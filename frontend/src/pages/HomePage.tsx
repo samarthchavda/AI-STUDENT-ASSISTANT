@@ -50,7 +50,9 @@ export default function HomePage() {
                   </div>
                 </>
               ) : (
-                <Link to="/auth" className="btn-primary">Get Started</Link>
+                <Link to="/auth" className="btn-primary">
+                  Get Started
+                </Link>
               )}
             </div>
           </div>
@@ -81,9 +83,12 @@ export default function HomePage() {
           </p>
           
           <div className="flex gap-4 justify-center flex-wrap">
-            <Link to="/auth" className="btn-primary text-lg px-10 py-4 inline-flex items-center gap-2">
+            <Link 
+              to={isAuthenticated ? "/chat" : "/auth"} 
+              className="btn-primary text-lg px-10 py-4 inline-flex items-center gap-2"
+            >
               <Sparkles className="w-5 h-5" />
-              Get Your Roadmap Free
+              {isAuthenticated ? "Go to Dashboard" : "Get Your Roadmap Free"}
             </Link>
             <Link to="/pricing" className="btn-secondary text-lg px-10 py-4 inline-flex items-center gap-2">
               <Zap className="w-5 h-5" />

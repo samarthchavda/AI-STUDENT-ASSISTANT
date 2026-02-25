@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Home, Code, Bug, Lightbulb, Rocket } from 'lucide-react'
 import { codingAPI } from '../api/client'
+import Header from '../components/Header'
 
 export default function CodingHelpPage() {
   const [selectedTab, setSelectedTab] = useState<'explain' | 'debug' | 'dsa' | 'project'>('explain')
@@ -62,22 +63,7 @@ export default function CodingHelpPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link to="/">
-              <Home className="w-6 h-6 text-gray-600 hover:text-primary-600" />
-            </Link>
-            <Link to="/" className="hover:opacity-80 transition-opacity">
-              <Code className="w-8 h-8 text-green-600" />
-            </Link>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">Coding Helper</h1>
-              <p className="text-sm text-gray-500">Your AI coding companion</p>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header title="Coding Helper" subtitle="Your AI coding companion" />
 
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="flex gap-4 mb-8 flex-wrap">

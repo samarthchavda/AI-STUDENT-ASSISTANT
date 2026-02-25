@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Home, BookOpen, FileText, Calendar, Award } from 'lucide-react'
 import { examAPI } from '../api/client'
+import Header from '../components/Header'
 
 export default function ExamPrepPage() {
   const [selectedTab, setSelectedTab] = useState<'mock' | 'pyq' | 'plan'>('mock')
@@ -69,23 +70,7 @@ export default function ExamPrepPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link to="/">
-              <Home className="w-6 h-6 text-gray-600 hover:text-primary-600" />
-            </Link>
-            <Link to="/" className="hover:opacity-80 transition-opacity">
-              <Award className="w-8 h-8 text-purple-600" />
-            </Link>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">Exam Preparation</h1>
-              <p className="text-sm text-gray-500">Ace your exams with AI</p>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header title="Exam Preparation" subtitle="Ace your exams with AI" />
 
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Tabs */}

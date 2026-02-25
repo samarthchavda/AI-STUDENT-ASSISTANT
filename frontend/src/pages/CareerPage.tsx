@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Home, Briefcase, FileText, Users, Upload, X } from 'lucide-react'
 import { careerAPI } from '../api/client'
+import Header from '../components/Header'
 
 export default function CareerPage() {
   const [selectedTab, setSelectedTab] = useState<'resume' | 'interview' | 'builder'>('resume')
@@ -68,24 +69,7 @@ export default function CareerPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-pink-50">
-      <header className="glass-effect sticky top-0 z-50 border-b border-white/20">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link to="/">
-              <Home className="w-6 h-6 text-gray-600 hover:text-orange-600 transition-colors" />
-            </Link>
-            <Link to="/" className="hover:opacity-80 transition-opacity">
-              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg">
-                <Briefcase className="w-6 h-6 text-white" />
-              </div>
-            </Link>
-            <div>
-              <h1 className="text-xl font-bold gradient-text">Career Assistant</h1>
-              <p className="text-sm text-gray-500">Land your dream job</p>
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header title="Career Assistant" subtitle="Land your dream job" />
 
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="flex gap-4 mb-8 flex-wrap">
