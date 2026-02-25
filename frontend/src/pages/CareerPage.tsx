@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Home, Briefcase, FileText, Users } from 'lucide-react'
+import { Home, Briefcase, FileText, Users, Upload, X } from 'lucide-react'
 import { careerAPI } from '../api/client'
 
 export default function CareerPage() {
@@ -9,19 +9,45 @@ export default function CareerPage() {
   const [result, setResult] = useState<any>(null)
 
   const [resumeText, setResumeText] = useState('')
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
+  const [uploadMethod, setUploadMethod] = useState<'text' | 'pdf'>('pdf')
   const [interviewForm, setInterviewForm] = useState({
     company: '',
     role: ''
   })
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.type !== 'application/pdf') {
+        alert('Please upload a PDF file')
+        return
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        alert('File size must be less than 5MB')
+        return
+      }
+      setUploadedFile(file)
+    }
+  }
+
   const handleResumeAnalysis = async () => {
     setLoading(true)
     try {
-      const response = await careerAPI.analyzeResume(resumeText)
+      let response
+      if (uploadMethod === 'pdf' && uploadedFile) {
+        // Upload PDF
+        const formData = new FormData()
+        formData.append('file', uploadedFile)
+        response = await careerAPI.uploadResume(formData)
+      } else {
+        // Analyze text
+        response = await careerAPI.analyzeResume(resumeText)
+      }
       setResult(response.data)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error:', error)
-      alert('Error analyzing resume. Please try again.')
+      alert(error.response?.data?.detail || 'Error analyzing resume. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -42,17 +68,19 @@ export default function CareerPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-pink-50">
-      <header className="bg-white shadow-sm border-b">
+      <header className="glass-effect sticky top-0 z-50 border-b border-white/20">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link to="/">
-              <Home className="w-6 h-6 text-gray-600 hover:text-primary-600" />
+              <Home className="w-6 h-6 text-gray-600 hover:text-orange-600 transition-colors" />
             </Link>
             <Link to="/" className="hover:opacity-80 transition-opacity">
-              <Briefcase className="w-8 h-8 text-orange-600" />
+              <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg">
+                <Briefcase className="w-6 h-6 text-white" />
+              </div>
             </Link>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">Career Assistant</h1>
+              <h1 className="text-xl font-bold gradient-text">Career Assistant</h1>
               <p className="text-sm text-gray-500">Land your dream job</p>
             </div>
           </div>
@@ -63,8 +91,10 @@ export default function CareerPage() {
         <div className="flex gap-4 mb-8 flex-wrap">
           <button
             onClick={() => setSelectedTab('resume')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold ${
-              selectedTab === 'resume' ? 'bg-orange-600 text-white' : 'bg-white text-gray-700'
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+              selectedTab === 'resume' 
+                ? 'bg-gradient-to-r from-orange-500 to-pink-500 text-white shadow-lg' 
+                : 'bg-white text-gray-700 hover:shadow-md'
             }`}
           >
             <FileText className="w-5 h-5" />
@@ -72,8 +102,10 @@ export default function CareerPage() {
           </button>
           <button
             onClick={() => setSelectedTab('interview')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold ${
-              selectedTab === 'interview' ? 'bg-orange-600 text-white' : 'bg-white text-gray-700'
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+              selectedTab === 'interview' 
+                ? 'bg-gradient-to-r from-orange-500 to-pink-500 text-white shadow-lg' 
+                : 'bg-white text-gray-700 hover:shadow-md'
             }`}
           >
             <Users className="w-5 h-5" />
@@ -81,8 +113,10 @@ export default function CareerPage() {
           </button>
           <button
             onClick={() => setSelectedTab('builder')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold ${
-              selectedTab === 'builder' ? 'bg-orange-600 text-white' : 'bg-white text-gray-700'
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+              selectedTab === 'builder' 
+                ? 'bg-gradient-to-r from-orange-500 to-pink-500 text-white shadow-lg' 
+                : 'bg-white text-gray-700 hover:shadow-md'
             }`}
           >
             <Briefcase className="w-5 h-5" />
@@ -91,42 +125,126 @@ export default function CareerPage() {
         </div>
 
         <div className="grid md:grid-cols-2 gap-8">
-          <div className="card">
-            <h2 className="text-2xl font-bold mb-6">
-              {selectedTab === 'resume' && 'Resume & ATS Analysis'}
-              {selectedTab === 'interview' && 'Interview Preparation'}
-              {selectedTab === 'builder' && 'Build Professional Resume'}
+          <div className="feature-card">
+            <h2 className="text-2xl font-bold mb-6 gradient-text">
+              {selectedTab === 'resume' && '📄 Resume & ATS Analysis'}
+              {selectedTab === 'interview' && '🎤 Interview Preparation'}
+              {selectedTab === 'builder' && '✨ Build Professional Resume'}
             </h2>
 
             {selectedTab === 'resume' && (
               <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Paste Your Resume Text
-                  </label>
-                  <textarea
-                    value={resumeText}
-                    onChange={(e) => setResumeText(e.target.value)}
-                    placeholder="Paste your resume content here for ATS analysis..."
-                    rows={16}
-                    className="w-full border rounded-lg px-4 py-2"
-                  />
+                {/* Upload Method Toggle */}
+                <div className="flex gap-2 mb-4">
+                  <button
+                    onClick={() => setUploadMethod('pdf')}
+                    className={`flex-1 py-2 px-4 rounded-lg font-medium ${
+                      uploadMethod === 'pdf'
+                        ? 'bg-orange-600 text-white'
+                        : 'bg-gray-100 text-gray-700'
+                    }`}
+                  >
+                    📄 Upload PDF
+                  </button>
+                  <button
+                    onClick={() => setUploadMethod('text')}
+                    className={`flex-1 py-2 px-4 rounded-lg font-medium ${
+                      uploadMethod === 'text'
+                        ? 'bg-orange-600 text-white'
+                        : 'bg-gray-100 text-gray-700'
+                    }`}
+                  >
+                    📝 Paste Text
+                  </button>
                 </div>
+
+                {uploadMethod === 'pdf' ? (
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Upload Resume PDF
+                    </label>
+                    <div className="border-2 border-dashed border-orange-300 rounded-2xl p-8 text-center hover:border-orange-500 hover:bg-orange-50/50 transition-all duration-300 cursor-pointer">
+                      {uploadedFile ? (
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-center gap-3 text-green-600">
+                            <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center shadow-lg">
+                              <FileText className="w-8 h-8 text-white" />
+                            </div>
+                            <div className="text-left">
+                              <p className="font-semibold text-lg">{uploadedFile.name}</p>
+                              <p className="text-sm text-gray-500">
+                                {(uploadedFile.size / 1024).toFixed(2)} KB
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => setUploadedFile(null)}
+                            className="text-red-600 hover:text-red-700 flex items-center gap-2 mx-auto font-medium"
+                          >
+                            <X className="w-4 h-4" />
+                            Remove file
+                          </button>
+                        </div>
+                      ) : (
+                        <div>
+                          <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-float shadow-xl">
+                            <Upload className="w-10 h-10 text-white" />
+                          </div>
+                          <p className="text-gray-700 mb-2 font-semibold text-lg">
+                            Click to upload or drag and drop
+                          </p>
+                          <p className="text-sm text-gray-500 mb-4">
+                            PDF only (Max 5MB)
+                          </p>
+                          <input
+                            type="file"
+                            accept=".pdf"
+                            onChange={handleFileSelect}
+                            className="hidden"
+                            id="resume-upload"
+                          />
+                          <label
+                            htmlFor="resume-upload"
+                            className="inline-block btn-primary cursor-pointer"
+                          >
+                            Choose File
+                          </label>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Paste Your Resume Text
+                    </label>
+                    <textarea
+                      value={resumeText}
+                      onChange={(e) => setResumeText(e.target.value)}
+                      placeholder="Paste your resume content here for ATS analysis..."
+                      rows={12}
+                      className="w-full border rounded-lg px-4 py-2"
+                    />
+                  </div>
+                )}
+
                 <button
                   onClick={handleResumeAnalysis}
-                  disabled={loading || !resumeText}
+                  disabled={loading || (uploadMethod === 'pdf' ? !uploadedFile : !resumeText)}
                   className="w-full btn-primary disabled:opacity-50"
                 >
                   {loading ? 'Analyzing...' : 'Analyze Resume'}
                 </button>
+                
                 <div className="text-sm text-gray-600 bg-blue-50 p-4 rounded-lg">
                   <strong>We check for:</strong>
                   <ul className="list-disc ml-5 mt-2">
-                    <li>ATS compatibility</li>
+                    <li>ATS compatibility score</li>
                     <li>Keywords optimization</li>
                     <li>Format & structure</li>
                     <li>Content quality</li>
                     <li>Missing sections</li>
+                    <li>Company fit analysis</li>
                   </ul>
                 </div>
               </div>

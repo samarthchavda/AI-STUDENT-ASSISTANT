@@ -1,38 +1,58 @@
-# AI Student Assistant 🎓
+# CodeCampus AI 🎓
 
-A comprehensive AI-powered learning platform built with React, TypeScript, FastAPI, and PostgreSQL. Helps students learn faster, study smarter, and prepare for exams & jobs.
+An AI-powered placement preparation platform built specifically for engineering students. Get personalized roadmaps, resume analysis, mock interviews, and structured learning paths for your dream tech job.
+
+## 🎯 Target Audience
+**Engineering Students** preparing for campus placements and tech careers
 
 ## 🌟 Features
 
-### 📚 Learning & Study
-- **Explain Topics**: Get simple, clear explanations for any subject
-- **Notes Generator**: Generate notes from syllabus/PDFs
-- **Assignment Helper**: Get structured guidance
-- **24/7 Doubt Solving**: Chat-based Q&A anytime
+### 🎯 Problems We Solve for Engineering Students
 
-### 📝 Exam Preparation
-- **Mock Tests & Quizzes**: Practice with AI-generated tests
-- **Previous Year Questions**: Solve with step-by-step explanations
-- **Study Plan Generator**: Personalized study schedules
-- **Weak Area Detection**: Identify and improve weak topics
+❌ **No proper roadmap** → ✅ Personalized placement roadmaps  
+❌ **Don't know what to study** → ✅ Daily study plans with tracking  
+❌ **Weak resume** → ✅ AI-powered resume analyzer with ATS scoring  
+❌ **No mock interview practice** → ✅ Company-specific interview prep  
+❌ **Random YouTube learning** → ✅ Structured learning paths  
+❌ **No tracking system** → ✅ Progress tracking and analytics  
 
-### 💻 Coding & Tech
-- **Code Explanation**: Understand any code snippet
-- **Bug Fixing**: Get help debugging your code
-- **DSA Practice**: Hints and approaches for algorithm problems
-- **Project Guidance**: Roadmaps for React, Python, IoT, ML projects
+### 🗺️ Personalized Placement Roadmap
+- **Input Your Details**: Branch, Current Year, Target Role (Frontend, Backend, Data Analyst, etc.)
+- **Get AI-Generated**:
+  - 3-month placement roadmap
+  - Daily study plans
+  - Skills to focus on
+  - Company-specific preparation
+  - DSA practice schedule
+  - Project recommendations
 
-### 🎯 Career & Placement
-- **Resume Builder**: Create ATS-friendly resumes
-- **Interview Prep**: Company-specific preparation
-- **ATS Resume Check**: Optimize for applicant tracking systems
-- **Company-wise Prep**: TCS, Infosys, Google, etc.
+### 📄 Resume Analyzer
+- **Upload PDF Resume**
+- **AI Analysis Provides**:
+  - ATS Score (0-100)
+  - Weak points identification
+  - Improvement suggestions
+  - Keyword optimization
+  - Format recommendations
+  - Industry-specific feedback
+
+### 💻 Coding & DSA Practice
+- **DSA Problem Solving**: Hints and approaches for algorithm problems
+- **Code Debugging**: Get help fixing your code
+- **Project Guidance**: Build placement-worthy projects
+- **Tech Stack Recommendations**: Based on target role
+
+### 🎯 Interview Preparation
+- **Mock Interviews**: Practice with AI interviewer
+- **Company-Specific Prep**: TCS, Infosys, Wipro, Google, Amazon, etc.
+- **HR Round Practice**: Common questions and answers
+- **Technical Round Prep**: Role-based questions
 
 ### 🤖 AI Features
-- **Personalized Learning**: Adapts to your learning style
-- **Progress Tracking**: Monitor your improvement
-- **Multi-Language**: English, Hindi, Gujarati support
-- **Smart Recommendations**: Based on your study patterns
+- **Personalized Roadmaps**: Based on branch, year, and target role
+- **Progress Tracking**: Monitor your placement preparation
+- **Smart Recommendations**: Skills and projects based on your profile
+- **Company Insights**: Latest hiring trends and requirements
 
 ### 🔐 Admin Panel
 - **User Management**: View and manage all users
@@ -59,9 +79,11 @@ A comprehensive AI-powered learning platform built with React, TypeScript, FastA
 - **JWT** authentication
 - **Pydantic** for validation
 
-### Payment Integration
-- Stripe (Demo keys included)
-- Razorpay (Demo keys included)
+### AI Integration
+- OpenAI GPT-4 for roadmap generation
+- Resume parsing and analysis
+- Interview question generation
+- Personalized recommendations
 
 ## 📦 Installation
 
@@ -73,7 +95,8 @@ A comprehensive AI-powered learning platform built with React, TypeScript, FastA
 ### 1. Clone & Setup
 
 \`\`\`bash
-cd ai-student-assistant
+git clone https://github.com/samarthchavda/AI-STUDENT-ASSISTANT.git
+cd AI-STUDENT-ASSISTANT
 \`\`\`
 
 ### 2. Database Setup
@@ -271,15 +294,38 @@ For questions or issues:
 
 ## 🎯 Roadmap
 
-- [ ] Voice input for doubts
+- [ ] PDF resume upload and parsing
+- [ ] Advanced ATS scoring algorithm
+- [ ] Company-wise interview questions database
+- [ ] Mock interview with voice
+- [ ] Peer-to-peer mock interviews
+- [ ] Placement statistics dashboard
 - [ ] Mobile app (React Native)
-- [ ] Offline mode
-- [ ] Parent dashboard
-- [ ] Group study rooms
-- [ ] Live tutoring sessions
-- [ ] More language support
+- [ ] LinkedIn profile analyzer
+- [ ] GitHub profile recommendations
+- [ ] Coding contest reminders
+
+## 🎓 For Engineering Students
+
+**Branches Supported:**
+- Computer Science & Engineering
+- Information Technology
+- Electronics & Communication
+- Electrical Engineering
+- Mechanical Engineering
+- Civil Engineering
+
+**Target Roles:**
+- Frontend Developer
+- Backend Developer
+- Full Stack Developer
+- Data Analyst
+- Data Scientist
+- DevOps Engineer
+- Mobile App Developer
+- Machine Learning Engineer
 
 ---
 
-Built with ❤️ for students worldwide
+Built with ❤️ for engineering students preparing for placements
 # AI-STUDENT-ASSISTANT

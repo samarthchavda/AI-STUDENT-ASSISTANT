@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { Brain, Mail, Lock, User, AlertCircle, Loader } from 'lucide-react'
+import { Brain, Mail, Lock, User, AlertCircle, Sparkles } from 'lucide-react'
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google'
 import { userAPI } from '../api/client'
 import { useAppStore } from '../store/useAppStore'
@@ -182,26 +182,32 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center px-4 py-8">
-      <div className="max-w-md w-full">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center px-4 py-8 relative overflow-hidden">
+      {/* Animated Background Elements */}
+      <div className="absolute top-20 left-10 w-96 h-96 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-float"></div>
+      <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-float" style={{animationDelay: '2s'}}></div>
+      
+      <div className="max-w-md w-full relative z-10">
         {/* Logo and Header */}
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-2 mb-4 hover:opacity-80 transition-opacity">
-            <Brain className="w-12 h-12 text-primary-600" />
-            <span className="text-3xl font-bold text-gray-900">AI Student</span>
+          <Link to="/" className="inline-flex items-center gap-3 mb-6 hover:opacity-80 transition-opacity group">
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform">
+              <Brain className="w-9 h-9 text-white" />
+            </div>
+            <span className="text-4xl font-bold gradient-text">CodeCampus AI</span>
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            {isLogin ? 'Welcome Back!' : 'Get Started Free'}
+          <h1 className="text-3xl font-bold text-gray-900 mb-3">
+            {isLogin ? 'Welcome Back! 👋' : 'Start Your Journey 🚀'}
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 text-lg">
             {isLogin 
-              ? 'Sign in to continue your learning journey' 
-              : 'Create an account to unlock all features'}
+              ? 'Continue your placement preparation' 
+              : 'Join thousands of engineering students getting placed'}
           </p>
         </div>
 
         {/* Auth Form */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+        <div className="glass-effect rounded-3xl shadow-2xl p-8 border border-white/20">
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Info Message (Session expiration, etc.) */}
             {infoMessage && (
@@ -226,12 +232,12 @@ export default function AuthPage() {
                   Full Name
                 </label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                    className="input-modern pl-12"
                     placeholder="John Doe"
                     disabled={loading}
                   />
@@ -245,12 +251,12 @@ export default function AuthPage() {
                 Email Address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                  className="input-modern pl-12"
                   placeholder="you@example.com"
                   disabled={loading}
                 />
@@ -263,12 +269,12 @@ export default function AuthPage() {
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="password"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                  className="input-modern pl-12"
                   placeholder="••••••••"
                   disabled={loading}
                 />
@@ -282,12 +288,12 @@ export default function AuthPage() {
                   Confirm Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
                     type="password"
                     value={formData.confirmPassword}
                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                    className="w-full pl-11 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all"
+                    className="input-modern pl-12"
                     placeholder="••••••••"
                     disabled={loading}
                   />
@@ -299,15 +305,18 @@ export default function AuthPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full btn-primary py-3 text-lg font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full btn-primary py-4 text-lg font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>
-                  <Loader className="w-5 h-5 animate-spin" />
+                  <div className="loading-spinner w-5 h-5"></div>
                   {isLogin ? 'Signing In...' : 'Creating Account...'}
                 </>
               ) : (
-                isLogin ? 'Sign In' : 'Create Account'
+                <>
+                  <Sparkles className="w-5 h-5" />
+                  {isLogin ? 'Sign In' : 'Create Account'}
+                </>
               )}
             </button>
           </form>

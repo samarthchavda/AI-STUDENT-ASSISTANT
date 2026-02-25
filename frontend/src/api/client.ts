@@ -96,6 +96,13 @@ export const codingAPI = {
 }
 
 export const careerAPI = {
+  uploadResume: (formData: FormData) => 
+    api.post('/career/resume-upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }),
+  
   analyzeResume: (resumeText: string) => 
     api.post('/career/resume-analyze', { resumeText }),
   

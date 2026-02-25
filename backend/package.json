@@ -1,7 +1,7 @@
 {
-  "name": "ai-student-assistant-backend",
+  "name": "codecampus-ai-backend",
   "version": "1.0.0",
-  "description": "Backend for AI Student Assistant",
+  "description": "Backend for CodeCampus AI - Placement preparation platform",
   "scripts": {
     "dev": "bash -c 'source venv/bin/activate && python main.py'",
     "start": "bash -c 'source venv/bin/activate && uvicorn main:app --reload'",

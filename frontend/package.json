@@ -1,7 +1,8 @@
 {
-  "name": "ai-student-assistant-frontend",
+  "name": "codecampus-ai-frontend",
   "private": true,
   "version": "1.0.0",
+  "description": "CodeCampus AI - Placement preparation platform for engineering students",
   "type": "module",
   "scripts": {
     "dev": "vite",
