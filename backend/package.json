@@ -1,0 +1,14 @@
+{
+  "name": "ai-student-assistant-backend",
+  "version": "1.0.0",
+  "description": "Backend for AI Student Assistant",
+  "scripts": {
+    "dev": "bash -c 'source venv/bin/activate && python main.py'",
+    "start": "bash -c 'source venv/bin/activate && uvicorn main:app --reload'",
+    "setup": "python3 -m venv venv && bash -c 'source venv/bin/activate && pip install -r requirements.txt'",
+    "db:init": "bash -c 'source venv/bin/activate && python -c \"from database import engine, Base; from models import *; Base.metadata.create_all(bind=engine)\"'",
+    "admin:create": "bash -c 'source venv/bin/activate && python create_admin.py'",
+    "admin:make": "bash -c 'source venv/bin/activate && python make_admin.py'",
+    "users:view": "bash -c 'source venv/bin/activate && python view_users.py'"
+  }
+}
