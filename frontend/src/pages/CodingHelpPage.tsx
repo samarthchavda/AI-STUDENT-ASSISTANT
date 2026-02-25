@@ -63,7 +63,7 @@ export default function CodingHelpPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
-      <Header title="Coding Helper" subtitle="Your AI coding companion" />
+      <Header />
 
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="flex gap-4 mb-8 flex-wrap">
@@ -221,9 +221,71 @@ export default function CodingHelpPage() {
             <h2 className="text-2xl font-bold mb-6">Output</h2>
             {result ? (
               <div className="prose max-w-none">
-                <pre className="whitespace-pre-wrap bg-gray-50 p-4 rounded-lg text-sm">
-                  {JSON.stringify(result, null, 2)}
-                </pre>
+                {/* Code Explanation/Debug/Optimize Result */}
+                {(selectedTab === 'explain' || selectedTab === 'debug') && result.result && (
+                  <div className="space-y-4">
+                    <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                      <p className="font-semibold text-blue-900">
+                        Task: {result.task?.charAt(0).toUpperCase() + result.task?.slice(1)}
+                      </p>
+                      <p className="text-sm text-blue-700">Language: {result.language}</p>
+                    </div>
+                    <div className="whitespace-pre-wrap bg-gray-50 p-6 rounded-lg text-sm leading-relaxed">
+                      {result.result}
+                    </div>
+                    {result.suggestions && result.suggestions.length > 0 && (
+                      <div className="bg-green-50 p-4 rounded-lg">
+                        <p className="font-semibold text-green-900 mb-2">💡 Suggestions:</p>
+                        <ul className="list-disc list-inside text-green-800 space-y-1">
+                          {result.suggestions.map((suggestion: string, idx: number) => (
+                            <li key={idx}>{suggestion}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                {/* DSA Solution Result */}
+                {selectedTab === 'dsa' && result.solution && (
+                  <div className="space-y-4">
+                    <div className="bg-purple-50 border-l-4 border-purple-500 p-4 rounded">
+                      <p className="font-semibold text-purple-900">💡 Complete DSA Solution</p>
+                      <p className="text-sm text-purple-700">Problem: {result.problem}</p>
+                    </div>
+                    <div className="prose prose-sm max-w-none bg-white p-6 rounded-lg border">
+                      <div 
+                        className="whitespace-pre-wrap leading-relaxed"
+                        dangerouslySetInnerHTML={{ 
+                          __html: result.solution
+                            .replace(/```python\n([\s\S]*?)```/g, '<pre class="bg-gray-900 text-green-400 p-4 rounded-lg overflow-x-auto"><code>$1</code></pre>')
+                            .replace(/```([\s\S]*?)```/g, '<pre class="bg-gray-100 p-4 rounded-lg overflow-x-auto"><code>$1</code></pre>')
+                            .replace(/\*\*(.*?)\*\*/g, '<strong class="text-gray-900">$1</strong>')
+                            .replace(/^### (.*$)/gm, '<h3 class="text-xl font-bold text-gray-900 mt-6 mb-3">$1</h3>')
+                            .replace(/^## (.*$)/gm, '<h2 class="text-2xl font-bold text-gray-900 mt-8 mb-4">$1</h2>')
+                            .replace(/^# (.*$)/gm, '<h1 class="text-3xl font-bold text-gray-900 mt-8 mb-4">$1</h1>')
+                            .replace(/^\- (.*$)/gm, '<li class="ml-4">$1</li>')
+                            .replace(/^\* (.*$)/gm, '<li class="ml-4">$1</li>')
+                            .replace(/\n\n/g, '<br/><br/>')
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+                
+                {/* Project Guidance Result */}
+                {selectedTab === 'project' && result.guidance && (
+                  <div className="space-y-4">
+                    <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded">
+                      <p className="font-semibold text-orange-900">🚀 Project: {result.projectType}</p>
+                      <p className="text-sm text-orange-700">Tech Stack: {result.techStack?.join(', ')}</p>
+                      <p className="text-sm text-orange-700">Estimated Time: {result.estimatedTime}</p>
+                    </div>
+                    <div className="whitespace-pre-wrap bg-gray-50 p-6 rounded-lg text-sm leading-relaxed">
+                      {result.guidance}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="text-center text-gray-500 py-12">

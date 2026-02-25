@@ -70,7 +70,7 @@ export default function ExamPrepPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <Header title="Exam Preparation" subtitle="Ace your exams with AI" />
+      <Header />
 
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Tabs */}
@@ -242,9 +242,65 @@ export default function ExamPrepPage() {
             <h2 className="text-2xl font-bold mb-6">Result</h2>
             {result ? (
               <div className="prose max-w-none">
-                <pre className="whitespace-pre-wrap bg-gray-50 p-4 rounded-lg">
-                  {JSON.stringify(result, null, 2)}
-                </pre>
+                {/* Mock Test Result */}
+                {selectedTab === 'mock' && result.questions && (
+                  <div className="space-y-6">
+                    <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+                      <p className="font-semibold text-blue-900">📝 Mock Test Generated</p>
+                      <p className="text-sm text-blue-700">Subject: {result.subject} | Topic: {result.topic}</p>
+                      <p className="text-sm text-blue-700">Difficulty: {result.difficulty} | Questions: {result.totalQuestions}</p>
+                      <p className="text-sm text-blue-700">Time Limit: {result.timeLimit} minutes</p>
+                    </div>
+                    {result.questions.map((q: any, idx: number) => (
+                      <div key={idx} className="bg-white border rounded-lg p-4 shadow-sm">
+                        <p className="font-semibold text-gray-900 mb-3">Q{q.id}. {q.question}</p>
+                        <div className="space-y-2 ml-4">
+                          {q.options.map((option: string, optIdx: number) => (
+                            <div key={optIdx} className={`p-2 rounded ${optIdx === q.correctAnswer ? 'bg-green-50 border border-green-300' : 'bg-gray-50'}`}>
+                              <span className="font-medium">{String.fromCharCode(65 + optIdx)}.</span> {option}
+                              {optIdx === q.correctAnswer && <span className="ml-2 text-green-600 font-semibold">✓ Correct</span>}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="mt-3 p-3 bg-blue-50 rounded">
+                          <p className="text-sm text-blue-900"><strong>Explanation:</strong> {q.explanation}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* PYQ Solution Result */}
+                {selectedTab === 'pyq' && result.solution && (
+                  <div className="space-y-4">
+                    <div className="bg-purple-50 border-l-4 border-purple-500 p-4 rounded">
+                      <p className="font-semibold text-purple-900">📚 Previous Year Question Solution</p>
+                      <p className="text-sm text-purple-700">Difficulty: {result.difficulty}</p>
+                    </div>
+                    <div className="bg-gray-50 p-4 rounded-lg">
+                      <p className="font-semibold text-gray-700 mb-2">Question:</p>
+                      <p className="text-gray-800">{result.question}</p>
+                    </div>
+                    <div className="whitespace-pre-wrap bg-white p-6 rounded-lg border text-sm leading-relaxed">
+                      {result.solution}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Study Plan Result */}
+                {selectedTab === 'plan' && result.plan && (
+                  <div className="space-y-4">
+                    <div className="bg-green-50 border-l-4 border-green-500 p-4 rounded">
+                      <p className="font-semibold text-green-900">📅 Study Plan Generated</p>
+                      <p className="text-sm text-green-700">Exam Date: {result.examDate}</p>
+                      <p className="text-sm text-green-700">Subjects: {result.subjects?.join(', ')}</p>
+                      <p className="text-sm text-green-700">Duration: {result.totalWeeks} weeks</p>
+                    </div>
+                    <div className="whitespace-pre-wrap bg-white p-6 rounded-lg border text-sm leading-relaxed">
+                      {result.plan}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="text-center text-gray-500 py-12">

@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     # AI APIs
     openai_api_key: str = ""
     anthropic_api_key: str = ""
+    gemini_api_key: str = ""
     
     # Payment
     stripe_api_key: str = ""

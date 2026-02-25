@@ -77,7 +77,7 @@ export default function ChatPage() {
 
   return (
     <div className="flex flex-col h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      <Header title="AI Study Assistant" subtitle="Your 24/7 Learning Partner" />
+      <Header />
 
       {/* Messages Container */}
       <div className="flex-1 overflow-y-auto px-4 py-6">
