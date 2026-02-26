@@ -4,8 +4,11 @@ import {
   Sparkles, Clock, Globe, Zap
 } from 'lucide-react'
 import Header from '../components/Header'
+import { useAppStore } from '../store/useAppStore'
 
 export default function HomePage() {
+  const { isAuthenticated } = useAppStore()
+  
   return (
     <div className="min-h-screen">
       <Header />
