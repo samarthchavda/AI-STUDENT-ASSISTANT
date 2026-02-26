@@ -1,63 +1,14 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { 
   BookOpen, Brain, Code, Briefcase, 
-  Sparkles, Clock, Globe, Zap, LogOut, User 
+  Sparkles, Clock, Globe, Zap
 } from 'lucide-react'
-import { useAppStore } from '../store/useAppStore'
+import Header from '../components/Header'
 
 export default function HomePage() {
-  const navigate = useNavigate()
-  const { isAuthenticated, user, logout } = useAppStore()
-
-  const handleLogout = () => {
-    logout()
-    navigate('/auth')
-  }
-
   return (
     <div className="min-h-screen">
-      {/* Navigation */}
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
-            <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <Brain className="w-8 h-8 text-primary-600" />
-              <span className="text-2xl font-bold text-gray-900">CodeCampus AI</span>
-            </Link>
-            <div className="hidden md:flex items-center gap-6">
-              <Link to="/chat" className="text-gray-600 hover:text-primary-600">Chat</Link>
-              <Link to="/exam-prep" className="text-gray-600 hover:text-primary-600">Exam Prep</Link>
-              <Link to="/coding-help" className="text-gray-600 hover:text-primary-600">Coding</Link>
-              <Link to="/career" className="text-gray-600 hover:text-primary-600">Career</Link>
-              {isAuthenticated ? (
-                <>
-                  <Link to="/dashboard" className="text-gray-600 hover:text-primary-600">Dashboard</Link>
-                  <div className="flex items-center gap-3 pl-4 border-l border-gray-300">
-                    <div className="flex items-center gap-2">
-                      <User className="w-4 h-4 text-gray-600" />
-                      <span className="text-sm font-medium text-gray-700">{user?.name}</span>
-                      <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
-                        {user?.plan.toUpperCase()}
-                      </span>
-                    </div>
-                    <button
-                      onClick={handleLogout}
-                      className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      Logout
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <Link to="/auth" className="btn-primary">
-                  Get Started
-                </Link>
-              )}
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Header />
 
       {/* Hero Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 relative">
@@ -135,7 +86,7 @@ export default function HomePage() {
       </section>
 
       {/* Features */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+      <section id="services" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold mb-4">
             Complete <span className="gradient-text">Placement Preparation</span> Platform
@@ -284,7 +235,7 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
+      <footer id="about" className="bg-gray-900 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
