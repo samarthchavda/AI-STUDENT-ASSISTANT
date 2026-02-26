@@ -32,11 +32,11 @@ export default function Header() {
                 Chat
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 group-hover:w-full transition-all duration-300"></span>
               </Link>
-              <Link to="/#services" className="text-gray-700 hover:text-blue-600 font-medium transition-colors relative group">
+              <Link to="/services" className="text-gray-700 hover:text-blue-600 font-medium transition-colors relative group">
                 Services
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 group-hover:w-full transition-all duration-300"></span>
               </Link>
-              <Link to="/#about" className="text-gray-700 hover:text-blue-600 font-medium transition-colors relative group">
+              <Link to="/about" className="text-gray-700 hover:text-blue-600 font-medium transition-colors relative group">
                 About
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 group-hover:w-full transition-all duration-300"></span>
               </Link>
@@ -44,13 +44,16 @@ export default function Header() {
 
             {isAuthenticated && user ? (
               <div className="flex items-center gap-4">
-                <div className="flex items-center gap-3 bg-gradient-to-r from-blue-50 to-purple-50 px-4 py-2 rounded-xl">
+                <Link 
+                  to="/profile"
+                  className="flex items-center gap-3 bg-gradient-to-r from-blue-50 to-purple-50 px-4 py-2 rounded-xl hover:shadow-md transition-shadow"
+                >
                   <User className="w-4 h-4 text-blue-600" />
                   <span className="text-sm font-semibold text-gray-700 hidden sm:block">{user.name}</span>
                   <span className="badge badge-primary text-xs">
                     {user.plan.toUpperCase()}
                   </span>
-                </div>
+                </Link>
                 
                 {user.isAdmin && (
                   <Link

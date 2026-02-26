@@ -8,6 +8,9 @@ import CareerPage from './pages/CareerPage'
 import PricingPage from './pages/PricingPage'
 import DashboardPage from './pages/DashboardPage'
 import AdminPage from './pages/AdminPage'
+import ServicesPage from './pages/ServicesPage'
+import AboutPage from './pages/AboutPage'
+import ProfilePage from './pages/ProfilePage'
 import { useAutoLogout } from './hooks/useAutoLogout'
 
 function AppRoutes() {
@@ -26,6 +29,9 @@ function AppRoutes() {
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/dashboard" element={<DashboardPage />} />
       <Route path="/admin" element={<AdminPage />} />
+      <Route path="/services" element={<ServicesPage />} />
+      <Route path="/about" element={<AboutPage />} />
+      <Route path="/profile" element={<ProfilePage />} />
     </Routes>
   )
 }
