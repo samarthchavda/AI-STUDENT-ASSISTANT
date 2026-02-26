@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
 import { Send, Brain, Loader, Mic, MicOff, Volume2, VolumeX } from 'lucide-react'
-import { Link } from 'react-router-dom'
 import { chatAPI, ChatMessage } from '../api/client'
 import Header from '../components/Header'
 
@@ -17,8 +16,6 @@ export default function ChatPage() {
   const [isListening, setIsListening] = useState(false)
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [autoSpeak, setAutoSpeak] = useState(true)
-  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([])
-  const [selectedVoice, setSelectedVoice] = useState<string>('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const recognitionRef = useRef<any>(null)
   const speechSynthesisRef = useRef<SpeechSynthesisUtterance | null>(null)
@@ -30,35 +27,6 @@ export default function ChatPage() {
   useEffect(() => {
     scrollToBottom()
   }, [messages])
-
-  // Load available voices
-  useEffect(() => {
-    const loadVoices = () => {
-      const voices = window.speechSynthesis.getVoices()
-      setAvailableVoices(voices)
-      
-      // Auto-select first voice for current language if not already selected
-      if (!selectedVoice && voices.length > 0) {
-        const langMap: { [key: string]: string } = {
-          'english': 'en',
-          'hindi': 'hi',
-          'gujarati': 'gu'
-        }
-        const langCode = langMap[language] || 'en'
-        const defaultVoice = voices.find(v => v.lang.startsWith(langCode))
-        if (defaultVoice) {
-          setSelectedVoice(defaultVoice.name)
-        }
-      }
-    }
-
-    loadVoices()
-    
-    // Chrome loads voices asynchronously
-    if (window.speechSynthesis.onvoiceschanged !== undefined) {
-      window.speechSynthesis.onvoiceschanged = loadVoices
-    }
-  }, [language])
 
   // Auto-speak when a new assistant message is complete
   useEffect(() => {
@@ -206,12 +174,41 @@ export default function ChatPage() {
     }
     utterance.lang = langMap[language] || 'en-US'
     
-    // Set selected voice if available
-    if (selectedVoice) {
-      const voice = availableVoices.find(v => v.name === selectedVoice)
-      if (voice) {
-        utterance.voice = voice
-      }
+    // Try to find and use specific voice (like Microsoft Guy - en-US-GuyNeural)
+    const voices = window.speechSynthesis.getVoices()
+    
+    // Priority order for English voices
+    const preferredVoices = [
+      'Microsoft Guy Online (Natural) - English (United States)',
+      'Microsoft David - English (United States)',
+      'Google US English',
+      'en-US-GuyNeural',
+      'en-us-guyneural'
+    ]
+    
+    let selectedVoiceObj = null
+    
+    // Try to find preferred voice
+    for (const prefVoice of preferredVoices) {
+      selectedVoiceObj = voices.find(v => 
+        v.name.toLowerCase().includes(prefVoice.toLowerCase()) ||
+        v.voiceURI.toLowerCase().includes(prefVoice.toLowerCase())
+      )
+      if (selectedVoiceObj) break
+    }
+    
+    // If no preferred voice found, use any voice matching the language
+    if (!selectedVoiceObj && language === 'english') {
+      selectedVoiceObj = voices.find(v => v.lang.startsWith('en'))
+    } else if (!selectedVoiceObj && language === 'hindi') {
+      selectedVoiceObj = voices.find(v => v.lang.startsWith('hi'))
+    } else if (!selectedVoiceObj && language === 'gujarati') {
+      selectedVoiceObj = voices.find(v => v.lang.startsWith('gu'))
+    }
+    
+    if (selectedVoiceObj) {
+      utterance.voice = selectedVoiceObj
+      console.log('Using voice:', selectedVoiceObj.name)
     }
     
     // Set voice properties
