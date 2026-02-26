@@ -49,7 +49,7 @@ SECRET_KEY=<generate-new-strong-key>  # MUST CHANGE!
 DATABASE_URL=<railway-postgres-url>   # Will get from Railway
 
 # Real API keys (not demo)
-GEMINI_API_KEY=AIzaSyBeRgC7GkOKWx2mDy4c-0N5-nK2HgoukRk
+GEMINI_API_KEY=your-gemini-api-key-here
 
 # Frontend URL (will be your Vercel URL)
 FRONTEND_URL=https://codecampusai.vercel.app

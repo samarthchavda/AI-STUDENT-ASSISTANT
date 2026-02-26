@@ -50,7 +50,7 @@ git push -u origin main
    ENVIRONMENT=production
    SECRET_KEY=<run: python -c "import secrets; print(secrets.token_urlsafe(32))">
    DATABASE_URL=${{Postgres.DATABASE_URL}}
-   GEMINI_API_KEY=AIzaSyBeRgC7GkOKWx2mDy4c-0N5-nK2HgoukRk
+   GEMINI_API_KEY=your-gemini-api-key-here
    ```
 4. Wait for deploy (2-3 min)
 5. Copy your URL: `https://xxxxx.railway.app`

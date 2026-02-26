@@ -164,9 +164,9 @@ Frontend will run on: http://localhost:3000
 \`\`\`env
 DATABASE_URL=postgresql://student_user:student_pass@localhost:5432/ai_student_db
 SECRET_KEY=your-secret-key-here
-OPENAI_API_KEY=sk-your-openai-key
-ANTHROPIC_API_KEY=sk-your-anthropic-key
-STRIPE_API_KEY=sk_test_your-stripe-key
+OPENAI_API_KEY=your-openai-key-here
+ANTHROPIC_API_KEY=your-anthropic-key-here
+STRIPE_API_KEY=your-stripe-key-here
 RAZORPAY_KEY_ID=rzp_test_your-key
 \`\`\`
 
