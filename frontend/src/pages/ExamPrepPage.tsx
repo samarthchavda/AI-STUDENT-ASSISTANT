@@ -208,21 +208,21 @@ export default function ExamPrepPage() {
         ) : showResults ? (
           // Results Screen
           <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
-              <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold mb-4">Test Results</h2>
-                <div className="inline-block bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl px-8 py-6">
-                  <div className="text-5xl font-bold mb-2">
+            <div className="bg-white rounded-xl shadow-lg p-6 mb-4">
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold mb-3">Test Results</h2>
+                <div className="inline-block bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl px-6 py-4">
+                  <div className="text-4xl font-bold mb-1">
                     {score}/{questions.length}
                   </div>
-                  <div className="text-lg">
+                  <div className="text-sm">
                     {Math.round((score / questions.length) * 100)}% Score
                   </div>
                 </div>
               </div>
 
               {/* Performance Message */}
-              <div className={`p-4 rounded-lg mb-6 ${
+              <div className={`p-3 rounded-lg mb-4 text-sm ${
                 score / questions.length >= 0.8 ? 'bg-green-50 text-green-800' :
                 score / questions.length >= 0.6 ? 'bg-yellow-50 text-yellow-800' :
                 'bg-red-50 text-red-800'
@@ -235,12 +235,12 @@ export default function ExamPrepPage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="grid md:grid-cols-2 gap-4 mb-6">
+              <div className="grid md:grid-cols-2 gap-3">
                 <button
                   onClick={() => startNewQuiz(true)}
-                  className="btn-primary py-4 flex items-center justify-center gap-2"
+                  className="btn-primary py-3 flex items-center justify-center gap-2 text-sm"
                 >
-                  <RefreshCw className="w-5 h-5" />
+                  <RefreshCw className="w-4 h-4" />
                   <div className="text-left">
                     <div className="font-semibold">Same Category</div>
                     <div className="text-xs opacity-90">
@@ -250,9 +250,9 @@ export default function ExamPrepPage() {
                 </button>
                 <button
                   onClick={() => startNewQuiz(false)}
-                  className="btn-secondary py-4 flex items-center justify-center gap-2"
+                  className="btn-secondary py-3 flex items-center justify-center gap-2 text-sm"
                 >
-                  <Brain className="w-5 h-5" />
+                  <Brain className="w-4 h-4" />
                   <div className="text-left">
                     <div className="font-semibold">Different Category</div>
                     <div className="text-xs opacity-90">Choose new topic</div>
@@ -262,25 +262,25 @@ export default function ExamPrepPage() {
             </div>
 
             {/* Detailed Solutions */}
-            <div className="space-y-4">
-              <h3 className="text-2xl font-bold mb-4">Detailed Solutions</h3>
+            <div className="space-y-3">
+              <h3 className="text-xl font-bold mb-3">Detailed Solutions</h3>
               {questions.map((q, idx) => (
-                <div key={idx} className="bg-white rounded-xl shadow-lg p-6">
-                  <div className="flex items-start gap-3 mb-4">
+                <div key={idx} className="bg-white rounded-lg shadow-md p-4">
+                  <div className="flex items-start gap-2 mb-3">
                     {q.userAnswer === q.correctAnswer ? (
-                      <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0 mt-1" />
+                      <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
                     ) : (
-                      <XCircle className="w-6 h-6 text-red-500 flex-shrink-0 mt-1" />
+                      <XCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
                     )}
                     <div className="flex-1">
-                      <p className="font-semibold text-lg mb-3">
+                      <p className="font-semibold text-sm mb-2">
                         Q{idx + 1}. {q.question}
                       </p>
-                      <div className="space-y-2 mb-4">
+                      <div className="space-y-1.5 mb-3">
                         {q.options.map((option, optIdx) => (
                           <div
                             key={optIdx}
-                            className={`p-3 rounded-lg border-2 ${
+                            className={`p-2 rounded-md border text-sm ${
                               optIdx === q.correctAnswer
                                 ? 'border-green-500 bg-green-50'
                                 : optIdx === q.userAnswer && q.userAnswer !== q.correctAnswer
@@ -288,28 +288,28 @@ export default function ExamPrepPage() {
                                 : 'border-gray-200'
                             }`}
                           >
-                            <span className="font-medium">
+                            <span className="font-medium text-xs">
                               {String.fromCharCode(65 + optIdx)}.
                             </span>{' '}
-                            {option}
+                            <span className="text-xs">{option}</span>
                             {optIdx === q.correctAnswer && (
-                              <span className="ml-2 text-green-600 font-semibold">
-                                ✓ Correct Answer
+                              <span className="ml-2 text-green-600 font-semibold text-xs">
+                                ✓ Correct
                               </span>
                             )}
                             {optIdx === q.userAnswer && q.userAnswer !== q.correctAnswer && (
-                              <span className="ml-2 text-red-600 font-semibold">
+                              <span className="ml-2 text-red-600 font-semibold text-xs">
                                 ✗ Your Answer
                               </span>
                             )}
                           </div>
                         ))}
                       </div>
-                      <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-                        <p className="text-sm font-semibold text-blue-900 mb-2">
+                      <div className="bg-blue-50 border-l-2 border-blue-500 p-2 rounded">
+                        <p className="text-xs font-semibold text-blue-900 mb-1">
                           💡 Explanation:
                         </p>
-                        <p className="text-sm text-blue-800">{q.explanation}</p>
+                        <p className="text-xs text-blue-800 leading-relaxed">{q.explanation}</p>
                       </div>
                     </div>
                   </div>
