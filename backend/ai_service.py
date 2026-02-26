@@ -252,32 +252,37 @@ Make it easy to understand for placement preparation."""
     
     def generate_mock_test(self, subject: str, topic: str, difficulty: str, num_questions: int) -> Dict:
         """Generate mock test questions for placement preparation"""
-        prompt = f"""Generate {num_questions} multiple choice questions for campus placement preparation.
+        prompt = f"""Generate EXACTLY {num_questions} multiple choice questions for campus placement aptitude test.
 
 Subject: {subject}
 Topic: {topic}
 Difficulty: {difficulty}
 
+IMPORTANT: Generate ALL {num_questions} questions. Do not generate less.
+
 For each question provide:
-1. Question text
+1. Clear question text
 2. Four options (A, B, C, D)
-3. Correct answer
-4. Brief explanation
+3. Correct answer index (0-3)
+4. Detailed explanation
 
-Focus on questions commonly asked by companies like TCS, Infosys, Amazon, Microsoft.
+Focus on aptitude questions commonly asked in placement exams.
 
-Return in JSON format:
+Return in JSON format with ALL {num_questions} questions:
 {{
   "questions": [
     {{
       "id": 1,
       "question": "...",
-      "options": ["A", "B", "C", "D"],
+      "options": ["Option A", "Option B", "Option C", "Option D"],
       "correctAnswer": 0,
       "explanation": "..."
-    }}
+    }},
+    ... (continue for all {num_questions} questions)
   ]
-}}"""
+}}
+
+CRITICAL: The questions array MUST contain exactly {num_questions} questions."""
 
         response = self._generate_response(prompt)
         
@@ -293,8 +298,22 @@ Return in JSON format:
             
             data = json.loads(json_str)
             questions = data.get("questions", [])
-        except:
-            # Fallback to demo questions if parsing fails
+            
+            # If we didn't get enough questions, generate more
+            if len(questions) < num_questions:
+                print(f"Warning: Only got {len(questions)} questions, expected {num_questions}")
+                # Generate additional questions to reach the target
+                for i in range(len(questions), num_questions):
+                    questions.append({
+                        "id": i+1,
+                        "question": f"Sample {topic} question {i+1}",
+                        "options": ["Option A", "Option B", "Option C", "Option D"],
+                        "correctAnswer": 0,
+                        "explanation": "This is a sample question."
+                    })
+        except Exception as e:
+            print(f"Error parsing mock test response: {e}")
+            # Fallback to demo questions
             questions = [
                 {
                     "id": i+1,
@@ -303,15 +322,15 @@ Return in JSON format:
                     "correctAnswer": 0,
                     "explanation": "This is a sample question."
                 }
-                for i in range(min(num_questions, 5))
+                for i in range(num_questions)
             ]
         
         return {
             "subject": subject,
             "topic": topic,
             "difficulty": difficulty,
-            "questions": questions,
-            "totalQuestions": len(questions),
+            "questions": questions[:num_questions],  # Ensure we don't exceed requested number
+            "totalQuestions": len(questions[:num_questions]),
             "timeLimit": num_questions * 2,
             "companies": ["TCS", "Infosys", "Amazon", "Microsoft", "Wipro"]
         }
