@@ -1,11 +1,37 @@
 import { User, Mail, Shield, CreditCard, LogOut, Edit } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '../store/useAppStore'
+import { userAPI } from '../api/client'
+import { useState, useEffect } from 'react'
 import Header from '../components/Header'
 
 export default function ProfilePage() {
   const navigate = useNavigate()
   const { user, logout } = useAppStore()
+  const [stats, setStats] = useState({
+    chatSessions: 0,
+    totalMessages: 0,
+    questionsAsked: 0,
+    lastActive: null as string | null
+  })
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const userStats = await userAPI.getUserStats()
+        setStats(userStats)
+      } catch (error) {
+        console.error('Error fetching user stats:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (user) {
+      fetchStats()
+    }
+  }, [user])
 
   const handleLogout = () => {
     logout()
@@ -115,24 +141,30 @@ export default function ProfilePage() {
         {/* Quick Stats */}
         <div className="bg-white rounded-2xl shadow-lg p-8 mb-8">
           <h2 className="text-2xl font-bold mb-6">Your Activity</h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <div className="text-center">
-              <div className="text-3xl font-bold gradient-text mb-2">0</div>
-              <div className="text-sm text-gray-600">Chat Sessions</div>
+          {loading ? (
+            <div className="text-center py-8 text-gray-500">Loading your activity...</div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="text-center">
+                <div className="text-3xl font-bold gradient-text mb-2">{stats.chatSessions}</div>
+                <div className="text-sm text-gray-600">Chat Sessions</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold gradient-text mb-2">{stats.totalMessages}</div>
+                <div className="text-sm text-gray-600">Total Messages</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold gradient-text mb-2">{stats.questionsAsked}</div>
+                <div className="text-sm text-gray-600">Questions Asked</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold gradient-text mb-2">
+                  {stats.lastActive ? 'Active' : 'New'}
+                </div>
+                <div className="text-sm text-gray-600">Status</div>
+              </div>
             </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold gradient-text mb-2">0</div>
-              <div className="text-sm text-gray-600">Questions Solved</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold gradient-text mb-2">0</div>
-              <div className="text-sm text-gray-600">Code Problems</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-bold gradient-text mb-2">0</div>
-              <div className="text-sm text-gray-600">Mock Interviews</div>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Actions */}

@@ -200,4 +200,23 @@ export const userAPI = {
   
   updateProgress: (data: any) =>
     api.post('/user/progress', data),
+  
+  getChatHistory: (limit: number = 50) =>
+    api.get(`/chat/history?limit=${limit}`),
+  
+  getUserStats: async () => {
+    const history = await api.get('/chat/history?limit=1000')
+    const messages = history.data.history || []
+    
+    // Calculate stats from chat history
+    const userMessages = messages.filter((m: any) => m.role === 'user')
+    const totalSessions = Math.ceil(userMessages.length / 10) // Approximate sessions
+    
+    return {
+      chatSessions: totalSessions,
+      totalMessages: messages.length,
+      questionsAsked: userMessages.length,
+      lastActive: messages.length > 0 ? messages[0].timestamp : null
+    }
+  },
 }

@@ -53,37 +53,37 @@ export default function HomePage() {
           {/* Trust Badges */}
           <div className="mt-12 flex items-center justify-center gap-8 flex-wrap text-sm text-gray-600">
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span>5000+ Students Placed</span>
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span>OpenAI GPT-4 Powered</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-              <span>200+ Companies</span>
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <span>Secure & Private</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
-              <span>90% Success Rate</span>
+              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+              <span>Free to Start</span>
             </div>
           </div>
         </div>
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-20">
-          <div className="stat-card text-center">
-            <div className="text-5xl font-bold mb-2">5K+</div>
-            <div className="text-blue-100 font-medium">Students Placed</div>
+          <div className="bg-white rounded-xl p-6 text-center shadow-md border border-gray-100">
+            <div className="text-4xl font-bold text-gray-900 mb-2">Real-time</div>
+            <div className="text-gray-600 font-medium">AI Responses</div>
           </div>
-          <div className="stat-card text-center" style={{background: 'linear-gradient(to bottom right, #8b5cf6, #ec4899)'}}>
-            <div className="text-5xl font-bold mb-2">200+</div>
-            <div className="text-purple-100 font-medium">Companies</div>
+          <div className="bg-white rounded-xl p-6 text-center shadow-md border border-gray-100">
+            <div className="text-4xl font-bold text-gray-900 mb-2">Multi</div>
+            <div className="text-gray-600 font-medium">Language Support</div>
           </div>
-          <div className="stat-card text-center" style={{background: 'linear-gradient(to bottom right, #10b981, #3b82f6)'}}>
-            <div className="text-5xl font-bold mb-2">90%</div>
-            <div className="text-green-100 font-medium">Placement Rate</div>
+          <div className="bg-white rounded-xl p-6 text-center shadow-md border border-gray-100">
+            <div className="text-4xl font-bold text-gray-900 mb-2">Voice</div>
+            <div className="text-gray-600 font-medium">Recognition</div>
           </div>
-          <div className="stat-card text-center" style={{background: 'linear-gradient(to bottom right, #f59e0b, #ef4444)'}}>
-            <div className="text-5xl font-bold mb-2">24/7</div>
-            <div className="text-orange-100 font-medium">AI Support</div>
+          <div className="bg-white rounded-xl p-6 text-center shadow-md border border-gray-100">
+            <div className="text-4xl font-bold text-gray-900 mb-2">24/7</div>
+            <div className="text-gray-600 font-medium">Available</div>
           </div>
         </div>
       </section>
