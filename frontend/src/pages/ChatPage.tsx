@@ -20,6 +20,7 @@ export default function ChatPage() {
   const [autoSpeak, setAutoSpeak] = useState(true)
   const [showPlusMenu, setShowPlusMenu] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const plusMenuRef = useRef<HTMLDivElement>(null)
   const recognitionRef = useRef<any>(null)
   const speechSynthesisRef = useRef<SpeechSynthesisUtterance | null>(null)
 
@@ -30,6 +31,23 @@ export default function ChatPage() {
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+
+  // Close plus menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (plusMenuRef.current && !plusMenuRef.current.contains(event.target as Node)) {
+        setShowPlusMenu(false)
+      }
+    }
+
+    if (showPlusMenu) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showPlusMenu])
 
   // Auto-speak when a new assistant message is complete
   useEffect(() => {
@@ -415,7 +433,7 @@ export default function ChatPage() {
           
           <div className="flex gap-3 items-end">
             {/* Plus Menu Button */}
-            <div className="relative">
+            <div className="relative" ref={plusMenuRef}>
               <button
                 onClick={() => setShowPlusMenu(!showPlusMenu)}
                 className="h-12 w-12 flex items-center justify-center rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
