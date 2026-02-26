@@ -32,16 +32,12 @@ export default function Header() {
                 Chat
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 group-hover:w-full transition-all duration-300"></span>
               </Link>
-              <Link to="/exam-prep" className="text-gray-700 hover:text-blue-600 font-medium transition-colors relative group">
-                Exam Prep
+              <Link to="/#services" className="text-gray-700 hover:text-blue-600 font-medium transition-colors relative group">
+                Services
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 group-hover:w-full transition-all duration-300"></span>
               </Link>
-              <Link to="/coding-help" className="text-gray-700 hover:text-blue-600 font-medium transition-colors relative group">
-                Coding
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 group-hover:w-full transition-all duration-300"></span>
-              </Link>
-              <Link to="/career" className="text-gray-700 hover:text-blue-600 font-medium transition-colors relative group">
-                Career
+              <Link to="/#about" className="text-gray-700 hover:text-blue-600 font-medium transition-colors relative group">
+                About
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 group-hover:w-full transition-all duration-300"></span>
               </Link>
             </nav>

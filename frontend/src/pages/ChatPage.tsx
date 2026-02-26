@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
-import { Send, Brain, Loader, Mic, MicOff, Volume2, VolumeX } from 'lucide-react'
+import { Send, Brain, Loader, Mic, MicOff, Volume2, VolumeX, Plus, BookOpen, Code, Briefcase, Upload } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { chatAPI, ChatMessage } from '../api/client'
 import Header from '../components/Header'
 
 export default function ChatPage() {
+  const navigate = useNavigate()
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
@@ -16,6 +18,7 @@ export default function ChatPage() {
   const [isListening, setIsListening] = useState(false)
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [autoSpeak, setAutoSpeak] = useState(true)
+  const [showPlusMenu, setShowPlusMenu] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const recognitionRef = useRef<any>(null)
   const speechSynthesisRef = useRef<SpeechSynthesisUtterance | null>(null)
@@ -411,6 +414,79 @@ export default function ChatPage() {
           </div>
           
           <div className="flex gap-3 items-end">
+            {/* Plus Menu Button */}
+            <div className="relative">
+              <button
+                onClick={() => setShowPlusMenu(!showPlusMenu)}
+                className="h-12 w-12 flex items-center justify-center rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                title="More options"
+              >
+                <Plus className={`w-5 h-5 transition-transform ${showPlusMenu ? 'rotate-45' : ''}`} />
+              </button>
+              
+              {/* Plus Menu Dropdown */}
+              {showPlusMenu && (
+                <div className="absolute bottom-14 left-0 bg-white rounded-lg shadow-xl border border-gray-200 py-2 w-56 z-10">
+                  <button
+                    onClick={() => {
+                      navigate('/exam-prep')
+                      setShowPlusMenu(false)
+                    }}
+                    className="w-full px-4 py-3 text-left hover:bg-blue-50 transition-colors flex items-center gap-3"
+                  >
+                    <BookOpen className="w-5 h-5 text-blue-600" />
+                    <div>
+                      <div className="font-medium text-gray-900">Exam Prep</div>
+                      <div className="text-xs text-gray-500">Practice questions</div>
+                    </div>
+                  </button>
+                  
+                  <button
+                    onClick={() => {
+                      navigate('/coding-help')
+                      setShowPlusMenu(false)
+                    }}
+                    className="w-full px-4 py-3 text-left hover:bg-green-50 transition-colors flex items-center gap-3"
+                  >
+                    <Code className="w-5 h-5 text-green-600" />
+                    <div>
+                      <div className="font-medium text-gray-900">Coding Help</div>
+                      <div className="text-xs text-gray-500">Debug & learn code</div>
+                    </div>
+                  </button>
+                  
+                  <button
+                    onClick={() => {
+                      navigate('/career')
+                      setShowPlusMenu(false)
+                    }}
+                    className="w-full px-4 py-3 text-left hover:bg-purple-50 transition-colors flex items-center gap-3"
+                  >
+                    <Briefcase className="w-5 h-5 text-purple-600" />
+                    <div>
+                      <div className="font-medium text-gray-900">Career Guidance</div>
+                      <div className="text-xs text-gray-500">Resume & interview</div>
+                    </div>
+                  </button>
+                  
+                  <button
+                    onClick={() => {
+                      // TODO: Implement document upload
+                      alert('Document upload feature coming soon!')
+                      setShowPlusMenu(false)
+                    }}
+                    className="w-full px-4 py-3 text-left hover:bg-orange-50 transition-colors flex items-center gap-3"
+                  >
+                    <Upload className="w-5 h-5 text-orange-600" />
+                    <div>
+                      <div className="font-medium text-gray-900">Upload Document</div>
+                      <div className="text-xs text-gray-500">PDF, DOC, TXT</div>
+                    </div>
+                  </button>
+                </div>
+              )}
+            </div>
+            
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
