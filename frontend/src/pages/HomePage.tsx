@@ -283,21 +283,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="bg-gradient-to-r from-primary-600 to-purple-600 rounded-2xl p-12 text-center text-white">
-          <h2 className="text-4xl font-bold mb-4">
-            Ready to Transform Your Learning?
-          </h2>
-          <p className="text-xl mb-8 opacity-90">
-            Join thousands of students already learning smarter with AI
-          </p>
-          <Link to="/chat" className="bg-white text-primary-600 font-bold px-8 py-3 rounded-lg hover:bg-gray-100 inline-block">
-            Start Free Trial
-          </Link>
-        </div>
-      </section>
-
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -305,41 +290,41 @@ export default function HomePage() {
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <Brain className="w-6 h-6" />
-                <span className="text-xl font-bold">AI Student</span>
+                <span className="text-xl font-bold">CodeCampus AI</span>
               </div>
               <p className="text-gray-400">
-                Your AI-powered learning companion for academic excellence.
+                Your AI-powered placement preparation companion for engineering students.
               </p>
             </div>
             <div>
               <h4 className="font-bold mb-4">Features</h4>
               <ul className="space-y-2 text-gray-400">
-                <li>Study Assistant</li>
-                <li>Exam Preparation</li>
-                <li>Coding Help</li>
-                <li>Career Guidance</li>
+                <li><Link to="/chat" className="hover:text-white transition-colors">Chat Assistant</Link></li>
+                <li><Link to="/exam-prep" className="hover:text-white transition-colors">Exam Preparation</Link></li>
+                <li><Link to="/coding-help" className="hover:text-white transition-colors">Coding Help</Link></li>
+                <li><Link to="/career" className="hover:text-white transition-colors">Career Guidance</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="font-bold mb-4">Company</h4>
               <ul className="space-y-2 text-gray-400">
-                <li>About Us</li>
-                <li>Pricing</li>
-                <li>Contact</li>
-                <li>Blog</li>
+                <li><Link to="/" className="hover:text-white transition-colors">About Us</Link></li>
+                <li><Link to="/pricing" className="hover:text-white transition-colors">Pricing</Link></li>
+                <li><Link to="/" className="hover:text-white transition-colors">Contact</Link></li>
+                <li><Link to="/" className="hover:text-white transition-colors">Blog</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="font-bold mb-4">Legal</h4>
               <ul className="space-y-2 text-gray-400">
-                <li>Privacy Policy</li>
-                <li>Terms of Service</li>
-                <li>Cookie Policy</li>
+                <li><Link to="/" className="hover:text-white transition-colors">Privacy Policy</Link></li>
+                <li><Link to="/" className="hover:text-white transition-colors">Terms of Service</Link></li>
+                <li><Link to="/" className="hover:text-white transition-colors">Cookie Policy</Link></li>
               </ul>
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2026 AI Student Assistant. All rights reserved.</p>
+            <p>&copy; 2026 CodeCampus AI. All rights reserved.</p>
           </div>
         </div>
       </footer>

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from datetime import timedelta
 from google.oauth2 import id_token
@@ -9,6 +9,7 @@ from schemas import UserCreate, UserLogin, User, Token
 from auth import verify_password, get_password_hash, create_access_token
 from config import settings
 from pydantic import BaseModel
+from middleware import rate_limit
 import secrets
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
@@ -17,7 +18,8 @@ class GoogleAuthRequest(BaseModel):
     credential: str
 
 @router.post("/register", response_model=Token)
-def register(user: UserCreate, db: Session = Depends(get_db)):
+@rate_limit("5/minute")  # Strict rate limit for registration
+async def register(request: Request, user: UserCreate, db: Session = Depends(get_db)):
     """Register a new user"""
     # Check if user exists
     db_user = db.query(UserModel).filter(UserModel.email == user.email).first()
@@ -55,14 +57,16 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
     }
 
 @router.post("/login", response_model=Token)
-def login(user_login: UserLogin, db: Session = Depends(get_db)):
+@rate_limit("10/minute")  # Strict rate limit for login to prevent brute force
+async def login(request: Request, user_login: UserLogin, db: Session = Depends(get_db)):
     """Login user and return access token"""
     user = db.query(UserModel).filter(UserModel.email == user_login.email).first()
     
     if not user or not verify_password(user_login.password, user.hashed_password):
+        # Security: Don't reveal whether email exists or password is wrong
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password"
+            detail="Invalid credentials"
         )
     
     access_token_expires = timedelta(minutes=settings.access_token_expire_minutes)
@@ -84,7 +88,8 @@ def login(user_login: UserLogin, db: Session = Depends(get_db)):
     }
 
 @router.post("/google", response_model=Token)
-def google_auth(auth_data: GoogleAuthRequest, db: Session = Depends(get_db)):
+@rate_limit("10/minute")  # Rate limit for Google OAuth
+async def google_auth(request: Request, auth_data: GoogleAuthRequest, db: Session = Depends(get_db)):
     """Authenticate user with Google OAuth"""
     try:
         # Verify the Google token
@@ -138,13 +143,15 @@ def google_auth(auth_data: GoogleAuthRequest, db: Session = Depends(get_db)):
         }
         
     except ValueError as e:
-        # Invalid token
+        # Invalid token - don't expose internal error details
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Invalid Google token: {str(e)}"
+            detail="Invalid authentication token"
         )
     except Exception as e:
+        # Log error internally but don't expose details to user
+        print(f"[SECURITY] Google auth error: {type(e).__name__}")  # Log error type only, not details
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Authentication failed: {str(e)}"
+            detail="Authentication failed"
         )

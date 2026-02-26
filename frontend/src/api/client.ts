@@ -60,8 +60,69 @@ export interface PaymentRequest {
 
 // API Functions
 export const chatAPI = {
-  sendMessage: (messages: ChatMessage[]) => 
-    api.post('/chat', { messages }),
+  sendMessage: (messages: ChatMessage[], language: string = 'english') => 
+    api.post('/chat', { messages, language }),
+  
+  sendMessageStream: async (
+    messages: ChatMessage[], 
+    language: string = 'english',
+    onChunk: (chunk: string) => void,
+    onComplete: () => void,
+    onError: (error: string) => void
+  ) => {
+    const token = localStorage.getItem('token')
+    const response = await fetch(`${API_BASE_URL}/chat/stream`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ messages, language })
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to connect to streaming endpoint')
+    }
+
+    const reader = response.body?.getReader()
+    const decoder = new TextDecoder()
+
+    if (!reader) {
+      throw new Error('No reader available')
+    }
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        const chunk = decoder.decode(value)
+        const lines = chunk.split('\n')
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = JSON.parse(line.slice(6))
+            
+            if (data.error) {
+              onError(data.error)
+              return
+            }
+            
+            if (data.done) {
+              onComplete()
+              return
+            }
+            
+            if (data.chunk) {
+              onChunk(data.chunk)
+            }
+          }
+        }
+      }
+    } catch (error) {
+      onError(error instanceof Error ? error.message : 'Streaming error')
+    }
+  },
   
   explainTopic: (data: ExplainTopicRequest) => 
     api.post('/learning/explain', data),

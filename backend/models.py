@@ -34,6 +34,7 @@ class ChatHistory(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     role = Column(String)  # 'user' or 'assistant'
     content = Column(Text)
+    language = Column(String, default="english")  # 'english', 'hindi', 'gujarati'
     timestamp = Column(DateTime, default=datetime.utcnow)
     
     user = relationship("User", back_populates="chat_history")

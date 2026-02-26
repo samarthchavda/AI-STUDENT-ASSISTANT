@@ -42,6 +42,7 @@ class ChatMessage(BaseModel):
 
 class ChatRequest(BaseModel):
     messages: List[ChatMessage]
+    language: Optional[str] = "english"  # 'english', 'hindi', 'gujarati'
 
 class ChatResponse(BaseModel):
     response: str

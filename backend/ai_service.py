@@ -45,12 +45,40 @@ class AIService:
             # Return a helpful error message instead of crashing
             return f"⚠️ AI service temporarily unavailable. Error: {error_msg[:100]}\n\nPlease try again in a moment."
     
-    def chat_completion(self, messages: List[Dict]) -> str:
-        """Generate chat completion response for engineering students"""
-        user_message = messages[-1]['content']
+    def _generate_response_stream(self, prompt: str):
+        """Generate streaming response using Gemini AI (word by word like ChatGPT)"""
+        if not self.use_ai:
+            yield "[Demo Mode] Configure GEMINI_API_KEY in .env file to enable AI responses."
+            return
         
-        # Build context-aware prompt
-        system_context = """You are CodeCampus AI, an expert placement preparation assistant for engineering students in India.
+        try:
+            # Set generation config
+            generation_config = {
+                "temperature": 0.7,
+                "top_p": 0.95,
+                "top_k": 40,
+                "max_output_tokens": 2048,
+            }
+            
+            response = self.model.generate_content(
+                prompt,
+                generation_config=generation_config,
+                stream=True
+            )
+            
+            for chunk in response:
+                if chunk.text:
+                    yield chunk.text
+        except Exception as e:
+            error_msg = str(e)
+            print(f"Error generating streaming AI response: {error_msg}")
+            yield f"⚠️ AI service temporarily unavailable. Error: {error_msg[:100]}\n\nPlease try again in a moment."
+    
+    def chat_completion(self, messages: List[Dict]) -> str:
+        """Generate chat completion response for engineering students with conversation context"""
+        
+        # Build context-aware prompt with conversation history
+        system_context = """You are CodeCampus AI, a helpful AI assistant for engineering students in India.
 
 Your expertise:
 - Campus placement preparation (TCS, Infosys, Wipro, Amazon, Microsoft, Google)
@@ -60,19 +88,95 @@ Your expertise:
 - Company-specific interview tips
 - Technical skills roadmap
 - Core CS subjects (OS, DBMS, Networks, OOP)
+- General academic help (any subject, any topic)
+- Study notes and explanations
+- Homework and assignment help
 
-Guidelines:
-- Focus on placement preparation and career guidance
+Response Style (IMPORTANT):
+- Write like ChatGPT - natural, conversational paragraphs
+- NO bullet points (*) or lists unless specifically asked
+- Use normal sentences and paragraphs like a human conversation
+- Keep responses SHORT and CONCISE (2-4 short paragraphs for simple questions)
+- Only give detailed explanations when specifically asked
+- Don't ask multiple follow-up questions unless necessary
+- Get straight to the point - no long introductions
+- Use emojis sparingly (1-2 per response maximum)
+- Write in a friendly, helpful tone like talking to a friend
+
+Content Guidelines:
+- Help with ANY topic the student asks about (not just placement prep)
+- If asked about history, science, math, or any subject - answer it!
+- Focus on placement preparation when relevant
 - Provide actionable, practical advice
 - Include company names and package ranges when relevant
 - Use Indian context (LPA, campus placements, service vs product companies)
-- Be encouraging and supportive
-- Format responses with emojis, bullet points, and clear sections
+- Be encouraging and supportive but brief
+- Remember previous messages in the conversation and maintain context
 """
         
-        full_prompt = f"{system_context}\n\nStudent Question: {user_message}\n\nProvide a helpful, detailed response:"
+        # Build conversation history (skip the initial assistant greeting if present)
+        conversation_history = ""
+        for msg in messages:
+            if msg['role'] == 'user':
+                conversation_history += f"\n\nStudent: {msg['content']}"
+            elif msg['role'] == 'assistant' and not msg['content'].startswith("Hello! I'm your AI"):
+                conversation_history += f"\n\nAssistant: {msg['content']}"
+        
+        full_prompt = f"{system_context}\n\nConversation History:{conversation_history}\n\nProvide a helpful, contextual response:"
         
         return self._generate_response(full_prompt)
+    
+    def chat_completion_stream(self, messages: List[Dict]):
+        """Generate streaming chat completion response with conversation context (word by word like ChatGPT)"""
+        
+        # Build context-aware prompt with conversation history
+        system_context = """You are CodeCampus AI, a helpful AI assistant for engineering students in India.
+
+Your expertise:
+- Campus placement preparation (TCS, Infosys, Wipro, Amazon, Microsoft, Google)
+- Data Structures & Algorithms (DSA) for coding interviews
+- Resume building with ATS optimization
+- Mock interview preparation
+- Company-specific interview tips
+- Technical skills roadmap
+- Core CS subjects (OS, DBMS, Networks, OOP)
+- General academic help (any subject, any topic)
+- Study notes and explanations
+- Homework and assignment help
+
+Response Style (IMPORTANT):
+- Write like ChatGPT - natural, conversational paragraphs
+- NO bullet points (*) or lists unless specifically asked
+- Use normal sentences and paragraphs like a human conversation
+- Keep responses SHORT and CONCISE (2-4 short paragraphs for simple questions)
+- Only give detailed explanations when specifically asked
+- Don't ask multiple follow-up questions unless necessary
+- Get straight to the point - no long introductions
+- Use emojis sparingly (1-2 per response maximum)
+- Write in a friendly, helpful tone like talking to a friend
+
+Content Guidelines:
+- Help with ANY topic the student asks about (not just placement prep)
+- If asked about history, science, math, or any subject - answer it!
+- Focus on placement preparation when relevant
+- Provide actionable, practical advice
+- Include company names and package ranges when relevant
+- Use Indian context (LPA, campus placements, service vs product companies)
+- Be encouraging and supportive but brief
+- Remember previous messages in the conversation and maintain context
+"""
+        
+        # Build conversation history (skip the initial assistant greeting if present)
+        conversation_history = ""
+        for msg in messages:
+            if msg['role'] == 'user':
+                conversation_history += f"\n\nStudent: {msg['content']}"
+            elif msg['role'] == 'assistant' and not msg['content'].startswith("Hello! I'm your AI"):
+                conversation_history += f"\n\nAssistant: {msg['content']}"
+        
+        full_prompt = f"{system_context}\n\nConversation History:{conversation_history}\n\nProvide a helpful, contextual response:"
+        
+        return self._generate_response_stream(full_prompt)
 
     
     def explain_topic(self, topic: str, subject: str, level: str) -> Dict:
