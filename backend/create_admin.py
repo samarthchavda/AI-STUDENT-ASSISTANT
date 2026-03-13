@@ -6,25 +6,26 @@ import sys
 from sqlalchemy.orm import Session
 from database import SessionLocal, engine, Base
 from models import User
-from auth import get_password_hash
+from auth import get_password_hash, normalize_email
 
 def create_admin_user(email: str, password: str, name: str):
     """Create a new admin user"""
     db = SessionLocal()
+    normalized_email = normalize_email(email)
     
     try:
         # Check if user already exists
-        existing_user = db.query(User).filter(User.email == email).first()
+        existing_user = db.query(User).filter(User.email == normalized_email).first()
         
         if existing_user:
-            print(f"❌ User with email {email} already exists!")
+            print(f"❌ User with email {normalized_email} already exists!")
             print(f"   Use make_admin.py to make them an admin instead.")
             return False
         
         # Create new admin user
         hashed_password = get_password_hash(password)
         admin_user = User(
-            email=email,
+            email=normalized_email,
             name=name,
             hashed_password=hashed_password,
             is_admin=True
@@ -35,7 +36,7 @@ def create_admin_user(email: str, password: str, name: str):
         db.refresh(admin_user)
         
         print(f"✅ Admin user created successfully!")
-        print(f"   Email: {email}")
+        print(f"   Email: {normalized_email}")
         print(f"   Name: {name}")
         print(f"   Admin: Yes")
         print(f"\n🔐 You can now login with these credentials")

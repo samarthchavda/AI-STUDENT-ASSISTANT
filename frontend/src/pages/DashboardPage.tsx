@@ -1,332 +1,495 @@
-import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { 
-  Brain, BookOpen, Code, Briefcase, Users, TrendingUp, 
-  Target, CheckCircle2, Clock, Award, ArrowRight, Sparkles,
-  FileText
-} from 'lucide-react'
-import Header from '../components/Header'
-import { useAppStore } from '../store/useAppStore'
-import { userAPI } from '../api/client'
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import {
+  Calendar,
+  Briefcase,
+  ChevronRight,
+  ArrowUpRight,
+  FileText,
+  Code2,
+  Bot,
+  BookOpenCheck,
+  Target,
+  ClipboardCheck,
+  Trophy,
+  Clock3,
+  TrendingUp,
+  Activity,
+  Gauge,
+  Layers,
+  Sparkles,
+  type LucideIcon
+} from 'lucide-react';
+import Header from '../components/Header';
+import { companyPrepAPI, type PracticeHistoryItem } from '../api/client';
+import { useAppStore } from '../store/useAppStore';
 
-export default function DashboardPage() {
-  const navigate = useNavigate()
-  const user = useAppStore((state) => state.user)
-  const [stats, setStats] = useState({
-    placementReadiness: 0,
-    mockTestsAttempted: 0,
-    resumeATSScore: 0,
-    status: 'Active'
-  })
-  const [targetCompany, setTargetCompany] = useState('TCS NQT')
-  const [loading, setLoading] = useState(true)
+const APTITUDE_PROGRESS_KEY = 'aptitude_progress';
+const RESUME_ATS_SCORE_KEY = 'latest_resume_ats_score';
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const data: any = await userAPI.getUserStats()
-        
-        // Calculate placement readiness based on activity
-        const readiness = Math.min(100, Math.floor(
-          (data.mockTestsAttempted || 0) * 10 + 
-          (data.resumeATSScore || 0) * 0.5 + 
-          (data.questionsAsked || 0) * 0.2
-        ))
-        
-        setStats({
-          placementReadiness: readiness || 0,
-          mockTestsAttempted: data.mockTestsAttempted || 0,
-          resumeATSScore: data.resumeATSScore || 0,
-          status: data.status || 'Active'
-        })
-      } catch (error) {
-        console.error('Error fetching stats:', error)
-        setStats({
-          placementReadiness: 0,
-          mockTestsAttempted: 0,
-          resumeATSScore: 0,
-          status: 'Active'
-        })
-      } finally {
-        setLoading(false)
-      }
+const upcomingPlacements = [
+  { companyId: 'tcs', company: 'TCS NQT', role: 'Ninja / Digital', date: '15 April 2026', package: '3.3 - 7.0 LPA', color: 'from-blue-500 to-cyan-500' },
+  { companyId: 'amazon', company: 'Amazon', role: 'SDE-1 (Fresher)', date: '28 April 2026', package: '24+ LPA', color: 'from-orange-500 to-amber-500' },
+  { companyId: 'infosys', company: 'Infosys', role: 'Specialist Programmer', date: '05 May 2026', package: '8.0 - 9.5 LPA', color: 'from-indigo-500 to-blue-600' }
+];
+
+interface AptitudeProgress {
+  totalQuizzes: number;
+  totalCorrect: number;
+  totalQuestions: number;
+}
+
+interface DashboardStats {
+  overallReadiness: number;
+  mockTestsTaken: number;
+  resumeAtsScore: number;
+  dsaSolved: number;
+  aptitudeAccuracy: number;
+  companyPracticeAverage: number;
+  hrRoundsPracticed: number;
+  technicalRoundsPracticed: number;
+  latestScore: number;
+}
+
+interface StatCard {
+  id: string;
+  title: string;
+  value: string;
+  icon: LucideIcon;
+  accent: string;
+}
+
+interface ActivityItem {
+  id: string;
+  title: string;
+  subtitle: string;
+  time: string;
+  icon: LucideIcon;
+  iconClass: string;
+}
+
+interface ToolCard {
+  id: string;
+  title: string;
+  description: string;
+  route: string;
+  icon: LucideIcon;
+  accent: string;
+}
+
+
+const toolCards: ToolCard[] = [
+  {
+    id: 'aptitude-tests',
+    title: 'Free Aptitude Tests',
+    description: 'Practice company-specific mock tests for TCS, Amazon, etc.',
+    route: '/exam-prep',
+    icon: BookOpenCheck,
+    accent: 'from-blue-50 to-cyan-50 border-blue-100'
+  },
+  {
+    id: 'resume-ats',
+    title: 'Resume ATS Analyzer',
+    description: 'Upload your resume and get instant AI feedback & scoring',
+    route: '/career',
+    icon: FileText,
+    accent: 'from-emerald-50 to-teal-50 border-emerald-100'
+  },
+  {
+    id: 'dsa-code',
+    title: 'DSA & Code Analysis',
+    description: 'Get hints, debug code, and optimize your solutions with AI',
+    route: '/coding',
+    icon: Code2,
+    accent: 'from-violet-50 to-purple-50 border-violet-100'
+  },
+  {
+    id: 'interview-copilot',
+    title: 'AI Interview Copilot',
+    description: 'Chat with our AI to prepare for HR rounds and technical interviews',
+    route: '/chat',
+    icon: Bot,
+    accent: 'from-orange-50 to-amber-50 border-orange-100'
+  }
+];
+
+function readAptitudeProgress(): AptitudeProgress {
+  try {
+    const raw = localStorage.getItem(APTITUDE_PROGRESS_KEY);
+    if (!raw) {
+      return { totalQuizzes: 0, totalCorrect: 0, totalQuestions: 0 };
     }
 
-    if (user) {
-      fetchStats()
-      // Load saved target company
-      const saved = localStorage.getItem('targetCompany')
-      if (saved) setTargetCompany(saved)
-    } else {
-      setLoading(false)
-    }
-  }, [user])
+    const parsed = JSON.parse(raw);
+    return {
+      totalQuizzes: Number(parsed.totalQuizzes || 0),
+      totalCorrect: Number(parsed.totalCorrect || 0),
+      totalQuestions: Number(parsed.totalQuestions || 0)
+    };
+  } catch {
+    return { totalQuizzes: 0, totalCorrect: 0, totalQuestions: 0 };
+  }
+}
 
-  const handleTargetCompanyChange = (company: string) => {
-    setTargetCompany(company)
-    localStorage.setItem('targetCompany', company)
+function toRelativeTime(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+
+  if (diffMs < 60 * 60 * 1000) {
+    const mins = Math.max(1, Math.floor(diffMs / (60 * 1000)));
+    return `${mins} min ago`;
   }
 
-  const targetCompanies = [
-    'TCS NQT',
-    'Infosys',
-    'Wipro',
-    'Cognizant',
-    'Accenture',
-    'Amazon',
-    'Google',
-    'Microsoft',
-    'Other'
-  ]
+  if (diffMs < 24 * 60 * 60 * 1000) {
+    const hours = Math.floor(diffMs / (60 * 60 * 1000));
+    return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+  }
 
-  const placementTools = [
-    {
-      title: 'Placement Copilot',
-      description: 'AI assistant for placement doubts',
-      icon: Brain,
-      color: 'from-blue-600 to-purple-600',
-      path: '/chat',
-      badge: 'Smart AI'
-    },
-    {
-      title: 'Aptitude Tests',
-      description: 'Practice quantitative & logical reasoning',
-      icon: BookOpen,
-      color: 'from-teal-600 to-emerald-600',
-      path: '/exam-prep',
-      badge: '15 Questions'
-    },
-    {
-      title: 'Coding Practice',
-      description: 'DSA problems & debugging help',
-      icon: Code,
-      color: 'from-orange-600 to-red-600',
-      path: '/coding-help',
-      badge: 'DSA Focus'
-    },
-    {
-      title: 'Resume Builder',
-      description: 'ATS score & job matching',
-      icon: FileText,
-      color: 'from-emerald-600 to-teal-600',
-      path: '/career',
-      badge: 'ATS Ready'
-    },
-    {
-      title: 'Mock Interview',
-      description: '4-round company simulation',
-      icon: Users,
-      color: 'from-indigo-600 to-blue-600',
-      path: '/company-prep',
-      badge: 'Live Practice'
-    },
-    {
-      title: 'Career Guidance',
-      description: 'Job search & interview prep',
-      icon: Briefcase,
-      color: 'from-violet-600 to-purple-600',
-      path: '/career',
-      badge: 'Expert Tips'
-    }
-  ]
+  const days = Math.floor(diffMs / (24 * 60 * 60 * 1000));
+  return `${days} day${days > 1 ? 's' : ''} ago`;
+}
 
-  const quickActions = [
+function getActivityVisual(roundName: string): { icon: LucideIcon; iconClass: string } {
+  const normalized = roundName.toLowerCase();
+
+  if (normalized.includes('hr')) {
+    return { icon: TrendingUp, iconClass: 'text-violet-600 bg-violet-50 border-violet-100' };
+  }
+
+  if (normalized.includes('coding') || normalized.includes('technical')) {
+    return { icon: Code2, iconClass: 'text-blue-600 bg-blue-50 border-blue-100' };
+  }
+
+  return { icon: Trophy, iconClass: 'text-emerald-600 bg-emerald-50 border-emerald-100' };
+}
+
+function isDsaLike(question: PracticeHistoryItem): boolean {
+  const round = question.round_name.toLowerCase();
+  const text = question.question_text.toLowerCase();
+  return (
+    round.includes('coding') ||
+    round.includes('technical') ||
+    /dsa|array|linked list|stack|queue|tree|graph|dp|dynamic programming|recursion/.test(text)
+  );
+}
+
+export default function DashboardPage() {
+  const navigate = useNavigate();
+  const user = useAppStore((state) => state.user);
+
+  const [stats, setStats] = useState<DashboardStats>({
+    overallReadiness: 0,
+    mockTestsTaken: 0,
+    resumeAtsScore: 0,
+    dsaSolved: 0,
+    aptitudeAccuracy: 0,
+    companyPracticeAverage: 0,
+    hrRoundsPracticed: 0,
+    technicalRoundsPracticed: 0,
+    latestScore: 0
+  });
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const [activitiesLoaded, setActivitiesLoaded] = useState(false);
+
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      const aptitude = readAptitudeProgress();
+      const aptitudeAverage = aptitude.totalQuestions > 0
+        ? Math.round((aptitude.totalCorrect / aptitude.totalQuestions) * 100)
+        : 0;
+
+      let practiceHistory: PracticeHistoryItem[] = [];
+      try {
+        const historyResponse = await companyPrepAPI.getHistory(50);
+        practiceHistory = historyResponse.data || [];
+      } catch {
+        practiceHistory = [];
+      }
+
+      const companyAttempts = practiceHistory.length;
+      const companyAverage = companyAttempts > 0
+        ? Math.round(practiceHistory.reduce((sum, item) => sum + Number(item.score || 0), 0) / companyAttempts)
+        : 0;
+      const latestScore = companyAttempts > 0 ? Number(practiceHistory[0].score || 0) : 0;
+
+      const hrRoundsPracticed = practiceHistory.filter((item) => item.round_name.toLowerCase().includes('hr')).length;
+      const technicalRoundsPracticed = practiceHistory.filter((item) => {
+        const normalized = item.round_name.toLowerCase();
+        return normalized.includes('technical') || normalized.includes('coding');
+      }).length;
+
+      const totalAttempts = aptitude.totalQuizzes + companyAttempts;
+      const weightedScore = (
+        (aptitudeAverage * aptitude.totalQuizzes) +
+        (companyAverage * companyAttempts)
+      );
+      const overallReadiness = totalAttempts > 0 ? Math.round(weightedScore / totalAttempts) : 0;
+
+      const resumeAtsScore = Number(localStorage.getItem(RESUME_ATS_SCORE_KEY) || 0);
+      const dsaSolved = practiceHistory.filter(isDsaLike).length;
+
+      setStats({
+        overallReadiness,
+        mockTestsTaken: totalAttempts,
+        resumeAtsScore,
+        dsaSolved,
+        aptitudeAccuracy: aptitudeAverage,
+        companyPracticeAverage: companyAverage,
+        hrRoundsPracticed,
+        technicalRoundsPracticed,
+        latestScore
+      });
+
+      if (practiceHistory.length > 0) {
+        const latestActivities = practiceHistory.slice(0, 5).map((item) => {
+          const visual = getActivityVisual(item.round_name);
+          return {
+            id: `activity-${item.id}`,
+            title: `Practiced ${item.company_name} - ${item.round_name}`,
+            subtitle: `Scored ${item.score}%`,
+            time: toRelativeTime(item.practice_date),
+            icon: visual.icon,
+            iconClass: visual.iconClass
+          };
+        });
+        setActivities(latestActivities);
+      }
+      setActivitiesLoaded(true);
+    };
+
+    loadDashboardData();
+  }, []);
+
+  const statCards: StatCard[] = [
     {
-      title: `${targetCompany} Pattern Test`,
-      subtitle: 'Company-specific aptitude',
+      id: 'overall-readiness',
+      title: 'Overall Readiness',
+      value: `${stats.overallReadiness}%`,
       icon: Target,
-      action: () => navigate('/exam-prep')
+      accent: 'from-blue-50 to-indigo-50 border-blue-100'
     },
     {
-      title: 'Daily 15-Min DSA Challenge',
-      subtitle: 'Quick coding practice',
-      icon: Code,
-      action: () => navigate('/coding-help')
+      id: 'mock-tests-taken',
+      title: 'Mock Tests Taken',
+      value: `${stats.mockTestsTaken} Tests`,
+      icon: ClipboardCheck,
+      accent: 'from-emerald-50 to-teal-50 border-emerald-100'
     },
     {
-      title: 'Check Resume ATS Score',
-      subtitle: 'Get instant feedback',
-      icon: CheckCircle2,
-      action: () => navigate('/career')
-    }
-  ]
-
-  const placementStats = [
-    {
-      title: 'Placement Readiness',
-      value: `${stats.placementReadiness}%`,
-      icon: Target,
-      color: 'text-green-600',
-      subtitle: 'Based on your activity'
-    },
-    {
-      title: 'Mock Tests Attempted',
-      value: stats.mockTestsAttempted,
-      icon: BookOpen,
-      color: 'text-blue-600',
-      subtitle: 'Keep practicing!'
-    },
-    {
+      id: 'resume-ats-score',
       title: 'Resume ATS Score',
-      value: stats.resumeATSScore > 0 ? `${stats.resumeATSScore}/100` : 'Not checked',
+      value: `${stats.resumeAtsScore}/100`,
       icon: FileText,
-      color: 'text-purple-600',
-      subtitle: 'Upload to check'
+      accent: 'from-violet-50 to-purple-50 border-violet-100'
+    },
+    {
+      id: 'dsa-solved',
+      title: 'DSA Solved',
+      value: `${stats.dsaSolved} Problems`,
+      icon: Code2,
+      accent: 'from-orange-50 to-amber-50 border-orange-100'
     }
-  ]
+  ];
+
+  const insightCards = [
+    {
+      id: 'aptitude-accuracy',
+      title: 'Aptitude Accuracy',
+      value: `${stats.aptitudeAccuracy}%`,
+      icon: Gauge,
+      note: 'From your aptitude test answers',
+      accent: 'from-sky-50 to-blue-50 border-sky-100'
+    },
+    {
+      id: 'company-average',
+      title: 'Company Practice Avg',
+      value: `${stats.companyPracticeAverage}%`,
+      icon: Activity,
+      note: 'Average of interview/practice evaluations',
+      accent: 'from-emerald-50 to-green-50 border-emerald-100'
+    },
+    {
+      id: 'round-distribution',
+      title: 'Rounds Practiced',
+      value: `${stats.technicalRoundsPracticed} Tech • ${stats.hrRoundsPracticed} HR`,
+      icon: Layers,
+      note: 'Coverage across interview round types',
+      accent: 'from-violet-50 to-purple-50 border-violet-100'
+    },
+    {
+      id: 'latest-score',
+      title: 'Latest Practice Score',
+      value: stats.latestScore > 0 ? `${stats.latestScore}%` : 'No data',
+      icon: Sparkles,
+      note: 'Most recent company-prep attempt',
+      accent: 'from-amber-50 to-orange-50 border-amber-100'
+    }
+  ];
+
+  const handlePrepNow = (companyId: string) => {
+    navigate('/exam-prep', { state: { companyId } });
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+    <div className="min-h-screen bg-gray-50 font-sans">
       <Header />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Section with Target Company */}
-        <div className="glass-effect rounded-3xl p-8 mb-8 border border-white/20">
-          <div className="flex items-start justify-between flex-wrap gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Sparkles className="w-5 h-5 text-primary-600" />
-                <span className="text-sm font-semibold text-primary-600 uppercase tracking-wider">
-                  Placement Dashboard
-                </span>
-              </div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">
-                Welcome back, {user?.name || 'Student'}! 👋
-              </h1>
-              <p className="text-lg text-gray-600 mb-4">
-                Your one-stop platform for placement preparation
-              </p>
-              
-              {/* Target Company Selector */}
-              <div className="flex items-center gap-3 mt-4">
-                <span className="text-sm font-semibold text-gray-700">🎯 Targeting:</span>
-                <select
-                  value={targetCompany}
-                  onChange={(e) => handleTargetCompanyChange(e.target.value)}
-                  className="px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-900 font-semibold focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+
+      <div className="p-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="mb-6">
+            <h1 className="text-3xl font-extrabold text-gray-900">Welcome back, {user?.name || 'Student'}!</h1>
+            <p className="text-gray-600 mt-1">Your placement command center for tests, coding, resume, and interviews.</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+            {statCards.map((stat) => {
+              const Icon = stat.icon;
+
+              return (
+                <div
+                  key={stat.id}
+                  className={`rounded-2xl border bg-gradient-to-br ${stat.accent} p-5 shadow-sm`}
                 >
-                  {targetCompanies.map((company) => (
-                    <option key={company} value={company}>{company}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="hidden md:block">
-              <div className="glass-effect rounded-2xl px-6 py-4 border border-primary-200">
-                <div className="text-sm text-gray-600 mb-1">Current Plan</div>
-                <div className="text-2xl font-bold gradient-text capitalize">
-                  {user?.plan || 'Free'}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Placement Progress Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {placementStats.map((stat, index) => (
-            <div key={index} className="glass-effect rounded-2xl p-6 border border-white/20 hover:border-primary-300 transition-all">
-              <div className="flex items-center justify-between mb-4">
-                <stat.icon className={`w-8 h-8 ${stat.color}`} />
-                <TrendingUp className="w-5 h-5 text-green-500" />
-              </div>
-              <div className="text-3xl font-bold text-gray-900 mb-1">
-                {loading ? '...' : stat.value}
-              </div>
-              <div className="text-sm font-semibold text-gray-900 mb-1">{stat.title}</div>
-              <div className="text-xs text-gray-500">{stat.subtitle}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Quick Actions */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <Clock className="w-6 h-6 text-primary-600" />
-            Quick Actions
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {quickActions.map((action, index) => (
-              <button
-                key={index}
-                onClick={action.action}
-                className="glass-effect rounded-2xl p-6 border border-white/20 hover:border-primary-300 transition-all hover:scale-105 text-left group"
-              >
-                <action.icon className="w-8 h-8 text-primary-600 mb-3 group-hover:scale-110 transition-transform" />
-                <div className="font-semibold text-gray-900 mb-1">{action.title}</div>
-                <div className="text-sm text-gray-600">{action.subtitle}</div>
-                <ArrowRight className="w-5 h-5 text-primary-600 mt-2 group-hover:translate-x-1 transition-transform" />
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Placement Tools */}
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-            <Award className="w-6 h-6 text-primary-600" />
-            Placement Tools
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {placementTools.map((tool, index) => (
-              <Link
-                key={index}
-                to={tool.path}
-                className="glass-effect rounded-2xl p-6 border border-white/20 hover:border-primary-300 transition-all hover:scale-105 group"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${tool.color} flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                    <tool.icon className="w-6 h-6 text-white" />
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-600">{stat.title}</p>
+                    <Icon className="w-5 h-5 text-gray-700" />
                   </div>
-                  <span className="text-xs font-semibold px-3 py-1 rounded-full bg-primary-100 text-primary-700">
-                    {tool.badge}
-                  </span>
+                  <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">{tool.title}</h3>
-                <p className="text-sm text-gray-600 mb-4">{tool.description}</p>
-                <div className="flex items-center text-primary-600 font-semibold text-sm group-hover:translate-x-1 transition-transform">
-                  Get Started <ArrowRight className="w-4 h-4 ml-1" />
-                </div>
-              </Link>
-            ))}
+              );
+            })}
           </div>
-        </div>
 
-        {/* Tips Section */}
-        <div className="mt-8 glass-effect rounded-3xl p-8 border border-white/20">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">💡 Pro Tips for Placement Success</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex items-start gap-3">
-              <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-              <div>
-                <div className="font-semibold text-gray-900">Practice Daily</div>
-                <div className="text-sm text-gray-600">Solve at least 2 DSA problems every day</div>
+          <div className="mb-10 bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+            <h2 className="text-xl font-bold text-gray-900 mb-1">Performance Insights</h2>
+            <p className="text-sm text-gray-600 mb-5">More live stats from your tests, practice rounds, and recent performance.</p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {insightCards.map((insight) => {
+                const Icon = insight.icon;
+
+                return (
+                  <div key={insight.id} className={`rounded-xl border bg-gradient-to-br ${insight.accent} p-4`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-600">{insight.title}</p>
+                      <Icon className="w-4 h-4 text-gray-700" />
+                    </div>
+                    <p className="text-xl font-bold text-gray-900">{insight.value}</p>
+                    <p className="text-xs text-gray-500 mt-1">{insight.note}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
+            <div className="lg:col-span-2 bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+              <h2 className="text-xl font-bold text-gray-900 mb-5">Recent Activity</h2>
+
+              <div className="space-y-4">
+                {activitiesLoaded && activities.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-10 text-center">
+                    <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+                      <Activity className="w-7 h-7 text-gray-400" />
+                    </div>
+                    <p className="text-sm font-semibold text-gray-700">No activity yet</p>
+                    <p className="text-xs text-gray-500 mt-1">Start a mock test or practice session to see your progress here.</p>
+                  </div>
+                ) : (
+                  activities.map((activity) => {
+                    const ActivityIcon = activity.icon;
+                    return (
+                      <div
+                        key={activity.id}
+                        className="rounded-xl border border-gray-100 bg-gray-50/80 p-4 flex items-start gap-4"
+                      >
+                        <div className={`w-10 h-10 rounded-xl border flex items-center justify-center ${activity.iconClass}`}>
+                          <ActivityIcon className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-900">{activity.title}</p>
+                          <p className="text-sm text-gray-600">{activity.subtitle}</p>
+                        </div>
+                        <div className="inline-flex items-center gap-1 text-xs text-gray-500 whitespace-nowrap">
+                          <Clock3 className="w-3.5 h-3.5" />
+                          {activity.time}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
-            <div className="flex items-start gap-3">
-              <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-              <div>
-                <div className="font-semibold text-gray-900">Update Resume</div>
-                <div className="text-sm text-gray-600">Keep your resume ATS-friendly and updated</div>
+
+            <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+              <h2 className="text-xl font-bold text-gray-900 mb-5 flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-indigo-600" />
+                Upcoming Drives
+              </h2>
+
+              <div className="space-y-4">
+                {upcomingPlacements.slice(0, 2).map((drive) => (
+                  <div key={drive.companyId} className="rounded-xl border border-gray-100 p-4 relative overflow-hidden bg-white">
+                    <div className={`absolute -top-10 -right-10 w-24 h-24 rounded-full bg-gradient-to-br ${drive.color} opacity-10`} />
+                    <div className="relative z-10">
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <h3 className="font-bold text-gray-900 text-base">{drive.company}</h3>
+                        <span className="text-[11px] font-semibold text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-full px-2 py-1">
+                          {drive.date}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-2">{drive.role}</p>
+                      <div className="inline-flex items-center gap-2 text-xs text-gray-600 bg-gray-50 rounded-md px-2 py-1 mb-3">
+                        <Briefcase className="w-3.5 h-3.5" />
+                        <span className="font-medium">{drive.package}</span>
+                      </div>
+                      <button
+                        onClick={() => handlePrepNow(drive.companyId)}
+                        className="w-full py-2.5 rounded-lg border border-indigo-100 text-indigo-700 text-sm font-semibold hover:bg-indigo-50 transition-all flex items-center justify-center gap-1.5"
+                      >
+                        Prep Now <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-            <div className="flex items-start gap-3">
-              <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-              <div>
-                <div className="font-semibold text-gray-900">Mock Interviews</div>
-                <div className="text-sm text-gray-600">Practice with our AI interviewer weekly</div>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <CheckCircle2 className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-              <div>
-                <div className="font-semibold text-gray-900">Track Progress</div>
-                <div className="text-sm text-gray-600">Monitor your improvement over time</div>
-              </div>
+          </div>
+
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Placement Arsenal</h2>
+            <p className="text-gray-600 mb-6">Quick tools to move from preparation to placement faster.</p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {toolCards.map((tool) => {
+                const Icon = tool.icon;
+
+                return (
+                  <button
+                    key={tool.id}
+                    onClick={() => navigate(tool.route)}
+                    className={`text-left bg-gradient-to-br ${tool.accent} border rounded-2xl p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1 group`}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 rounded-xl bg-white/90 border border-white flex items-center justify-center shadow-sm transition-transform duration-300 group-hover:scale-105">
+                          <Icon className="w-6 h-6 text-gray-700" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-bold text-gray-900">{tool.title}</h3>
+                          <p className="text-sm text-gray-600 mt-1 leading-relaxed">{tool.description}</p>
+                        </div>
+                      </div>
+                      <ArrowUpRight className="w-5 h-5 text-gray-500 transition-all duration-300 group-hover:text-gray-800 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }

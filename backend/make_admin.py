@@ -2,13 +2,15 @@
 import sys
 from database import SessionLocal
 from models import User
+from auth import normalize_email
 
 def make_admin(email: str):
     db = SessionLocal()
     try:
-        user = db.query(User).filter(User.email == email).first()
+        normalized_email = normalize_email(email)
+        user = db.query(User).filter(User.email == normalized_email).first()
         if not user:
-            print(f"❌ User with email {email} not found")
+            print(f"❌ User with email {normalized_email} not found")
             sys.exit(1)
         
         user.is_admin = True

@@ -1,15 +1,16 @@
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
-import bcrypt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
+from passlib.context import CryptContext
 from config import settings
 import re
 import secrets
 
 security = HTTPBearer()
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Password validation regex
 PASSWORD_REGEX = re.compile(

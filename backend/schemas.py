@@ -72,6 +72,7 @@ class MockTestRequest(BaseModel):
     topic: str
     difficulty: str
     numQuestions: int
+    company: Optional[str] = None
 
 class SolvePYQRequest(BaseModel):
     question: str
@@ -97,6 +98,8 @@ class ProjectGuideRequest(BaseModel):
 # Career Schemas
 class ResumeAnalyzeRequest(BaseModel):
     resumeText: str
+    target_role: Optional[str] = None
+    job_description: Optional[str] = None
 
 class ResumeGenerateRequest(BaseModel):
     resumeText: str

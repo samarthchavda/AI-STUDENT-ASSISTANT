@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Brain, CheckCircle, XCircle, RefreshCw, Clock, Target, TrendingUp, Award } from 'lucide-react'
 import { examAPI } from '../api/client'
 import Header from '../components/Header'
@@ -33,6 +34,7 @@ function loadStats(): ProgressStats {
 function saveStats(s: ProgressStats) { localStorage.setItem(STATS_KEY, JSON.stringify(s)) }
 
 export default function ExamPrepPage() {
+  const navigate = useNavigate()
   const [selectedCompany, setSelectedCompany] = useState('General Practice')
   const [category, setCategory] = useState('quantitative')
   const [difficulty, setDifficulty] = useState<'easy' | 'medium' | 'hard'>('easy')
@@ -201,6 +203,21 @@ export default function ExamPrepPage() {
     return order[(order.indexOf(cur) + 1) % order.length]
   }
 
+  const handleStartQuiz = () => {
+    if (!category) {
+      alert('Please select a category first')
+      return
+    }
+    
+    navigate('/exam-simulation', {
+      state: {
+        company: selectedCompany,
+        category: category,
+        difficulty: difficulty
+      }
+    })
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <Header />
@@ -330,7 +347,7 @@ export default function ExamPrepPage() {
                 </p>
               </div>
 
-              <button onClick={() => generateQuestions(false)} disabled={loading}
+              <button onClick={handleStartQuiz} disabled={loading}
                 className="w-full btn-primary py-4 text-lg disabled:opacity-50">
                 {loading ? (
                   <span className="flex items-center justify-center gap-2">

@@ -117,6 +117,9 @@ export interface PracticeHistoryItem {
 export const chatAPI = {
   sendMessage: (messages: ChatMessage[], language: string = 'auto') => 
     api.post('/chat', { messages, language }),
+
+  sendPublicMessage: (messages: ChatMessage[], language: string = 'auto') =>
+    api.post('/chat/public', { messages, language }),
   
   sendMessageStream: async (
     messages: ChatMessage[], 
@@ -126,6 +129,21 @@ export const chatAPI = {
     onError: (error: string) => void
   ) => {
     const token = localStorage.getItem('token')
+
+    if (!token) {
+      try {
+        const response = await api.post('/chat/public', { messages, language })
+        const content = response.data?.response || ''
+        if (content) {
+          onChunk(content)
+        }
+        onComplete()
+      } catch (error: any) {
+        onError(error?.response?.data?.detail || 'Failed to send guest message')
+      }
+      return
+    }
+
     const response = await fetch(`${API_BASE_URL}/chat/stream`, {
       method: 'POST',
       headers: {
@@ -212,15 +230,25 @@ export const codingAPI = {
 }
 
 export const careerAPI = {
-  uploadResume: (formData: FormData) => 
-    api.post('/career/resume-upload', formData, {
+  uploadResume: (formData: FormData, targetRole?: string, jobDescription?: string) => {
+    const payload = new FormData()
+    formData.forEach((value, key) => payload.append(key, value))
+    if (targetRole) payload.append('target_role', targetRole)
+    if (jobDescription) payload.append('job_description', jobDescription)
+
+    return api.post('/career/resume-upload', payload, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
-    }),
+    })
+  },
   
-  analyzeResume: (resumeText: string) => 
-    api.post('/career/resume-analyze', { resumeText }),
+  analyzeResume: (resumeText: string, targetRole?: string, jobDescription?: string) => 
+    api.post('/career/resume-analyze', {
+      resumeText,
+      target_role: targetRole,
+      job_description: jobDescription,
+    }),
   
   interviewPrep: (company: string, role: string) => 
     api.post('/career/interview-prep', { company, role }),

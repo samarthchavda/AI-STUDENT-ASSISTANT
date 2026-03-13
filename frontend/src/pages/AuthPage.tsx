@@ -9,6 +9,12 @@ export default function AuthPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const setUser = useAppStore((state) => state.setUser)
+  // Google Sign-In is disabled on localhost — Google Cloud Console rejects these
+  // origins with a 403. The GoogleOAuthProvider in main.tsx already sets clientId
+  // to '' on localhost so this will always be false during local development.
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() || ''
+  const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(window.location.origin)
+  const canShowGoogleLogin = Boolean(googleClientId) && !isLocalhost
   
   const [isLogin, setIsLogin] = useState(true)
   const [loading, setLoading] = useState(false)
@@ -181,12 +187,9 @@ export default function AuthPage() {
         isAdmin: user.is_admin
       })
       
-      // Redirect based on admin status
-      if (user.is_admin) {
-        navigate('/admin')
-      } else {
-        navigate('/dashboard')
-      }
+      // Redirect to the page they were trying to access, or dashboard
+      const from = (location.state as any)?.from?.pathname || (user.is_admin ? '/admin' : '/dashboard')
+      navigate(from, { replace: true })
       
     } catch (err: any) {
       console.error('Google auth error:', err)
@@ -199,7 +202,17 @@ export default function AuthPage() {
   }
 
   const handleGoogleError = () => {
-    setError('Google authentication was cancelled or failed.')
+    if (!googleClientId) {
+      setError('Google Sign-In is not configured. Please set VITE_GOOGLE_CLIENT_ID in frontend/.env')
+      return
+    }
+
+    if (!isCurrentOriginAuthorized) {
+      setError(`Google Sign-In is disabled for this origin (${currentOrigin}). Add this origin to VITE_GOOGLE_AUTHORIZED_ORIGINS and in Google Cloud Console > Authorized JavaScript origins.`)
+      return
+    }
+
+    setError('Google authentication failed. If console shows "origin is not allowed", add this origin in Google Cloud Console Authorized JavaScript origins.')
   }
 
   return (
@@ -355,15 +368,23 @@ export default function AuthPage() {
           {/* Google OAuth Button */}
           <div className="flex justify-center">
             <div className="w-full max-w-sm">
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={handleGoogleError}
-                theme="outline"
-                size="large"
-                text={isLogin ? "signin_with" : "signup_with"}
-                width="320"
-                logo_alignment="left"
-              />
+              {canShowGoogleLogin ? (
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={handleGoogleError}
+                  theme="outline"
+                  size="large"
+                  text={isLogin ? "signin_with" : "signup_with"}
+                  width="320"
+                  logo_alignment="left"
+                />
+              ) : (
+                <div className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+                  {!googleClientId
+                    ? 'Google Sign-In is not configured for this app.'
+                    : `Google Sign-In is disabled for this origin: ${currentOrigin}`}
+                </div>
+              )}
             </div>
           </div>
 
@@ -384,10 +405,12 @@ export default function AuthPage() {
           {/* Demo Credentials (for testing) */}
           {isLogin && (
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-xs text-blue-800 font-semibold mb-1">Demo Mode:</p>
-              <p className="text-xs text-blue-700">
-                You can create a new account or use any email/password combination to test the app.
-              </p>
+              <p className="text-xs text-blue-800 font-semibold mb-2">Test Credentials:</p>
+              <div className="space-y-1">
+                <p className="text-xs text-blue-700"><span className="font-medium">Admin:</span> admin@gmail.com / Admin@1234</p>
+                <p className="text-xs text-blue-700"><span className="font-medium">User:</span> chavdasamarth02@gmail.com / Chavda@1234</p>
+              </div>
+              <p className="text-xs text-blue-500 mt-2">Or create your own account via Sign Up.</p>
             </div>
           )}
         </div>

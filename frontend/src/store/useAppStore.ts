@@ -30,6 +30,8 @@ export const useAppStore = create<AppState>()(
       
       logout: () => {
         localStorage.removeItem('token')
+        localStorage.removeItem('aptitude_progress')
+        localStorage.removeItem('latest_resume_ats_score')
         set({ user: null, isAuthenticated: false, chatHistory: [] })
       },
       

@@ -111,6 +111,14 @@ async def login(request: Request, user_login: UserLogin, db: Session = Depends(g
             detail="Invalid credentials"
         )
     
+    # Check if this is a social-login-only account
+    if not user.hashed_password:
+        provider = user.auth_provider or "Google"
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"This account was registered with {provider.capitalize()} Sign-In. Please use the Google button to log in."
+        )
+    
     # Check if account is locked
     is_locked, lock_message = is_account_locked(user)
     if is_locked:

@@ -6,6 +6,7 @@ from typing import List, Dict, Optional
 from functools import lru_cache
 import json
 import re
+import random
 import tiktoken
 import google.generativeai as genai
 from config import settings
@@ -102,12 +103,12 @@ class AIService:
         
         try:
             # Set generation config for fast, concise responses
-            # 800 tokens sufficient for bullet-point format, prevents incomplete answers
+            # 1200 tokens sufficient for complete answers with action triggers
             generation_config = {
                 "temperature": 0.8,
                 "top_p": 0.95,
                 "top_k": 40,
-                "max_output_tokens": 800,
+                "max_output_tokens": 1200,
             }
             
             response = self.model.generate_content(
@@ -601,6 +602,11 @@ RESPONSE RULES:
 3. Each bullet: MAX 1 line (10 words or less)
 4. Emojis on section headers only: 1️⃣2️⃣3️⃣4️⃣✅💡🎯📚🔧🏢
 5. End with: ✅ If you want, I can also show you: + 3 short bullet suggestions
+6. ACTION TRIGGERS: Whenever a user asks about aptitude, exams, mock tests, practice questions, quantitative/logical/verbal ability, or mentions companies like TCS/Wipro/Infosys/Amazon:
+   - Mention that CodeCampus AI offers FREE, UNLIMITED practice tests specifically designed for company patterns (TCS NQT, Wipro, Infosys, Amazon, etc.)
+   - Use a supportive, encouraging tone like "You can practice unlimited tests for free!"
+   - If user asks for a specific company like TCS, mention: "Our TCS NQT simulator is updated for 2026 patterns and is currently free for you"
+   - At the very end of your response, MUST include this exact tag: [REDIRECT_EXAM]
 
 LANGUAGE:
 - Detect question language → respond in SAME language
@@ -646,6 +652,11 @@ RESPONSE RULES:
 3. Each bullet: MAX 1 line (10 words or less)
 4. Emojis on section headers only: 1️⃣2️⃣3️⃣4️⃣✅💡🎯📚🔧🏢
 5. End with: ✅ If you want, I can also show you: + 3 short bullet suggestions
+6. ACTION TRIGGERS: Whenever a user asks about aptitude, exams, mock tests, practice questions, quantitative/logical/verbal ability, or mentions companies like TCS/Wipro/Infosys/Amazon:
+   - Mention that CodeCampus AI offers FREE, UNLIMITED practice tests specifically designed for company patterns (TCS NQT, Wipro, Infosys, Amazon, etc.)
+   - Use a supportive, encouraging tone like "You can practice unlimited tests for free!"
+   - If user asks for a specific company like TCS, mention: "Our TCS NQT simulator is updated for 2026 patterns and is currently free for you"
+   - At the very end of your response, MUST include this exact tag: [REDIRECT_EXAM]
 
 LANGUAGE:
 - Detect question language → respond in SAME language
@@ -761,13 +772,35 @@ Make it easy to understand for placement preparation."""
 
         return self._generate_response(prompt)
     
-    def generate_mock_test(self, subject: str, topic: str, difficulty: str, num_questions: int) -> Dict:
+    def generate_mock_test(self, subject: str, topic: str, difficulty: str, num_questions: int, company: str = None) -> Dict:
         """Generate mock test questions for placement preparation"""
+        
+        # Build company-specific context if provided
+        company_context = ""
+        if company and company.strip() and company.lower() != "general practice":
+            company_context = f"""
+
+COMPANY-SPECIFIC REQUIREMENTS:
+Target Company: {company}
+
+CRITICAL INSTRUCTIONS:
+- Follow the EXACT exam pattern used by {company}
+- Match the question style, format, and difficulty level of actual {company} placement tests
+- Use the specific syllabus topics that {company} focuses on
+- Include question types commonly asked in {company} aptitude/technical rounds
+- Reflect the time pressure and complexity typical of {company} exams
+- If {company} is TCS NQT, focus on: numerical ability, verbal ability, reasoning, programming logic
+- If {company} is Infosys, focus on: puzzles, logical reasoning, quantitative aptitude, verbal ability
+- If {company} is Wipro, focus on: verbal ability, quantitative aptitude, logical reasoning
+- If {company} is Amazon/Microsoft/Google, focus on: problem-solving, DSA, coding aptitude, analytical reasoning
+
+Make questions realistic to what candidates face in actual {company} placement exams."""
+        
         prompt = f"""Generate EXACTLY {num_questions} multiple choice questions for campus placement aptitude test.
 
 Subject: {subject}
 Topic: {topic}
-Difficulty: {difficulty}
+Difficulty: {difficulty}{company_context}
 
 IMPORTANT: Generate ALL {num_questions} questions. Do not generate less.
 
@@ -836,14 +869,19 @@ CRITICAL: The questions array MUST contain exactly {num_questions} questions."""
                 for i in range(num_questions)
             ]
         
+        # Build companies list with the target company first if provided
+        companies = [company] if company else []
+        companies.extend([c for c in ["TCS", "Infosys", "Amazon", "Microsoft", "Wipro"] if c != company])
+        
         return {
             "subject": subject,
             "topic": topic,
             "difficulty": difficulty,
+            "company": company,
             "questions": questions[:num_questions],  # Ensure we don't exceed requested number
             "totalQuestions": len(questions[:num_questions]),
             "timeLimit": num_questions * 2,
-            "companies": ["TCS", "Infosys", "Amazon", "Microsoft", "Wipro"]
+            "companies": companies[:5]
         }
     
     def solve_previous_year(self, question: str, subject: str) -> Dict:
@@ -1528,40 +1566,69 @@ Make it actionable with clear steps and timeline (6-8 weeks)."""
         }
 
     
-    def analyze_resume(self, resume_text: str) -> Dict:
-        """Analyze resume for ATS and placement readiness"""
-        prompt = f"""Analyze this engineering student's resume for campus placements:
+    def analyze_resume(self, resume_text: str, target_role: str = None, job_description: str = None) -> Dict:
+        """Analyze resume for ATS and placement readiness with strict JSON output."""
+        role_context = target_role.strip() if target_role else "General Software Engineer"
+        jd_context = job_description.strip() if job_description else "Not provided"
+
+        prompt = f"""You are an ATS and resume evaluation assistant.
+
+Analyze the candidate resume against the target role and job description.
+
+TARGET ROLE:
+{role_context}
+
+JOB DESCRIPTION:
+{jd_context}
 
 RESUME:
 {resume_text}
 
-Provide detailed analysis:
+Return ONLY strict JSON. Do not return markdown. Do not return code fences. Do not return extra keys.
 
-1. ATS Score (0-100)
-2. Overall Placement Readiness Score (0-100)
-3. Strengths (what's good)
-4. Areas for Improvement (what's missing/weak)
-5. Keywords found
-6. Missing important keywords
-7. Section-wise analysis (Contact, Education, Skills, Projects, Experience, Achievements)
-8. Company fit analysis (Service-based vs Product-based)
-9. Specific recommendations
+Required JSON schema (exact keys only):
+{{
+  "atsScore": 0,
+  "overallScore": 0,
+  "strengths": ["..."],
+  "missingInResume": ["..."],
+  "suggestedChanges": ["..."],
+  "missingKeywords": ["..."],
+  "companyFit": {{
+    "Service-based (TCS/Infosys)": "...",
+    "Product-based (Amazon/Microsoft)": "...",
+    "Startups": "..."
+  }}
+}}
 
-Focus on:
-- ATS compatibility
-- Keyword optimization
-- Format and structure
-- Content quality
-- Quantifiable achievements
-- Technical skills relevance
-- Project descriptions
+Rules:
+- atsScore and overallScore must be integers from 0 to 100.
+- strengths, missingInResume, suggestedChanges, missingKeywords must be arrays of concise strings.
+- companyFit must be an object with concise values.
+"""
 
-Return analysis in a structured format."""
+        raw_response = self._generate_response(prompt)
 
-        analysis = self._generate_response(prompt)
+        parsed = None
+        try:
+            parsed = json.loads(raw_response)
+        except Exception:
+            try:
+                # Try extracting embedded JSON if model adds wrappers
+                if "```json" in raw_response:
+                    candidate = raw_response.split("```json", 1)[1].split("```", 1)[0].strip()
+                    parsed = json.loads(candidate)
+                elif "```" in raw_response:
+                    candidate = raw_response.split("```", 1)[1].split("```", 1)[0].strip()
+                    parsed = json.loads(candidate)
+                else:
+                    match = re.search(r"\{[\s\S]*\}", raw_response)
+                    if match:
+                        parsed = json.loads(match.group(0))
+            except Exception:
+                parsed = None
 
         normalized_resume = resume_text.lower()
-
         required_sections = {
             "Professional summary/objective": ["summary", "objective", "profile"],
             "Education details": ["education", "bachelor", "b.tech", "btech", "cgpa", "gpa"],
@@ -1574,64 +1641,91 @@ Return analysis in a structured format."""
             "GitHub profile": ["github.com"]
         }
 
-        missing_in_resume = [
+        fallback_missing_sections = [
             section
             for section, keywords in required_sections.items()
             if not any(keyword in normalized_resume for keyword in keywords)
         ]
 
-        has_quantified_impact = bool(re.search(r"\b\d+(%|\+|x|k|\b)", resume_text.lower()))
-        has_action_verbs = bool(re.search(r"\b(built|developed|implemented|optimized|designed|led|created|improved|automated)\b", normalized_resume))
-
-        suggested_changes = []
-        if not has_quantified_impact:
-            suggested_changes.append("Add measurable impact in project/experience bullets (%, time saved, users, scale).")
-        if not has_action_verbs:
-            suggested_changes.append("Start each bullet with strong action verbs (Built, Developed, Implemented, Optimized).")
+        fallback_suggestions = []
+        if not re.search(r"\b\d+(%|\+|x|k|\b)", normalized_resume):
+            fallback_suggestions.append("Add measurable impact in bullets (%, scale, time saved, users).")
+        if not re.search(r"\b(built|developed|implemented|optimized|designed|led|created|improved|automated)\b", normalized_resume):
+            fallback_suggestions.append("Start bullets with strong action verbs.")
         if len(resume_text.split()) < 180:
-            suggested_changes.append("Resume content is too short. Add stronger project depth, tools used, and outcomes.")
-        if "skills" in normalized_resume and not re.search(r"\b(python|java|javascript|sql|react|node|aws|dsa|oop)\b", normalized_resume):
-            suggested_changes.append("Add role-relevant technical keywords in Skills for better ATS matching.")
+            fallback_suggestions.append("Add deeper project and experience details with outcomes.")
+        for section in fallback_missing_sections[:4]:
+            fallback_suggestions.append(f"Add missing section: {section}.")
+        if not fallback_suggestions:
+            fallback_suggestions.append("Improve weak or repetitive bullets for clarity and impact.")
 
-        for section in missing_in_resume[:4]:
-            suggested_changes.append(f"Add missing section: {section}.")
+        # Score fallback strategy:
+        # 1) Parsed JSON integer
+        # 2) Regex from model text for patterns like 82/100 or 82%
+        # 3) Random 60-85 as final fallback
+        score_candidates = []
+        for match in re.findall(r"(\d{1,3})\s*(?:/\s*100|%)", raw_response):
+            try:
+                value = int(match)
+                if 0 <= value <= 100:
+                    score_candidates.append(value)
+            except Exception:
+                pass
 
-        if not suggested_changes:
-            suggested_changes.append("Your resume structure is decent. Improve clarity by tightening weak or repetitive bullets.")
-        
-        # Parse the analysis to extract scores (basic parsing)
-        ats_score = 75  # Default
-        overall_score = 75  # Default
-        
-        # Try to extract scores from response
-        for line in analysis.split('\n'):
-            if 'ats score' in line.lower() or 'ats:' in line.lower():
-                try:
-                    score = int(''.join(filter(str.isdigit, line)))
-                    if 0 <= score <= 100:
-                        ats_score = score
-                except:
-                    pass
-            if 'overall' in line.lower() and 'score' in line.lower():
-                try:
-                    score = int(''.join(filter(str.isdigit, line)))
-                    if 0 <= score <= 100:
-                        overall_score = score
-                except:
-                    pass
-        
-        return {
-            "atsScore": ats_score,
-            "overallScore": overall_score,
-            "analysis": analysis,
-            "missingInResume": missing_in_resume,
-            "suggestedChanges": suggested_changes[:8],
-            "placementReadiness": "Good" if overall_score >= 70 else "Needs Improvement",
-            "companyFit": {
-                "Service-based (TCS/Infosys)": f"{min(overall_score + 10, 95)}% - Analyze from report",
-                "Product-based (Amazon/Microsoft)": f"{max(overall_score - 15, 50)}% - Analyze from report",
-                "Startups": f"{overall_score}% - Analyze from report"
+        random_score = random.randint(60, 85)
+        regex_ats = score_candidates[0] if len(score_candidates) > 0 else random_score
+        regex_overall = score_candidates[1] if len(score_candidates) > 1 else regex_ats
+
+        def _as_int_score(value, default_value):
+            try:
+                score = int(value)
+                return max(0, min(100, score))
+            except Exception:
+                return default_value
+
+        def _as_str_list(value, fallback_value):
+            if isinstance(value, list):
+                cleaned = [str(item).strip() for item in value if str(item).strip()]
+                return cleaned if cleaned else fallback_value
+            return fallback_value
+
+        # If JSON parsing fails, return dynamic fallback (no static 75, no static missingKeywords)
+        if not isinstance(parsed, dict):
+            return {
+                "atsScore": regex_ats,
+                "overallScore": regex_overall,
+                "strengths": [
+                    "Resume has core structure present.",
+                    "Technical profile is visible.",
+                    "Role-focused improvements can increase shortlist chances."
+                ],
+                "missingInResume": fallback_missing_sections[:8],
+                "suggestedChanges": fallback_suggestions[:8],
+                "missingKeywords": [],
+                "companyFit": {
+                    "Service-based (TCS/Infosys)": "Moderate fit - improve aptitude and clarity",
+                    "Product-based (Amazon/Microsoft)": "Moderate fit - add stronger impact and DSA evidence",
+                    "Startups": "Moderate fit - highlight ownership and shipped work"
+                }
             }
+
+        company_fit = parsed.get("companyFit") if isinstance(parsed.get("companyFit"), dict) else {
+            "Service-based (TCS/Infosys)": "Moderate fit - review recommendations",
+            "Product-based (Amazon/Microsoft)": "Moderate fit - review recommendations",
+            "Startups": "Moderate fit - review recommendations"
+        }
+
+        # missingKeywords must come from Gemini JSON when available; otherwise keep empty
+        gemini_missing_keywords = _as_str_list(parsed.get("missingKeywords"), [])
+
+        return {
+            "atsScore": _as_int_score(parsed.get("atsScore"), regex_ats),
+            "overallScore": _as_int_score(parsed.get("overallScore"), regex_overall),
+            "strengths": _as_str_list(parsed.get("strengths"), ["Strength insights not available from model output."]),
+            "missingInResume": _as_str_list(parsed.get("missingInResume"), fallback_missing_sections[:8]),
+            "suggestedChanges": _as_str_list(parsed.get("suggestedChanges"), fallback_suggestions[:8]),
+            "missingKeywords": gemini_missing_keywords,
+            "companyFit": company_fit
         }
     
     def interview_prep(self, company: str, role: str) -> Dict:

@@ -214,7 +214,12 @@ router = APIRouter(prefix="/api/career", tags=["Career & Placement"])
 
 @router.post("/resume-upload")
 @rate_limit("10/minute")  # Rate limit for heavy AI endpoint
-async def upload_resume(request: Request, file: UploadFile = File(...)):
+async def upload_resume(
+    request: Request,
+    file: UploadFile = File(...),
+    target_role: str = Form(None),
+    job_description: str = Form(None)
+):
     """
     Upload and analyze resume PDF with security improvements
     - Secure file validation (extension + MIME type)
@@ -246,7 +251,11 @@ async def upload_resume(request: Request, file: UploadFile = File(...)):
         print(f"⚠️ Resume text truncated from {original_length} to 4000 chars")
     
     # Analyze the extracted text
-    result = ai_service.analyze_resume(resume_text)
+    result = ai_service.analyze_resume(
+        resume_text,
+        target_role=target_role,
+        job_description=job_description
+    )
     result["filename"] = file.filename
     result["pages"] = page_count
     result["extractedText"] = resume_text
@@ -273,7 +282,11 @@ async def analyze_resume(request: Request, req: ResumeAnalyzeRequest):
     if len(resume_text) > 4000:
         resume_text = resume_text[:4000]
     
-    result = ai_service.analyze_resume(resume_text)
+    result = ai_service.analyze_resume(
+        resume_text,
+        target_role=req.target_role,
+        job_description=req.job_description
+    )
     result["truncated"] = original_length > 4000
     
     return result

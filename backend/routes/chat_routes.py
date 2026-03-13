@@ -75,6 +75,22 @@ async def chat(request: Request, chat_request: ChatRequest, db: Session = Depend
     
     return {"response": response}
 
+
+@router.post("/chat/public", response_model=ChatResponse)
+@rate_limit("20/minute")
+async def public_chat(request: Request, chat_request: ChatRequest):
+    """Public chat endpoint for guest users (no auth, no history persistence)."""
+
+    language = resolve_chat_language(chat_request)
+    messages = [{"role": msg.role, "content": msg.content} for msg in chat_request.messages]
+
+    if language.lower() in ["hindi", "gujarati"]:
+        language_instruction = f"\n\nIMPORTANT: Respond in {language.upper()} language. Translate your entire response to {language}."
+        messages[-1]["content"] += language_instruction
+
+    response = ai_service.chat_completion(messages)
+    return {"response": response}
+
 @router.post("/chat/stream")
 @rate_limit("30/minute")  # 30 streaming requests per minute
 async def chat_stream(request: Request, chat_request: ChatRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):

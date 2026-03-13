@@ -29,9 +29,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         
-        # Don't set restrictive COOP for auth endpoints (breaks Google OAuth)
-        if "/auth/google" not in request.url.path:
-            response.headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups"
+        response.headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups"
         
         # Remove server header
         if "server" in response.headers:

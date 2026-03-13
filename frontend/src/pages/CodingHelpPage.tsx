@@ -1,7 +1,46 @@
 import { useState } from 'react'
-import { Code, Bug, Lightbulb, Rocket } from 'lucide-react'
+import { Code, Bug, Lightbulb, Rocket, Terminal, Loader2 } from 'lucide-react'
 import { codingAPI } from '../api/client'
 import Header from '../components/Header'
+
+const CODE_EXAMPLES = [
+  {
+    label: 'Two Sum (Python)',
+    language: 'python',
+    code: `def two_sum(nums, target):
+    seen = {}
+    for i, num in enumerate(nums):
+        complement = target - num
+        if complement in seen:
+            return [seen[complement], i]
+        seen[num] = i
+    return []
+
+# Example usage
+print(two_sum([2, 7, 11, 15], 9))  # Output: [0, 1]`,
+  },
+  {
+    label: 'Binary Search (Java)',
+    language: 'java',
+    code: `public class BinarySearch {
+    public static int binarySearch(int[] arr, int target) {
+        int left = 0, right = arr.length - 1;
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+            if (arr[mid] == target) return mid;
+            else if (arr[mid] < target) left = mid + 1;
+            else right = mid - 1;
+        }
+        return -1;
+    }
+
+    public static void main(String[] args) {
+        int[] arr = {1, 3, 5, 7, 9, 11};
+        System.out.println(binarySearch(arr, 7)); // Output: 3
+    }
+}`,
+  },
+]
 
 export default function CodingHelpPage() {
   const [selectedTab, setSelectedTab] = useState<'explain' | 'debug' | 'dsa' | 'project'>('explain')
@@ -164,21 +203,44 @@ export default function CodingHelpPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-2">Code</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-sm font-medium">Code</label>
+                  </div>
+                  <p className="text-xs text-gray-500 mb-2">
+                    Or try an example:{' '}
+                    {CODE_EXAMPLES.map((ex) => (
+                      <button
+                        key={ex.label}
+                        type="button"
+                        onClick={() => setCodeForm({ ...codeForm, code: ex.code, language: ex.language })}
+                        className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700 hover:bg-green-100 hover:text-green-800 transition-colors cursor-pointer mr-1"
+                      >
+                        {ex.label}
+                      </button>
+                    ))}
+                  </p>
                   <textarea
                     value={codeForm.code}
                     onChange={(e) => setCodeForm({ ...codeForm, code: e.target.value })}
-                    placeholder="Paste your code here..."
-                    rows={12}
-                    className="w-full border rounded-lg px-4 py-2 font-mono text-sm"
+                    placeholder="// Paste your code here..."
+                    rows={14}
+                    spellCheck={false}
+                    className="w-full rounded-lg px-4 py-3 font-mono text-sm bg-gray-900 text-gray-100 placeholder-gray-500 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 resize-y leading-relaxed"
                   />
                 </div>
                 <button
                   onClick={handleCodeHelp}
                   disabled={loading || !codeForm.code}
-                  className="w-full btn-primary disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-2 py-3 rounded-lg bg-green-600 text-white font-semibold text-sm hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {loading ? 'Processing...' : 'Analyze Code'}
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Analyzing...
+                    </>
+                  ) : (
+                    'Analyze Code 🚀'
+                  )}
                 </button>
               </div>
             )}
@@ -241,7 +303,7 @@ export default function CodingHelpPage() {
           <div className="card">
             <h2 className="text-2xl font-bold mb-6">Output</h2>
             {result ? (
-              <div className="prose max-w-none">
+              <div className="prose prose-sm max-w-none">
                 {/* Code Explanation/Debug/Optimize Result */}
                 {(selectedTab === 'explain' || selectedTab === 'debug') && result.result && (
                   <div className="space-y-4">
@@ -309,8 +371,12 @@ export default function CodingHelpPage() {
                 )}
               </div>
             ) : (
-              <div className="text-center text-gray-500 py-12">
-                Submit your code or problem to see AI-generated help here
+              <div className="flex flex-col items-center justify-center gap-3 py-16 text-gray-400">
+                <Terminal className="h-12 w-12 opacity-25" />
+                <p className="text-lg font-semibold text-gray-500">Awaiting your code...</p>
+                <p className="text-sm text-gray-400 text-center max-w-xs leading-relaxed">
+                  Paste your code on the left and click &ldquo;Analyze Code 🚀&rdquo; to get instant AI-powered feedback.
+                </p>
               </div>
             )}
           </div>

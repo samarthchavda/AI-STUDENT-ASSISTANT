@@ -1,9 +1,10 @@
 import { useEffect } from 'react'
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
-import HomePage from './pages/HomePage'
+import LandingPage from './pages/LandingPage'
 import AuthPage from './pages/AuthPage'
 import ChatPage from './pages/ChatPage'
 import ExamPrepPage from './pages/ExamPrepPage'
+import ExamSimulationPage from './pages/ExamSimulationPage'
 import CodingHelpPage from './pages/CodingHelpPage'
 import CareerPage from './pages/CareerPage'
 import CompanyPrepPage from './pages/CompanyPrepPage'
@@ -13,6 +14,7 @@ import AdminPage from './pages/AdminPage'
 import ServicesPage from './pages/ServicesPage'
 import AboutPage from './pages/AboutPage'
 import ProfilePage from './pages/ProfilePage'
+import ProtectedRoute from './components/ProtectedRoute'
 import { useAutoLogout } from './hooks/useAutoLogout'
 
 function AppRoutes() {
@@ -27,21 +29,28 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/" element={<HomePage />} />
+      {/* Public Routes */}
+      <Route path="/" element={<LandingPage />} />
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/login" element={<AuthPage />} />
       <Route path="/signup" element={<AuthPage />} />
-      <Route path="/chat" element={<ChatPage />} />
-      <Route path="/exam-prep" element={<ExamPrepPage />} />
-      <Route path="/coding-help" element={<CodingHelpPage />} />
-      <Route path="/career" element={<CareerPage />} />
-      <Route path="/company-prep" element={<CompanyPrepPage />} />
-      <Route path="/pricing" element={<PricingPage />} />
-      <Route path="/dashboard" element={<DashboardPage />} />
-      <Route path="/admin" element={<AdminPage />} />
       <Route path="/services" element={<ServicesPage />} />
       <Route path="/about" element={<AboutPage />} />
-      <Route path="/profile" element={<ProfilePage />} />
+      <Route path="/pricing" element={<PricingPage />} />
+      
+      {/* Protected Routes - Require Login */}
+      <Route path="/chat" element={<ChatPage />} />
+      <Route path="/exam-prep" element={<ProtectedRoute><ExamPrepPage /></ProtectedRoute>} />
+      <Route path="/exam-simulation" element={<ProtectedRoute><ExamSimulationPage /></ProtectedRoute>} />
+      <Route path="/coding-help" element={<ProtectedRoute><CodingHelpPage /></ProtectedRoute>} />
+      <Route path="/coding" element={<ProtectedRoute><CodingHelpPage /></ProtectedRoute>} />
+      <Route path="/career" element={<ProtectedRoute><CareerPage /></ProtectedRoute>} />
+      <Route path="/company-prep" element={<ProtectedRoute><CompanyPrepPage /></ProtectedRoute>} />
+      <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+      <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+      
+      {/* Admin Routes - Require Login + Admin */}
+      <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminPage /></ProtectedRoute>} />
     </Routes>
   )
 }

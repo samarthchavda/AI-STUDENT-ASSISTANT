@@ -11,7 +11,8 @@ def generate_mock_test(request: MockTestRequest):
         request.subject,
         request.topic,
         request.difficulty,
-        request.numQuestions
+        request.numQuestions,
+        request.company
     )
     return result
 

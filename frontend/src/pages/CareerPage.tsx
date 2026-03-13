@@ -1,42 +1,7 @@
 import { useState } from 'react'
-import { Briefcase, FileText, Users, Upload, X } from 'lucide-react'
+import { Briefcase, FileText, Users, Upload, X, Sparkles, FileSearch, Loader2, CheckCircle2 } from 'lucide-react'
 import { careerAPI } from '../api/client'
 import Header from '../components/Header'
-
-const actionKeywords = {
-  update: ['improve', 'add', 'include', 'update', 'rewrite', 'optimize', 'highlight', 'quantify', 'missing', 'recommend', 'enhance', 'should'],
-  remove: ['remove', 'avoid', 'delete', 'omit', 'redundant', 'unnecessary', 'irrelevant', 'too long', 'weak statement']
-}
-
-function cleanLine(line: string) {
-  return line
-    .replace(/^[-*•\d.)\s]+/, '')
-    .replace(/^\*+\s*/, '')
-    .replace(/\*+/g, '')
-    .trim()
-}
-
-function extractActionItems(analysis: string) {
-  const lines = analysis
-    .split('\n')
-    .map(cleanLine)
-    .filter((line) => line.length > 14)
-
-  const updateItems = lines.filter((line) =>
-    actionKeywords.update.some((keyword) => line.toLowerCase().includes(keyword))
-  )
-
-  const removeItems = lines.filter((line) =>
-    actionKeywords.remove.some((keyword) => line.toLowerCase().includes(keyword))
-  )
-
-  const unique = (items: string[]) => [...new Set(items)]
-
-  return {
-    update: unique(updateItems).slice(0, 6),
-    remove: unique(removeItems).slice(0, 6)
-  }
-}
 
 export default function CareerPage() {
   const [selectedTab, setSelectedTab] = useState<'resume' | 'interview' | 'builder'>('resume')
@@ -48,6 +13,8 @@ export default function CareerPage() {
   const [resumeText, setResumeText] = useState('')
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
   const [uploadMethod, setUploadMethod] = useState<'text' | 'pdf'>('pdf')
+  const [targetRole, setTargetRole] = useState('')
+  const [jobDescription, setJobDescription] = useState('')
   const [interviewForm, setInterviewForm] = useState({
     company: '',
     role: ''
@@ -76,12 +43,17 @@ export default function CareerPage() {
         // Upload PDF
         const formData = new FormData()
         formData.append('file', uploadedFile)
-        response = await careerAPI.uploadResume(formData)
+        response = await careerAPI.uploadResume(formData, targetRole, jobDescription)
       } else {
         // Analyze text
-        response = await careerAPI.analyzeResume(resumeText)
+        response = await careerAPI.analyzeResume(resumeText, targetRole, jobDescription)
       }
       setResult(response.data)
+
+      const atsScore = Number(response.data?.atsScore || 0)
+      if (atsScore > 0) {
+        localStorage.setItem('latest_resume_ats_score', String(atsScore))
+      }
     } catch (error: any) {
       console.error('Error:', error)
       alert(error.response?.data?.detail || 'Error analyzing resume. Please try again.')
@@ -139,7 +111,7 @@ export default function CareerPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-pink-50">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50">
       <Header />
 
       <div className="max-w-6xl mx-auto px-4 py-8">
@@ -148,7 +120,7 @@ export default function CareerPage() {
             onClick={() => setSelectedTab('resume')}
             className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
               selectedTab === 'resume' 
-                ? 'bg-gradient-to-r from-orange-500 to-pink-500 text-white shadow-lg' 
+                ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg' 
                 : 'bg-white text-gray-700 hover:shadow-md'
             }`}
           >
@@ -159,7 +131,7 @@ export default function CareerPage() {
             onClick={() => setSelectedTab('interview')}
             className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
               selectedTab === 'interview' 
-                ? 'bg-gradient-to-r from-orange-500 to-pink-500 text-white shadow-lg' 
+                ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg' 
                 : 'bg-white text-gray-700 hover:shadow-md'
             }`}
           >
@@ -170,7 +142,7 @@ export default function CareerPage() {
             onClick={() => setSelectedTab('builder')}
             className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
               selectedTab === 'builder' 
-                ? 'bg-gradient-to-r from-orange-500 to-pink-500 text-white shadow-lg' 
+                ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg' 
                 : 'bg-white text-gray-700 hover:shadow-md'
             }`}
           >
@@ -189,24 +161,55 @@ export default function CareerPage() {
 
             {selectedTab === 'resume' && (
               <div className="space-y-4">
+                {/* Target Role & JD */}
+                <div className="space-y-3 rounded-xl border border-teal-200 bg-teal-50/60 p-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Target Job Role</label>
+                    <input
+                      type="text"
+                      value={targetRole}
+                      onChange={(e) => setTargetRole(e.target.value)}
+                      placeholder="e.g., Frontend Developer, Data Analyst"
+                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">
+                      Paste Job Description (JD){' '}
+                      <span className="font-normal text-gray-400">— optional</span>
+                    </label>
+                    <textarea
+                      value={jobDescription}
+                      onChange={(e) => setJobDescription(e.target.value)}
+                      placeholder="Paste the job description here to get a more accurate ATS match score..."
+                      rows={3}
+                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 resize-y"
+                    />
+                  </div>
+                  <p className="text-xs text-teal-700 flex items-start gap-1">
+                    <span>💡</span>
+                    <span>ATS scoring works best when matched against a specific job description.</span>
+                  </p>
+                </div>
+
                 {/* Upload Method Toggle */}
                 <div className="flex gap-2 mb-4">
                   <button
                     onClick={() => setUploadMethod('pdf')}
-                    className={`flex-1 py-2 px-4 rounded-lg font-medium ${
+                    className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
                       uploadMethod === 'pdf'
-                        ? 'bg-orange-600 text-white'
-                        : 'bg-gray-100 text-gray-700'
+                        ? 'bg-teal-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
                     📄 Upload PDF
                   </button>
                   <button
                     onClick={() => setUploadMethod('text')}
-                    className={`flex-1 py-2 px-4 rounded-lg font-medium ${
+                    className={`flex-1 py-2 px-4 rounded-lg font-medium transition-colors ${
                       uploadMethod === 'text'
-                        ? 'bg-orange-600 text-white'
-                        : 'bg-gray-100 text-gray-700'
+                        ? 'bg-teal-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
                     📝 Paste Text
@@ -218,7 +221,7 @@ export default function CareerPage() {
                     <label className="block text-sm font-medium mb-2">
                       Upload Resume PDF
                     </label>
-                    <div className="border-2 border-dashed border-orange-300 rounded-2xl p-8 text-center hover:border-orange-500 hover:bg-orange-50/50 transition-all duration-300 cursor-pointer">
+                    <div className="border-2 border-dashed border-teal-300 rounded-2xl p-8 text-center hover:border-teal-500 hover:bg-teal-50/50 transition-all duration-300 cursor-pointer">
                       {uploadedFile ? (
                         <div className="space-y-4">
                           <div className="flex items-center justify-center gap-3 text-green-600">
@@ -242,7 +245,7 @@ export default function CareerPage() {
                         </div>
                       ) : (
                         <div>
-                          <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-float shadow-xl">
+                          <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-float shadow-xl">
                             <Upload className="w-10 h-10 text-white" />
                           </div>
                           <p className="text-gray-700 mb-2 font-semibold text-lg">
@@ -260,7 +263,7 @@ export default function CareerPage() {
                           />
                           <label
                             htmlFor="resume-upload"
-                            className="inline-block btn-primary cursor-pointer"
+                            className="inline-block cursor-pointer rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:from-emerald-600 hover:to-teal-700 transition-all"
                           >
                             Choose File
                           </label>
@@ -286,9 +289,23 @@ export default function CareerPage() {
                 <button
                   onClick={handleResumeAnalysis}
                   disabled={loading || (uploadMethod === 'pdf' ? !uploadedFile : !resumeText)}
-                  className="w-full btn-primary disabled:opacity-50"
+                  className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl font-semibold text-sm transition-all ${
+                    (uploadMethod === 'pdf' ? !uploadedFile : !resumeText)
+                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed opacity-60'
+                      : 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg hover:from-emerald-600 hover:to-teal-700'
+                  }`}
                 >
-                  {loading ? 'Analyzing...' : 'Analyze Resume'}
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4" />
+                      Analyze Resume
+                    </>
+                  )}
                 </button>
                 
                 <div className="text-sm text-gray-600 bg-blue-50 p-4 rounded-lg">
@@ -369,13 +386,8 @@ export default function CareerPage() {
             {result ? (
               <div className="prose max-w-none">
                 {/* Resume Analysis Result */}
-                {selectedTab === 'resume' && result.analysis && (
+                {selectedTab === 'resume' && (result.atsScore !== undefined || result.overallScore !== undefined) && (
                   <div className="space-y-4">
-                    {(() => {
-                      const actionItems = extractActionItems(result.analysis)
-
-                      return (
-                        <>
                     <div className="grid grid-cols-2 gap-4 mb-6">
                       <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
                         <p className="text-sm text-blue-700 mb-1">ATS Score</p>
@@ -386,11 +398,39 @@ export default function CareerPage() {
                         <p className="text-3xl font-bold text-green-900">{result.overallScore}/100</p>
                       </div>
                     </div>
-                    <div className="bg-purple-50 border-l-4 border-purple-500 p-4 rounded">
-                      <p className="font-semibold text-purple-900">📊 Placement Readiness: {result.placementReadiness}</p>
+
+                    <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl">
+                      <p className="font-semibold text-emerald-900 mb-3">✅ Your Resume Strengths</p>
+                      {result.strengths?.length > 0 ? (
+                        <ul className="space-y-2">
+                          {result.strengths.map((item: string, idx: number) => (
+                            <li key={idx} className="flex items-start gap-2 text-sm text-emerald-800">
+                              <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0 text-emerald-600" />
+                              <span>{item}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-emerald-800">No strengths listed yet.</p>
+                      )}
                     </div>
-                    <div className="whitespace-pre-wrap bg-white p-6 rounded-lg border text-sm leading-relaxed">
-                      {result.analysis}
+
+                    <div className="bg-rose-50 border border-rose-100 p-4 rounded-xl">
+                      <p className="font-semibold text-rose-900 mb-3">🔎 Missing Keywords</p>
+                      {result.missingKeywords?.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {result.missingKeywords.map((keyword: string, idx: number) => (
+                            <span
+                              key={idx}
+                              className="inline-flex items-center rounded-full bg-white border border-rose-200 px-3 py-1 text-xs font-medium text-rose-700"
+                            >
+                              {keyword}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-rose-800">No missing keywords identified.</p>
+                      )}
                     </div>
 
                     <div className="bg-gray-50 border rounded-lg p-4">
@@ -444,34 +484,6 @@ export default function CareerPage() {
                       </div>
                     )}
 
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div className="bg-emerald-50 border-l-4 border-emerald-500 p-4 rounded">
-                        <p className="font-semibold text-emerald-900 mb-3">✅ Update in Resume</p>
-                        {actionItems.update.length > 0 ? (
-                          <ul className="list-disc list-inside space-y-2 text-emerald-800 text-sm">
-                            {actionItems.update.map((item, idx) => (
-                              <li key={idx} className="ml-1">{item}</li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p className="text-sm text-emerald-800">Add stronger achievements with numbers, better keywords, and clearer project impact points.</p>
-                        )}
-                      </div>
-
-                      <div className="bg-rose-50 border-l-4 border-rose-500 p-4 rounded">
-                        <p className="font-semibold text-rose-900 mb-3">❌ Remove from Resume</p>
-                        {actionItems.remove.length > 0 ? (
-                          <ul className="list-disc list-inside space-y-2 text-rose-800 text-sm">
-                            {actionItems.remove.map((item, idx) => (
-                              <li key={idx} className="ml-1">{item}</li>
-                            ))}
-                          </ul>
-                        ) : (
-                          <p className="text-sm text-rose-800">Remove repetitive lines, vague claims, and irrelevant details that don’t support your target role.</p>
-                        )}
-                      </div>
-                    </div>
-
                     {result.companyFit && (
                       <div className="bg-gray-50 p-4 rounded-lg">
                         <p className="font-semibold text-gray-900 mb-3">🏢 Company Fit Analysis:</p>
@@ -485,9 +497,6 @@ export default function CareerPage() {
                         </div>
                       </div>
                     )}
-                        </>
-                      )
-                    })()}
                   </div>
                 )}
                 
@@ -521,8 +530,14 @@ export default function CareerPage() {
                 )}
               </div>
             ) : (
-              <div className="text-center text-gray-500 py-12">
-                Submit your information to see AI-powered career guidance
+              <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
+                <FileSearch className="h-16 w-16 text-gray-200" />
+                <div>
+                  <p className="text-lg font-bold text-gray-600">Awaiting Your Resume</p>
+                  <p className="mt-1 max-w-xs text-sm text-gray-400 leading-relaxed">
+                    Upload your resume and enter a target role to get your ATS match score and actionable AI feedback.
+                  </p>
+                </div>
               </div>
             )}
           </div>
