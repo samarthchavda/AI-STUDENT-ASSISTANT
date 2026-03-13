@@ -8,8 +8,8 @@ const TOKEN_CHECK_INTERVAL = 60 * 1000 // Check every minute
 export function useAutoLogout() {
   const navigate = useNavigate()
   const { logout, isAuthenticated } = useAppStore()
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const checkIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const checkIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const resetTimer = () => {
     if (timeoutRef.current) {
@@ -49,6 +49,15 @@ export function useAutoLogout() {
     }
   }
 
+  // Auto logout when page becomes hidden (tab switched/browser minimized)
+  const handleVisibilityChange = () => {
+    if (document.hidden && isAuthenticated) {
+      // Optional: You can add a timer here to logout after specific time in hidden state
+      // For now, just logging as a reference point
+      console.log('Page hidden - user may be inactive')
+    }
+  }
+
   useEffect(() => {
     if (!isAuthenticated) {
       if (timeoutRef.current) clearTimeout(timeoutRef.current)
@@ -70,6 +79,9 @@ export function useAutoLogout() {
       document.addEventListener(event, resetTimer)
     })
 
+    // Track when user switches tabs/windows
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current)
       if (checkIntervalRef.current) clearInterval(checkIntervalRef.current)
@@ -77,6 +89,7 @@ export function useAutoLogout() {
       events.forEach(event => {
         document.removeEventListener(event, resetTimer)
       })
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [isAuthenticated, logout, navigate])
 

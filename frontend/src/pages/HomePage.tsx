@@ -54,7 +54,7 @@ export default function HomePage() {
           <div className="mt-12 flex items-center justify-center gap-8 flex-wrap text-sm text-gray-600">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span>OpenAI GPT-4 Powered</span>
+              <span>Google Gemini AI Powered</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
@@ -254,7 +254,7 @@ export default function HomePage() {
               <h4 className="font-bold mb-4">Features</h4>
               <ul className="space-y-2 text-gray-400">
                 <li><Link to="/chat" className="hover:text-white transition-colors">Chat Assistant</Link></li>
-                <li><Link to="/exam-prep" className="hover:text-white transition-colors">Exam Preparation</Link></li>
+                <li><Link to="/exam-prep" className="hover:text-white transition-colors">Aptitude Preparation</Link></li>
                 <li><Link to="/coding-help" className="hover:text-white transition-colors">Coding Help</Link></li>
                 <li><Link to="/career" className="hover:text-white transition-colors">Career Guidance</Link></li>
               </ul>

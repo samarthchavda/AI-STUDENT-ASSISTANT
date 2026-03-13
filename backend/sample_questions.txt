@@ -1,0 +1,279 @@
+COMPANY: Microsoft
+category: technical
+difficulty: medium
+topic: OOP
+question: Explain Object Oriented Programming concepts
+year: 2024
+---
+COMPANY: Microsoft
+category: technical
+difficulty: medium
+topic: OOP
+question: What is polymorphism in OOP
+year: 2024
+---
+COMPANY: Microsoft
+category: coding
+difficulty: medium
+topic: Linked Lists
+question: Reverse a linked list
+year: 2024
+---
+COMPANY: Microsoft
+category: technical
+difficulty: medium
+topic: Web Services
+question: Explain REST API
+year: 2024
+---
+COMPANY: Microsoft
+category: technical
+difficulty: medium
+topic: Operating Systems
+question: Difference between process and thread
+year: 2024
+---
+COMPANY: Microsoft
+category: technical
+difficulty: medium
+topic: Databases
+question: Explain database normalization
+year: 2024
+---
+COMPANY: Microsoft
+category: technical
+difficulty: hard
+topic: Operating Systems
+question: What is deadlock in operating systems
+year: 2024
+---
+COMPANY: Microsoft
+category: technical
+difficulty: medium
+topic: Algorithms
+question: Explain time complexity with example
+year: 2024
+---
+COMPANY: Microsoft
+category: technical
+difficulty: medium
+topic: Databases
+question: What is SQL vs NoSQL
+year: 2024
+---
+COMPANY: Microsoft
+category: technical
+difficulty: hard
+topic: System Design
+question: Explain microservices architecture
+year: 2024
+---
+COMPANY: Amazon
+category: hr
+difficulty: easy
+topic: Communication
+question: Explain Amazon leadership principles
+year: 2024
+---
+COMPANY: Amazon
+category: system_design
+difficulty: hard
+topic: System Design
+question: What is system design
+year: 2024
+---
+COMPANY: Amazon
+category: coding
+difficulty: medium
+topic: Arrays
+question: Find duplicate numbers in array
+year: 2024
+---
+COMPANY: Amazon
+category: technical
+difficulty: medium
+topic: Hash Tables
+question: Explain hashing in data structures
+year: 2024
+---
+COMPANY: Amazon
+category: technical
+difficulty: hard
+topic: System Design
+question: What is load balancing
+year: 2024
+---
+COMPANY: Amazon
+category: technical
+difficulty: hard
+topic: Distributed Systems
+question: Explain CAP theorem
+year: 2024
+---
+COMPANY: Amazon
+category: technical
+difficulty: medium
+topic: Architecture
+question: Explain microservices vs monolith
+year: 2024
+---
+COMPANY: Amazon
+category: technical
+difficulty: medium
+topic: Performance
+question: What is caching
+year: 2024
+---
+COMPANY: Amazon
+category: technical
+difficulty: medium
+topic: Databases
+question: Explain database indexing
+year: 2024
+---
+COMPANY: Amazon
+category: technical
+difficulty: easy
+topic: Web Services
+question: Difference between GET and POST
+year: 2024
+---
+COMPANY: TCS
+category: technical
+difficulty: easy
+topic: Software Development
+question: What is SDLC
+year: 2024
+---
+COMPANY: TCS
+category: technical
+difficulty: easy
+topic: Programming Languages
+question: Difference between C and C++
+year: 2024
+---
+COMPANY: TCS
+category: technical
+difficulty: easy
+topic: OOP
+question: Explain OOP concepts
+year: 2024
+---
+COMPANY: TCS
+category: technical
+difficulty: easy
+topic: Programming
+question: What is a pointer
+year: 2024
+---
+COMPANY: TCS
+category: technical
+difficulty: easy
+topic: Databases
+question: What is DBMS
+year: 2024
+---
+COMPANY: TCS
+category: technical
+difficulty: easy
+topic: Data Structures
+question: Difference between array and linked list
+year: 2024
+---
+COMPANY: TCS
+category: technical
+difficulty: easy
+topic: Databases
+question: What is normalization in database
+year: 2024
+---
+COMPANY: TCS
+category: technical
+difficulty: easy
+topic: Operating Systems
+question: Explain operating system
+year: 2024
+---
+COMPANY: TCS
+category: technical
+difficulty: easy
+topic: OOP
+question: Explain inheritance in OOP
+year: 2024
+---
+COMPANY: TCS
+category: technical
+difficulty: easy
+topic: Cloud Computing
+question: What is cloud computing
+year: 2024
+---
+COMPANY: Infosys
+category: technical
+difficulty: easy
+topic: Data Structures
+question: What is data structure
+year: 2024
+---
+COMPANY: Infosys
+category: technical
+difficulty: easy
+topic: Data Structures
+question: Explain stack and queue
+year: 2024
+---
+COMPANY: Infosys
+category: technical
+difficulty: easy
+topic: Algorithms
+question: What is recursion
+year: 2024
+---
+COMPANY: Infosys
+category: technical
+difficulty: easy
+topic: OOP
+question: Explain polymorphism
+year: 2024
+---
+COMPANY: Infosys
+category: technical
+difficulty: easy
+topic: Databases
+question: What is database indexing
+year: 2024
+---
+COMPANY: Infosys
+category: technical
+difficulty: easy
+topic: Databases
+question: Explain ACID properties
+year: 2024
+---
+COMPANY: Infosys
+category: technical
+difficulty: easy
+topic: Operating Systems
+question: Explain operating system scheduling
+year: 2024
+---
+COMPANY: Infosys
+category: technical
+difficulty: easy
+topic: Web Services
+question: What is API
+year: 2024
+---
+COMPANY: Infosys
+category: technical
+difficulty: easy
+topic: Databases
+question: What is primary key in database
+year: 2024
+---
+COMPANY: Infosys
+category: technical
+difficulty: easy
+topic: OOP
+question: Explain difference between abstract class and interface
+year: 2024

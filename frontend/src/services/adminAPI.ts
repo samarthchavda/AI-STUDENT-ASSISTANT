@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -75,6 +75,17 @@ export interface AdminProgress {
   completed_at: string;
 }
 
+export interface CompanyQuestion {
+  id: number;
+  company_name: string;
+  question_text: string;
+  category: string;
+  difficulty: string;
+  frequency: number;
+  topic: string | null;
+  year_asked: string | null;
+}
+
 export const adminAPI = {
   getStats: async (): Promise<AdminStats> => {
     const response = await api.get('/admin/stats');
@@ -98,6 +109,25 @@ export const adminAPI = {
 
   getAllProgress: async (): Promise<AdminProgress[]> => {
     const response = await api.get('/admin/progress');
+    return response.data;
+  },
+
+  getAllCompanyQuestions: async (): Promise<CompanyQuestion[]> => {
+    const response = await api.get('/admin/company-questions');
+    return response.data;
+  },
+
+  bulkUploadCompanyQuestions: async (formData: FormData): Promise<any> => {
+    const response = await api.post('/admin/company-questions/bulk-upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
+  getCompanyQuestionsTemplate: async (): Promise<{ template: string }> => {
+    const response = await api.get('/admin/company-questions/sample-template');
     return response.data;
   },
 

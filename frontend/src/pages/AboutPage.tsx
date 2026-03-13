@@ -31,7 +31,7 @@ export default function AboutPage() {
     {
       name: 'AI-Powered Platform',
       role: 'Technology',
-      description: 'Built with OpenAI GPT-4 and Google Gemini for intelligent responses'
+      description: 'Built with Google Gemini AI for fast, intelligent responses'
     },
     {
       name: 'Expert Content',

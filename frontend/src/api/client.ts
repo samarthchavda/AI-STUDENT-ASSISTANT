@@ -58,14 +58,69 @@ export interface PaymentRequest {
   paymentMethod: string
 }
 
+export interface CompanyPrepQuestion {
+  id: number
+  company_name: string
+  question: string
+  category: string
+  difficulty: string
+  frequency: number
+  topic: string | null
+  year_asked: string | null
+  round_name: string
+}
+
+export interface CompanyPrepMetadata {
+  companies: string[]
+  roles: string[]
+  rounds: string[]
+}
+
+export interface CompanyPrepSession {
+  session_id: string
+  company: string
+  role: string
+  user_id: number
+  simulation_mode: string
+  rounds: Array<{ name: string; question_count: number }>
+  questions: CompanyPrepQuestion[]
+  top_questions: CompanyPrepQuestion[]
+}
+
+export interface CompanyPrepEvaluation {
+  evaluation: {
+    score: number
+    verdict: string
+    strengths: string[]
+    improvements: string[]
+    sample_answer: string
+    follow_up_question: string
+  }
+  practice_id: number
+  average_score: number
+}
+
+export interface PracticeHistoryItem {
+  id: number
+  company_name: string
+  role: string
+  round_name: string
+  question_text: string
+  user_answer: string
+  ai_feedback: string | null
+  sample_answer: string | null
+  score: number
+  practice_date: string
+}
+
 // API Functions
 export const chatAPI = {
-  sendMessage: (messages: ChatMessage[], language: string = 'english') => 
+  sendMessage: (messages: ChatMessage[], language: string = 'auto') => 
     api.post('/chat', { messages, language }),
   
   sendMessageStream: async (
     messages: ChatMessage[], 
-    language: string = 'english',
+    language: string = 'auto',
     onChunk: (chunk: string) => void,
     onComplete: () => void,
     onError: (error: string) => void
@@ -172,6 +227,24 @@ export const careerAPI = {
   
   generateResume: (details: any) => 
     api.post('/career/resume-generate', details),
+
+  generateResumePDF: (resumeText: string, templateType: 'classic' | 'modern' | 'minimal' = 'classic') =>
+    api.post('/career/resume-generate', { resumeText, templateType }, {
+      responseType: 'blob',
+    }),
+
+  generateResumePDFFromUpload: (formData: FormData, templateType: 'classic' | 'modern' | 'minimal' = 'classic') => {
+    const payload = new FormData()
+    formData.forEach((value, key) => payload.append(key, value))
+    payload.append('template_type', templateType)
+
+    return api.post('/career/resume-generate-upload', payload, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      responseType: 'blob',
+    })
+  },
 }
 
 export const paymentAPI = {
@@ -183,6 +256,42 @@ export const paymentAPI = {
   
   getPlans: () => 
     api.get('/payment/plans'),
+}
+
+export const companyPrepAPI = {
+  getMetadata: () => api.get<CompanyPrepMetadata>('/company-prep/metadata'),
+
+  getCompanyQuestions: (company: string, limit: number = 20) =>
+    api.get<{ company: string; total: number; questions: CompanyPrepQuestion[] }>(`/company-questions/${encodeURIComponent(company)}`, {
+      params: { limit },
+    }),
+
+  getTopQuestions: (company: string, limit: number = 20) =>
+    api.get<{ company: string; title: string; questions: CompanyPrepQuestion[] }>(`/company-prep/top-questions/${encodeURIComponent(company)}`, {
+      params: { limit },
+    }),
+
+  startSession: (company: string, role: string, questionCount: number = 6) =>
+    api.post<CompanyPrepSession>('/company-prep/session/start', {
+      company,
+      role,
+      question_count: questionCount,
+    }),
+
+  explainQuestion: (question: string, company?: string, role?: string) =>
+    api.post<{ question: string; explanation: { concepts: string[]; simple_explanation: string; answer_framework: string[]; sample_answer: string } }>('/company-prep/question/explain', {
+      question,
+      company,
+      role,
+    }),
+
+  evaluateAnswer: (payload: { company: string; role: string; question: string; answer: string; round_name: string }) =>
+    api.post<CompanyPrepEvaluation>('/company-prep/answer/evaluate', payload),
+
+  getHistory: (limit: number = 20) =>
+    api.get<PracticeHistoryItem[]>('/company-prep/history', {
+      params: { limit },
+    }),
 }
 
 export const userAPI = {
@@ -210,13 +319,14 @@ export const userAPI = {
     
     // Calculate stats from chat history
     const userMessages = messages.filter((m: any) => m.role === 'user')
-    const totalSessions = Math.ceil(userMessages.length / 10) // Approximate sessions
     
+    // For now, return mock placement stats (will be replaced with real backend data later)
     return {
-      chatSessions: totalSessions,
-      totalMessages: messages.length,
+      placementReadiness: 0,
+      mockTestsAttempted: 0,
+      resumeATSScore: 0,
       questionsAsked: userMessages.length,
-      lastActive: messages.length > 0 ? messages[0].timestamp : null
+      status: 'Active'
     }
   },
 }

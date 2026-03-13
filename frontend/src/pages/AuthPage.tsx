@@ -51,8 +51,21 @@ export default function AuthPage() {
         setError('Passwords do not match')
         return
       }
-      if (formData.password.length < 6) {
-        setError('Password must be at least 6 characters')
+      // Updated password validation for new requirements
+      if (formData.password.length < 8) {
+        setError('Password must be at least 8 characters')
+        return
+      }
+      if (!/[A-Za-z]/.test(formData.password)) {
+        setError('Password must contain at least one letter')
+        return
+      }
+      if (!/\d/.test(formData.password)) {
+        setError('Password must contain at least one number')
+        return
+      }
+      if (!/[@$!%*#?&]/.test(formData.password)) {
+        setError('Password must contain at least one special character (@$!%*#?&)')
         return
       }
     }
@@ -63,10 +76,13 @@ export default function AuthPage() {
       if (isLogin) {
         // Login
         const response = await userAPI.login(formData.email, formData.password)
-        const { access_token, user } = response.data
+        const { access_token, refresh_token, user } = response.data
         
-        // Store token
+        // Store tokens
         localStorage.setItem('token', access_token)
+        if (refresh_token) {
+          localStorage.setItem('refresh_token', refresh_token)
+        }
         
         // Update user state
         setUser({
@@ -81,7 +97,7 @@ export default function AuthPage() {
         if (user.is_admin) {
           navigate('/admin')
         } else {
-          navigate('/pricing')
+          navigate('/dashboard')
         }
         
       } else {
@@ -91,10 +107,13 @@ export default function AuthPage() {
           formData.password,
           formData.name
         )
-        const { access_token, user } = response.data
+        const { access_token, refresh_token, user } = response.data
         
-        // Store token
+        // Store tokens
         localStorage.setItem('token', access_token)
+        if (refresh_token) {
+          localStorage.setItem('refresh_token', refresh_token)
+        }
         
         // Update user state
         setUser({
@@ -109,7 +128,7 @@ export default function AuthPage() {
         if (user.is_admin) {
           navigate('/admin')
         } else {
-          navigate('/pricing')
+          navigate('/dashboard')
         }
       }
     } catch (err: any) {
@@ -145,10 +164,13 @@ export default function AuthPage() {
 
       // Send the credential to backend for verification
       const response = await userAPI.googleAuth(credentialResponse.credential)
-      const { access_token, user } = response.data
+      const { access_token, refresh_token, user } = response.data
       
-      // Store token
+      // Store tokens
       localStorage.setItem('token', access_token)
+      if (refresh_token) {
+        localStorage.setItem('refresh_token', refresh_token)
+      }
       
       // Update user state
       setUser({
@@ -163,14 +185,13 @@ export default function AuthPage() {
       if (user.is_admin) {
         navigate('/admin')
       } else {
-        navigate('/pricing')
+        navigate('/dashboard')
       }
       
     } catch (err: any) {
       console.error('Google auth error:', err)
       setError(
-        err.response?.data?.detail || 
-        'Google authentication failed. Please try again.'
+        'Google OAuth not configured yet. Please use email/password login instead.'
       )
     } finally {
       setLoading(false)
@@ -266,7 +287,7 @@ export default function AuthPage() {
             {/* Password Field */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Password
+                Password {!isLogin && <span className="text-xs text-gray-500">(8+ chars, 1 number, 1 special char)</span>}
               </label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -333,15 +354,17 @@ export default function AuthPage() {
 
           {/* Google OAuth Button */}
           <div className="flex justify-center">
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={handleGoogleError}
-              theme="outline"
-              size="large"
-              text={isLogin ? "signin_with" : "signup_with"}
-              width="100%"
-              logo_alignment="left"
-            />
+            <div className="w-full max-w-sm">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                theme="outline"
+                size="large"
+                text={isLogin ? "signin_with" : "signup_with"}
+                width="320"
+                logo_alignment="left"
+              />
+            </div>
           </div>
 
           {/* Toggle Mode */}

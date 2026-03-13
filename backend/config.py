@@ -17,9 +17,7 @@ class Settings(BaseSettings):
     # Google OAuth
     google_client_id: str = ""
     
-    # AI APIs
-    openai_api_key: str = ""
-    anthropic_api_key: str = ""
+    # AI APIs (Only Gemini is used)
     gemini_api_key: str = ""
     
     # Payment

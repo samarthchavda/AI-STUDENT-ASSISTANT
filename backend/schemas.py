@@ -31,8 +31,13 @@ class UserInfo(BaseModel):
 
 class Token(BaseModel):
     access_token: str
+    refresh_token: Optional[str] = None
     token_type: str
     user: Optional[UserInfo] = None
+
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
 
 # Chat Schemas
 class ChatMessage(BaseModel):
@@ -93,6 +98,10 @@ class ProjectGuideRequest(BaseModel):
 class ResumeAnalyzeRequest(BaseModel):
     resumeText: str
 
+class ResumeGenerateRequest(BaseModel):
+    resumeText: str
+    templateType: str = "classic"
+
 class InterviewPrepRequest(BaseModel):
     company: str
     role: str
@@ -104,3 +113,66 @@ class PaymentCheckoutRequest(BaseModel):
 
 class PaymentVerifyRequest(BaseModel):
     sessionId: str
+
+# Company Questions Schemas (SEO Feature)
+class CompanyQuestionRequest(BaseModel):
+    question_text: str
+    category: Optional[str] = "dsa"
+    difficulty: Optional[str] = "medium"
+    topic: Optional[str] = None
+    year_asked: Optional[str] = None
+    solution_outline: Optional[str] = None
+    similar_questions: Optional[str] = None
+
+class CompanyQuestion(BaseModel):
+    id: int
+    company_name: str
+    question_text: str
+    category: str
+    difficulty: str
+    frequency: int
+    topic: Optional[str]
+    year_asked: Optional[str]
+    
+    class Config:
+        from_attributes = True
+
+class CompanyInsightsRequest(BaseModel):
+    company: str
+    include_ai_analysis: bool = True
+
+
+class CompanyPrepStartRequest(BaseModel):
+    company: str
+    role: str
+    question_count: int = 6
+
+
+class CompanyQuestionExplainRequest(BaseModel):
+    question: str
+    company: Optional[str] = None
+    role: Optional[str] = None
+
+
+class CompanyAnswerEvaluationRequest(BaseModel):
+    company: str
+    role: str
+    question: str
+    answer: str
+    round_name: str
+
+
+class PracticeHistoryItem(BaseModel):
+    id: int
+    company_name: str
+    role: str
+    round_name: str
+    question_text: str
+    user_answer: str
+    ai_feedback: Optional[str] = None
+    sample_answer: Optional[str] = None
+    score: int
+    practice_date: datetime
+
+    class Config:
+        from_attributes = True

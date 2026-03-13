@@ -19,13 +19,13 @@ export default function ServicesPage() {
     },
     {
       icon: BookOpen,
-      title: 'Exam Preparation',
-      description: 'Practice with AI-generated questions tailored to your subjects and difficulty level.',
+      title: 'Aptitude Preparation',
+      description: 'Practice quantitative aptitude, logical reasoning, verbal ability, and data interpretation for placement exams.',
       features: [
-        'Custom question generation',
-        'Multiple subjects coverage',
-        'Instant feedback and explanations',
-        'Progress tracking'
+        'Quantitative & logical reasoning',
+        'Verbal ability practice',
+        'Data interpretation questions',
+        'Progressive difficulty levels'
       ],
       color: 'from-purple-500 to-purple-600',
       link: '/exam-prep'

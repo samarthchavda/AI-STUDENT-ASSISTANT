@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Home, Check, Zap, Crown } from 'lucide-react'
+import { Check, Zap, Crown } from 'lucide-react'
 import { paymentAPI } from '../api/client'
 import { useAppStore } from '../store/useAppStore'
 import Header from '../components/Header'
@@ -101,7 +101,7 @@ export default function PricingPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50">
-      <Header title="Pricing Plans" subtitle="Choose the perfect plan for you" />
+      <Header />
 
       <div className="max-w-7xl mx-auto px-4 py-12">
         {/* Welcome Message for Authenticated Users */}

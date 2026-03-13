@@ -12,45 +12,44 @@ export default function Header() {
   }
 
   return (
-    <header className="glass-effect sticky top-0 z-50 border-b border-white/20">
-      <div className="max-w-7xl mx-auto px-4 py-4">
+    <header className="sticky top-0 z-50 border-b border-stone-200/70 bg-[rgba(255,249,239,0.82)] backdrop-blur-xl">
+      <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
-          {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity group">
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-              <Brain className="w-7 h-7 text-white" />
+          <Link to="/" className="group flex items-center gap-3 transition-opacity hover:opacity-85">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,_#0f766e,_#115e59)] text-white shadow-[0_14px_28px_rgba(15,118,110,0.28)] transition-transform group-hover:-rotate-3 group-hover:scale-105">
+              <Brain className="h-6 w-6" />
             </div>
-            <span className="text-2xl font-bold gradient-text hidden sm:block">
-              CodeCampus AI
-            </span>
+            <div className="hidden sm:block">
+              <div className="font-display text-2xl font-bold leading-none text-stone-900">CodeCampus AI</div>
+              <div className="mt-1 text-xs font-semibold uppercase tracking-[0.22em] text-stone-500">Career and study copilot</div>
+            </div>
           </Link>
 
-          {/* Navigation Links */}
-          <div className="flex items-center gap-6">
-            <nav className="hidden md:flex items-center gap-6">
-              <Link to="/chat" className="text-gray-700 hover:text-blue-600 font-medium transition-colors relative group">
-                Chat
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 group-hover:w-full transition-all duration-300"></span>
+          <div className="flex items-center gap-3 sm:gap-5">
+            <nav className="hidden items-center gap-2 rounded-full border border-stone-200 bg-white/75 p-1 shadow-[0_10px_25px_rgba(33,24,9,0.06)] md:flex">
+              <Link to="/dashboard" className="rounded-full px-4 py-2 text-sm font-semibold text-stone-700 transition hover:bg-stone-100 hover:text-stone-900">
+                Dashboard
               </Link>
-              <Link to="/services" className="text-gray-700 hover:text-blue-600 font-medium transition-colors relative group">
+              <Link to="/chat" className="rounded-full px-4 py-2 text-sm font-semibold text-stone-700 transition hover:bg-stone-100 hover:text-stone-900">
+                Copilot
+              </Link>
+              <Link to="/services" className="rounded-full px-4 py-2 text-sm font-semibold text-stone-700 transition hover:bg-stone-100 hover:text-stone-900">
                 Services
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 group-hover:w-full transition-all duration-300"></span>
               </Link>
-              <Link to="/about" className="text-gray-700 hover:text-blue-600 font-medium transition-colors relative group">
+              <Link to="/about" className="rounded-full px-4 py-2 text-sm font-semibold text-stone-700 transition hover:bg-stone-100 hover:text-stone-900">
                 About
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 group-hover:w-full transition-all duration-300"></span>
               </Link>
             </nav>
 
             {isAuthenticated && user ? (
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <Link 
                   to="/profile"
-                  className="flex items-center gap-3 bg-gradient-to-r from-blue-50 to-purple-50 px-4 py-2 rounded-xl hover:shadow-md transition-shadow"
+                  className="flex items-center gap-3 rounded-2xl border border-stone-200 bg-white/90 px-4 py-2.5 shadow-[0_10px_25px_rgba(33,24,9,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_30px_rgba(33,24,9,0.08)]"
                 >
-                  <User className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm font-semibold text-gray-700 hidden sm:block">{user.name}</span>
-                  <span className="badge badge-primary text-xs">
+                  <User className="h-4 w-4 text-teal-700" />
+                  <span className="hidden text-sm font-semibold text-stone-700 sm:block">{user.name}</span>
+                  <span className="rounded-full bg-orange-100 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-orange-700">
                     {user.plan.toUpperCase()}
                   </span>
                 </Link>
@@ -58,18 +57,18 @@ export default function Header() {
                 {user.isAdmin && (
                   <Link
                     to="/admin"
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-xl transition-colors"
+                    className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-violet-700 transition hover:bg-violet-50"
                   >
-                    <Shield className="w-4 h-4" />
+                    <Shield className="h-4 w-4" />
                     <span className="hidden sm:block">Admin</span>
                   </Link>
                 )}
                 
                 <button
                   onClick={handleLogout}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                  className="flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50"
                 >
-                  <LogOut className="w-4 h-4" />
+                  <LogOut className="h-4 w-4" />
                   <span className="hidden sm:block">Logout</span>
                 </button>
               </div>

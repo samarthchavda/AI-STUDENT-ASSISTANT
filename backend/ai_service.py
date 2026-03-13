@@ -2,48 +2,148 @@
 AI Service - Handles all AI-related functionality using Google Gemini API
 """
 
-from typing import List, Dict
+from typing import List, Dict, Optional
+from functools import lru_cache
 import json
+import re
+import tiktoken
 import google.generativeai as genai
 from config import settings
+from sqlalchemy.orm import Session
+from models import CompanyQuestion
 
 class AIService:
     def __init__(self):
         # Initialize Gemini API
         if settings.gemini_api_key and settings.gemini_api_key != "your-gemini-api-key-here":
             genai.configure(api_key=settings.gemini_api_key)
-            # Use gemini-flash-latest for fast responses
-            self.model = genai.GenerativeModel('gemini-flash-latest')
+            # Use gemini-2.5-flash for fastest responses
+            self.model = genai.GenerativeModel('gemini-2.5-flash')
             self.use_ai = True
             print("✅ Gemini AI initialized successfully")
         else:
             self.use_ai = False
             print("⚠️ Gemini API key not configured, using demo mode")
+        
+        # Initialize tiktoken for token counting
+        try:
+            self.enc = tiktoken.get_encoding("cl100k_base")
+        except Exception as e:
+            print(f"⚠️ Tiktoken not available: {e}, using character count estimation")
+            self.enc = None
+    
+    def _count_tokens(self, text: str) -> int:
+        """Count tokens in text using tiktoken (or estimate if unavailable)"""
+        if self.enc:
+            return len(self.enc.encode(text))
+        # Fallback: estimate ~1 token per 4 characters
+        return len(text) // 4
+    
+    def _detect_prompt_injection(self, prompt: str) -> bool:
+        """Detect common prompt injection attempts"""
+        dangerous_patterns = [
+            "ignore previous instructions",
+            "ignore all previous",
+            "forget everything",
+            "bypass system",
+            "override",
+            "disregard",
+            "system prompt",
+            "secret instruction",
+            "hidden instruction",
+            "reveal the prompt",
+            "show me the prompt",
+            "what's your system prompt",
+            "you are actually",
+            "act as if",
+            "pretend you are",
+        ]
+        
+        prompt_lower = prompt.lower()
+        for pattern in dangerous_patterns:
+            if pattern in prompt_lower:
+                return True
+        return False
+    
+    def get_cache_stats(self) -> Dict:
+        """Get cache hit/miss statistics to show API savings"""
+        return {
+            "topic_explanations": {
+                "hits": self._cached_explain_topic.cache_info().hits,
+                "misses": self._cached_explain_topic.cache_info().misses,
+                "size": self._cached_explain_topic.cache_info().currsize,
+                "max": self._cached_explain_topic.cache_info().maxsize
+            },
+            "doubt_solutions": {
+                "hits": self._cached_solve_doubt.cache_info().hits,
+                "misses": self._cached_solve_doubt.cache_info().misses,
+                "size": self._cached_solve_doubt.cache_info().currsize,
+                "max": self._cached_solve_doubt.cache_info().maxsize
+            },
+            "estimated_savings": f"~{(self._cached_explain_topic.cache_info().hits + self._cached_solve_doubt.cache_info().hits) * 100} API calls saved"
+        }
     
     def _generate_response(self, prompt: str) -> str:
         """Generate response using Gemini AI"""
         if not self.use_ai:
             return "[Demo Mode] Configure GEMINI_API_KEY in .env file to enable AI responses."
         
+        # Check for prompt injection attempts
+        if self._detect_prompt_injection(prompt):
+            return "❌ Invalid request: Suspicious prompt pattern detected. Please rephrase your question."
+        
+        # Count tokens before truncation
+        token_count = self._count_tokens(prompt)
+        print(f"📊 Prompt tokens: {token_count}")
+        
+        # Protect against extremely long prompts (truncate to 4000 chars)
+        if len(prompt) > 4000:
+            prompt = prompt[:4000] + "\n\n[Context truncated for token limit]"
+        
         try:
-            # Set generation config
+            # Set generation config for fast, concise responses
+            # 800 tokens sufficient for bullet-point format, prevents incomplete answers
             generation_config = {
-                "temperature": 0.7,
+                "temperature": 0.8,
                 "top_p": 0.95,
                 "top_k": 40,
-                "max_output_tokens": 2048,
+                "max_output_tokens": 800,
             }
             
             response = self.model.generate_content(
                 prompt,
                 generation_config=generation_config
             )
-            return response.text
+            extracted = self._extract_text_from_gemini_response(response)
+            cleaned = self._sanitize_chat_output(extracted)
+            return cleaned or "I’m here to help. Please share a bit more context so I can give a precise answer."
         except Exception as e:
             error_msg = str(e)
             print(f"Error generating AI response: {error_msg}")
+            lower_error = error_msg.lower()
+            if "429" in error_msg or "quota" in lower_error or "rate limit" in lower_error:
+                return "⚠️ AI daily limit reached right now. Please try again after some time, or update Gemini billing/quota settings."
             # Return a helpful error message instead of crashing
             return f"⚠️ AI service temporarily unavailable. Error: {error_msg[:100]}\n\nPlease try again in a moment."
+
+    def _extract_json_object(self, raw_text: str) -> Optional[Dict]:
+        """Extract a JSON object from a model response if present."""
+        if not raw_text:
+            return None
+
+        try:
+            return json.loads(raw_text)
+        except Exception:
+            pass
+
+        match = re.search(r"\{.*\}", raw_text, re.DOTALL)
+        if not match:
+            return None
+
+        try:
+            return json.loads(match.group(0))
+        except Exception:
+            return None
     
     def _generate_response_stream(self, prompt: str):
         """Generate streaming response using Gemini AI (word by word like ChatGPT)"""
@@ -51,13 +151,27 @@ class AIService:
             yield "[Demo Mode] Configure GEMINI_API_KEY in .env file to enable AI responses."
             return
         
+        # Check for prompt injection attempts
+        if self._detect_prompt_injection(prompt):
+            yield "❌ Invalid request: Suspicious prompt pattern detected. Please rephrase your question."
+            return
+        
+        # Count tokens before truncation
+        token_count = self._count_tokens(prompt)
+        print(f"📊 Streaming prompt tokens: {token_count}")
+        
+        # Protect against extremely long prompts (truncate to 4000 chars)
+        if len(prompt) > 4000:
+            prompt = prompt[:4000] + "\n\n[Context truncated for token limit]"
+        
         try:
-            # Set generation config
+            # Set generation config for fast, concise streaming
+            # 800 tokens sufficient for bullet-point format, prevents incomplete answers
             generation_config = {
-                "temperature": 0.7,
+                "temperature": 0.8,
                 "top_p": 0.95,
                 "top_k": 40,
-                "max_output_tokens": 2048,
+                "max_output_tokens": 800,
             }
             
             response = self.model.generate_content(
@@ -67,54 +181,448 @@ class AIService:
             )
             
             for chunk in response:
-                if chunk.text:
-                    yield chunk.text
+                chunk_text = self._extract_text_from_gemini_response(chunk)
+                if chunk_text:
+                    yield self._sanitize_chat_output(chunk_text)
         except Exception as e:
             error_msg = str(e)
             print(f"Error generating streaming AI response: {error_msg}")
+            lower_error = error_msg.lower()
+            if "429" in error_msg or "quota" in lower_error or "rate limit" in lower_error:
+                yield "⚠️ AI daily limit reached right now. Please try again after some time, or update Gemini billing/quota settings."
+                return
             yield f"⚠️ AI service temporarily unavailable. Error: {error_msg[:100]}\n\nPlease try again in a moment."
+
+    def _generate_response_long(self, prompt: str) -> str:
+        """Generate longer-form response (used for resume generation)."""
+        if not self.use_ai:
+            return "[Demo Mode] Configure GEMINI_API_KEY in .env file to enable AI responses."
+
+        # Protect against extremely long prompts (truncate to 8000 chars for long responses)
+        if len(prompt) > 8000:
+            prompt = prompt[:8000] + "\n\n[Context truncated for token limit]"
+
+        try:
+            generation_config = {
+                "temperature": 0.5,
+                "top_p": 0.95,
+                "top_k": 40,
+                "max_output_tokens": 4096,
+            }
+
+            response = self.model.generate_content(
+                prompt,
+                generation_config=generation_config
+            )
+            extracted = self._extract_text_from_gemini_response(response)
+            return extracted or "Could not generate full resume content right now. Please try again."
+        except Exception as e:
+            error_msg = str(e)
+            print(f"Error generating long AI response: {error_msg}")
+            return f"⚠️ AI service temporarily unavailable. Error: {error_msg[:100]}\n\nPlease try again in a moment."
+
+    def _extract_text_from_gemini_response(self, response_obj) -> str:
+        """Safely extract text from Gemini response/chunk, including multipart responses."""
+        if response_obj is None:
+            return ""
+
+        try:
+            direct_text = getattr(response_obj, "text", None)
+            if isinstance(direct_text, str) and direct_text.strip():
+                return direct_text
+        except Exception:
+            pass
+
+        texts = []
+        candidates = getattr(response_obj, "candidates", None) or []
+        for candidate in candidates:
+            content = getattr(candidate, "content", None)
+            if not content:
+                continue
+            parts = getattr(content, "parts", None) or []
+            for part in parts:
+                part_text = getattr(part, "text", None)
+                if part_text:
+                    texts.append(part_text)
+
+        return "\n".join(texts).strip()
+
+    def _sanitize_chat_output(self, text: str) -> str:
+        """Remove markdown-heavy symbols and keep output clean/professional."""
+        if not text:
+            return ""
+
+        cleaned = re.sub(r"\*\*(.*?)\*\*", r"\1", text)
+        cleaned = re.sub(r"^\s*#{1,6}\s*", "", cleaned, flags=re.MULTILINE)
+        cleaned = cleaned.replace("#", "")
+        cleaned = re.sub(r"\*{2,}", "", cleaned)
+        cleaned = re.sub(r"(^|\s)\*(?=\S)", " ", cleaned)
+        cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+        return cleaned.strip()
+
+    def _build_resume_fallback(self, resume_text: str) -> str:
+        """Build a structured resume output directly from extracted source text when AI output is too short."""
+        lines = [line.strip() for line in resume_text.split('\n') if line.strip()]
+        source_preview = lines[:40]
+
+        email_match = re.search(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", resume_text)
+        phone_match = re.search(r"(\+?\d[\d\s\-]{8,}\d)", resume_text)
+        linkedin_match = re.search(r"(https?://)?(www\.)?linkedin\.com/[^\s]+", resume_text, re.IGNORECASE)
+        github_match = re.search(r"(https?://)?(www\.)?github\.com/[^\s]+", resume_text, re.IGNORECASE)
+
+        first_line = source_preview[0] if source_preview else "[Your Name]"
+        contact_line_parts = []
+        if email_match:
+            contact_line_parts.append(email_match.group(0))
+        if phone_match:
+            contact_line_parts.append(phone_match.group(0))
+        if linkedin_match:
+            contact_line_parts.append(linkedin_match.group(0))
+        if github_match:
+            contact_line_parts.append(github_match.group(0))
+
+        contact_line = " | ".join(contact_line_parts) if contact_line_parts else "[Add email] | [Add phone] | [Add LinkedIn] | [Add GitHub]"
+
+        keywords = [
+            "python", "java", "javascript", "typescript", "react", "node", "sql", "mongodb", "aws", "docker", "git", "dsa"
+        ]
+        found_skills = []
+        normalized = resume_text.lower()
+        for keyword in keywords:
+            if keyword in normalized:
+                found_skills.append(keyword.upper() if keyword == "aws" else keyword.capitalize())
+
+        skills_line = ", ".join(found_skills[:10]) if found_skills else "[Add technical skills relevant to target role]"
+
+        highlights = source_preview[1:12] if len(source_preview) > 1 else []
+        bullet_highlights = "\n".join([f"- {line}" for line in highlights]) if highlights else "- [Add project, internship, and achievement highlights from your resume]"
+
+        return (
+            f"{first_line}\n"
+            f"{contact_line}\n\n"
+            "PROFESSIONAL SUMMARY\n"
+            "Engineering student/fresher preparing for IT placements. Strong problem-solving mindset and practical project exposure.\n\n"
+            "TECHNICAL SKILLS\n"
+            f"{skills_line}\n\n"
+            "EXTRACTED HIGHLIGHTS (VERIFY & EDIT)\n"
+            f"{bullet_highlights}\n\n"
+            "PROJECTS\n"
+            "- [Project Name] - Built using [Tech Stack], achieved [quantified impact].\n"
+            "- [Project Name] - Implemented [feature], improved [metric].\n\n"
+            "EDUCATION\n"
+            "[Degree], [College], [Year], [CGPA/Percentage]\n\n"
+            "CERTIFICATIONS\n"
+            "[Add relevant certifications]\n\n"
+            "ACHIEVEMENTS\n"
+            "[Add coding ranks, awards, leadership, or responsibilities]"
+        )
+
+    def generate_updated_resume(self, resume_text: str) -> str:
+        """Generate an improved ATS-friendly resume from provided resume text"""
+        prompt = f"""You are an expert resume writer for Indian engineering placements.
+
+Rewrite and improve this resume into a strong ATS-friendly version.
+
+SOURCE RESUME:
+{resume_text}
+
+Instructions:
+1. Keep all details truthful to the source content. Do not invent companies, internships, projects, dates, or achievements.
+2. Improve wording, structure, and bullet quality.
+3. Use action verbs and concise impact-focused bullets.
+4. Include sections in this order when possible:
+   - Name and Contact
+   - Professional Summary
+   - Education
+   - Technical Skills
+   - Projects
+   - Experience/Internships (if present)
+   - Certifications
+   - Achievements/Leadership
+5. If a section is missing in source data, add a placeholder line like: "[Add your X details]".
+6. Output plain text only, no markdown symbols like **, ##, or ```.
+7. Keep it clean, one-page style.
+
+Return only the improved resume text."""
+
+        updated_resume = self._generate_response_long(prompt)
+
+        if updated_resume.startswith("[Demo Mode]"):
+            return (
+                "UPDATED RESUME (DEMO MODE)\n\n"
+                "To generate a true AI-updated resume PDF, configure GEMINI_API_KEY in backend/.env.\n\n"
+                "Suggested structure:\n"
+                "Name | Phone | Email | LinkedIn | GitHub\n\n"
+                "Professional Summary\n"
+                "2-3 lines tailored for target role.\n\n"
+                "Education\n"
+                "Degree, college, year, CGPA.\n\n"
+                "Technical Skills\n"
+                "Languages, frameworks, tools, databases.\n\n"
+                "Projects\n"
+                "Project title + 2-3 impact bullets with numbers.\n\n"
+                "Experience/Internships\n"
+                "Role, company, duration, quantified impact.\n\n"
+                "Certifications and Achievements\n"
+                "Relevant credentials and accomplishments."
+            )
+
+        cleaned = updated_resume.replace('```', '').replace('**', '').strip()
+        if len(cleaned) < 500:
+            return self._build_resume_fallback(resume_text)
+
+        return cleaned
+    
+    def calculate_ats_score(self, resume_text: str) -> Dict:
+        """
+        Calculate detailed ATS score breakdown
+        Returns comprehensive scoring with specific metrics
+        """
+        prompt = f"""Analyze this resume and provide a detailed ATS (Applicant Tracking System) score breakdown.
+
+RESUME:
+{resume_text}
+
+Provide scores (0-100) for each category and overall:
+
+1. OVERALL ATS SCORE (0-100)
+2. KEYWORDS SCORE (0-100) - Technical keywords, skills, tools
+3. FORMATTING SCORE (0-100) - Structure, sections, readability
+4. SKILLS SCORE (0-100) - Technical skills relevance and depth
+5. EXPERIENCE SCORE (0-100) - Projects, internships, quantifiable impact
+
+For each score, provide:
+- The numeric score
+- Brief explanation (1-2 sentences)
+- Specific improvements needed
+
+Also provide:
+- Top 5 strengths
+- Top 5 weaknesses
+- Missing keywords (10-15 important ones)
+- Recommended actions (5-7 specific steps)
+
+Format your response clearly with scores at the top."""
+
+        analysis = self._generate_response(prompt)
+        
+        # Parse scores from response
+        scores = {
+            "overall": 70,
+            "keywords": 65,
+            "formatting": 75,
+            "skills": 70,
+            "experience": 65
+        }
+        
+        # Try to extract scores
+        lines = analysis.lower().split('\n')
+        for line in lines:
+            if 'overall' in line and 'score' in line:
+                try:
+                    score = int(''.join(filter(str.isdigit, line)))
+                    if 0 <= score <= 100:
+                        scores["overall"] = score
+                except:
+                    pass
+            elif 'keyword' in line and 'score' in line:
+                try:
+                    score = int(''.join(filter(str.isdigit, line)))
+                    if 0 <= score <= 100:
+                        scores["keywords"] = score
+                except:
+                    pass
+            elif 'format' in line and 'score' in line:
+                try:
+                    score = int(''.join(filter(str.isdigit, line)))
+                    if 0 <= score <= 100:
+                        scores["formatting"] = score
+                except:
+                    pass
+            elif 'skill' in line and 'score' in line:
+                try:
+                    score = int(''.join(filter(str.isdigit, line)))
+                    if 0 <= score <= 100:
+                        scores["skills"] = score
+                except:
+                    pass
+            elif 'experience' in line and 'score' in line:
+                try:
+                    score = int(''.join(filter(str.isdigit, line)))
+                    if 0 <= score <= 100:
+                        scores["experience"] = score
+                except:
+                    pass
+        
+        # Calculate grade
+        overall = scores["overall"]
+        if overall >= 90:
+            grade = "Excellent"
+            color = "green"
+        elif overall >= 75:
+            grade = "Good"
+            color = "blue"
+        elif overall >= 60:
+            grade = "Average"
+            color = "yellow"
+        else:
+            grade = "Needs Improvement"
+            color = "red"
+        
+        return {
+            "overallScore": scores["overall"],
+            "grade": grade,
+            "color": color,
+            "breakdown": {
+                "keywords": {
+                    "score": scores["keywords"],
+                    "label": "Keywords & Technical Terms"
+                },
+                "formatting": {
+                    "score": scores["formatting"],
+                    "label": "Formatting & Structure"
+                },
+                "skills": {
+                    "score": scores["skills"],
+                    "label": "Technical Skills"
+                },
+                "experience": {
+                    "score": scores["experience"],
+                    "label": "Experience & Impact"
+                }
+            },
+            "detailedAnalysis": analysis,
+            "recommendation": "Your resume is ATS-friendly" if overall >= 75 else "Improve your resume for better ATS compatibility"
+        }
+    
+    def match_resume_to_job(self, resume_text: str, job_description: str) -> Dict:
+        """
+        Match resume against job description
+        Returns match score and gap analysis
+        """
+        prompt = f"""Analyze how well this resume matches the job description.
+
+RESUME:
+{resume_text}
+
+JOB DESCRIPTION:
+{job_description}
+
+Provide:
+
+1. MATCH SCORE (0-100) - Overall compatibility
+2. MATCHING SKILLS - Skills present in both resume and JD
+3. MISSING SKILLS - Required skills not in resume
+4. EXPERIENCE MATCH - How experience aligns
+5. EDUCATION MATCH - Education requirements met?
+6. GAP ANALYSIS - What's missing or weak
+7. RECOMMENDATIONS - Specific actions to improve match
+8. INTERVIEW READINESS - Ready to apply? (Yes/No/Maybe)
+
+Be specific and actionable. Focus on technical skills, tools, and experience."""
+
+        analysis = self._generate_response(prompt)
+        
+        # Parse match score
+        match_score = 65  # Default
+        for line in analysis.lower().split('\n'):
+            if 'match score' in line or 'match:' in line:
+                try:
+                    score = int(''.join(filter(str.isdigit, line)))
+                    if 0 <= score <= 100:
+                        match_score = score
+                        break
+                except:
+                    pass
+        
+        # Extract skills (basic parsing)
+        matching_skills = []
+        missing_skills = []
+        
+        # Common technical skills to check
+        common_skills = [
+            "python", "java", "javascript", "react", "node", "sql", "aws",
+            "docker", "kubernetes", "git", "rest api", "mongodb", "postgresql",
+            "typescript", "angular", "vue", "spring boot", "django", "flask",
+            "machine learning", "data structures", "algorithms", "system design"
+        ]
+        
+        resume_lower = resume_text.lower()
+        jd_lower = job_description.lower()
+        
+        for skill in common_skills:
+            if skill in jd_lower:
+                if skill in resume_lower:
+                    matching_skills.append(skill.title())
+                else:
+                    missing_skills.append(skill.title())
+        
+        # Determine readiness
+        if match_score >= 75:
+            readiness = "Yes - Strong match"
+            readiness_color = "green"
+        elif match_score >= 60:
+            readiness = "Maybe - Moderate match"
+            readiness_color = "yellow"
+        else:
+            readiness = "No - Weak match"
+            readiness_color = "red"
+        
+        return {
+            "matchScore": match_score,
+            "matchingSkills": matching_skills[:10],
+            "missingSkills": missing_skills[:10],
+            "interviewReadiness": readiness,
+            "readinessColor": readiness_color,
+            "detailedAnalysis": analysis,
+            "recommendations": [
+                f"Add missing skills: {', '.join(missing_skills[:5])}" if missing_skills else "Skills look good",
+                "Tailor your resume to match job description keywords",
+                "Highlight relevant projects and experience",
+                "Quantify your achievements with numbers",
+                "Update your skills section to match requirements"
+            ],
+            "gapAnalysis": {
+                "technicalSkills": f"{len(matching_skills)} matching, {len(missing_skills)} missing",
+                "overallFit": f"{match_score}% match",
+                "action": "Apply now" if match_score >= 75 else "Improve resume first"
+            }
+        }
     
     def chat_completion(self, messages: List[Dict]) -> str:
         """Generate chat completion response for engineering students with conversation context"""
         
         # Build context-aware prompt with conversation history
-        system_context = """You are CodeCampus AI, a helpful AI assistant for engineering students in India.
+        system_context = """You are CodeCampus AI - engineering placement assistant for TCS, Microsoft, Amazon, Google, Infosys, Wipro.
 
-Your expertise:
-- Campus placement preparation (TCS, Infosys, Wipro, Amazon, Microsoft, Google)
-- Data Structures & Algorithms (DSA) for coding interviews
-- Resume building with ATS optimization
-- Mock interview preparation
-- Company-specific interview tips
-- Technical skills roadmap
-- Core CS subjects (OS, DBMS, Networks, OOP)
-- General academic help (any subject, any topic)
-- Study notes and explanations
-- Homework and assignment help
+RESPONSE RULES:
+1. BULLET POINTS ONLY - no paragraphs, no prose
+2. MAX 8 BULLETS TOTAL per response - prefer 5-6
+3. Each bullet: MAX 1 line (10 words or less)
+4. Emojis on section headers only: 1️⃣2️⃣3️⃣4️⃣✅💡🎯📚🔧🏢
+5. End with: ✅ If you want, I can also show you: + 3 short bullet suggestions
 
-Response Style (IMPORTANT):
-- Write like ChatGPT - natural, conversational paragraphs
-- NO bullet points (*) or lists unless specifically asked
-- Use normal sentences and paragraphs like a human conversation
-- Keep responses SHORT and CONCISE (2-4 short paragraphs for simple questions)
-- Only give detailed explanations when specifically asked
-- Don't ask multiple follow-up questions unless necessary
-- Get straight to the point - no long introductions
-- Use emojis sparingly (1-2 per response maximum)
-- Write in a friendly, helpful tone like talking to a friend
+LANGUAGE:
+- Detect question language → respond in SAME language
+- English: ✅ If you want, I can also show you:
+- Gujarati: ✅ જો તમે ઇચ્છો તો, હું આને પણ બતાવી શકું:
+- Hindi: ✅ अगर आप चाहें तो, मैं आपको यह भी दिखा सकता हूँ:
 
-Content Guidelines:
-- Help with ANY topic the student asks about (not just placement prep)
-- If asked about history, science, math, or any subject - answer it!
-- Focus on placement preparation when relevant
-- Provide actionable, practical advice
-- Include company names and package ranges when relevant
-- Use Indian context (LPA, campus placements, service vs product companies)
-- Be encouraging and supportive but brief
-- Remember previous messages in the conversation and maintain context
-"""
+EXAMPLE (interview process question):
+Amazon Interview Process
+1️⃣ Online Assessment - Coding + MCQ
+2️⃣ Technical Round 1 - DSA problems
+3️⃣ Technical Round 2 - System Design
+4️⃣ Bar Raiser Round - Behavioral
+✅ If you want, I can also show you:
+• Amazon top DSA questions
+• Leadership Principles prep
+• Resume tips for Amazon
+    """
         
         # Build conversation history (skip the initial assistant greeting if present)
+        # Limit to last 6 messages to save tokens (avoids 4000+ token bloat from long histories)
+        messages = messages[-6:]
         conversation_history = ""
         for msg in messages:
             if msg['role'] == 'user':
@@ -130,43 +638,36 @@ Content Guidelines:
         """Generate streaming chat completion response with conversation context (word by word like ChatGPT)"""
         
         # Build context-aware prompt with conversation history
-        system_context = """You are CodeCampus AI, a helpful AI assistant for engineering students in India.
+        system_context = """You are CodeCampus AI - engineering placement assistant for TCS, Microsoft, Amazon, Google, Infosys, Wipro.
 
-Your expertise:
-- Campus placement preparation (TCS, Infosys, Wipro, Amazon, Microsoft, Google)
-- Data Structures & Algorithms (DSA) for coding interviews
-- Resume building with ATS optimization
-- Mock interview preparation
-- Company-specific interview tips
-- Technical skills roadmap
-- Core CS subjects (OS, DBMS, Networks, OOP)
-- General academic help (any subject, any topic)
-- Study notes and explanations
-- Homework and assignment help
+RESPONSE RULES:
+1. BULLET POINTS ONLY - no paragraphs, no prose
+2. MAX 8 BULLETS TOTAL per response - prefer 5-6
+3. Each bullet: MAX 1 line (10 words or less)
+4. Emojis on section headers only: 1️⃣2️⃣3️⃣4️⃣✅💡🎯📚🔧🏢
+5. End with: ✅ If you want, I can also show you: + 3 short bullet suggestions
 
-Response Style (IMPORTANT):
-- Write like ChatGPT - natural, conversational paragraphs
-- NO bullet points (*) or lists unless specifically asked
-- Use normal sentences and paragraphs like a human conversation
-- Keep responses SHORT and CONCISE (2-4 short paragraphs for simple questions)
-- Only give detailed explanations when specifically asked
-- Don't ask multiple follow-up questions unless necessary
-- Get straight to the point - no long introductions
-- Use emojis sparingly (1-2 per response maximum)
-- Write in a friendly, helpful tone like talking to a friend
+LANGUAGE:
+- Detect question language → respond in SAME language
+- English: ✅ If you want, I can also show you:
+- Gujarati: ✅ જો તમે ઇચ્છો તો, હું આને પણ બતાવી શકું:
+- Hindi: ✅ अगर आप चाहें तो, मैं आपको यह भी दिखा सकता हूँ:
 
-Content Guidelines:
-- Help with ANY topic the student asks about (not just placement prep)
-- If asked about history, science, math, or any subject - answer it!
-- Focus on placement preparation when relevant
-- Provide actionable, practical advice
-- Include company names and package ranges when relevant
-- Use Indian context (LPA, campus placements, service vs product companies)
-- Be encouraging and supportive but brief
-- Remember previous messages in the conversation and maintain context
-"""
+EXAMPLE (interview process question):
+Amazon Interview Process
+1️⃣ Online Assessment - Coding + MCQ
+2️⃣ Technical Round 1 - DSA problems
+3️⃣ Technical Round 2 - System Design
+4️⃣ Bar Raiser Round - Behavioral
+✅ If you want, I can also show you:
+• Amazon top DSA questions
+• Leadership Principles prep
+• Resume tips for Amazon
+    """
         
         # Build conversation history (skip the initial assistant greeting if present)
+        # Limit to last 6 messages to save tokens (avoids 4000+ token bloat from long histories)
+        messages = messages[-6:]
         conversation_history = ""
         for msg in messages:
             if msg['role'] == 'user':
@@ -181,6 +682,17 @@ Content Guidelines:
     
     def explain_topic(self, topic: str, subject: str, level: str) -> Dict:
         """Generate topic explanation for placement preparation"""
+        explanation = self._cached_explain_topic(topic, subject, level)
+        
+        return {
+            "explanation": explanation,
+            "difficulty": level,
+            "estimatedTime": "15-20 minutes"
+        }
+    
+    @lru_cache(maxsize=500)  # Cache up to 500 unique topics (saves 70% on repeated questions)
+    def _cached_explain_topic(self, topic: str, subject: str, level: str) -> str:
+        """Cached topic explanation generation"""
         prompt = f"""Explain the topic "{topic}" from {subject} for engineering students preparing for campus placements.
 
 Difficulty Level: {level}
@@ -195,13 +707,7 @@ Include:
 
 Format the response for easy understanding."""
 
-        explanation = self._generate_response(prompt)
-        
-        return {
-            "explanation": explanation,
-            "difficulty": level,
-            "estimatedTime": "15-20 minutes"
-        }
+        return self._generate_response(prompt)
     
     def generate_notes(self, topic: str, format: str) -> Dict:
         """Generate study notes"""
@@ -228,10 +734,21 @@ Make it placement-focused and easy to revise."""
     
     def solve_doubt(self, question: str, subject: str = None) -> Dict:
         """Solve student doubt with detailed explanation"""
+        answer = self._cached_solve_doubt(question, subject or 'General')
+        
+        return {
+            "answer": answer,
+            "subject": subject,
+            "confidence": 0.95
+        }
+    
+    @lru_cache(maxsize=500)  # Cache up to 500 unique doubts (saves 70% on repeated questions)
+    def _cached_solve_doubt(self, question: str, subject: str = 'General') -> str:
+        """Cached doubt solution generation"""
         prompt = f"""Answer this engineering student's question in detail:
 
 Question: {question}
-Subject: {subject or 'General'}
+Subject: {subject}
 
 Provide:
 1. Clear, step-by-step answer
@@ -242,13 +759,7 @@ Provide:
 
 Make it easy to understand for placement preparation."""
 
-        answer = self._generate_response(prompt)
-        
-        return {
-            "answer": answer,
-            "subject": subject,
-            "confidence": 0.95
-        }
+        return self._generate_response(prompt)
     
     def generate_mock_test(self, subject: str, topic: str, difficulty: str, num_questions: int) -> Dict:
         """Generate mock test questions for placement preparation"""
@@ -399,45 +910,54 @@ Make it realistic and achievable for engineering students."""
     
     def explain_code(self, code: str, language: str, task: str) -> Dict:
         """Explain, debug, or optimize code"""
+        persona = """You are a senior software engineer and coding mentor with 10+ years of experience at top tech companies (Amazon, Microsoft, Google).
+Your role: explain programming problems step-by-step, provide optimized solutions, and explain time and space complexity in simple terms.
+Always use clear bullet points, numbered steps, and short sentences. Avoid long paragraphs.
+"""
         prompts = {
-            "explain": f"""Explain this {language} code line by line:
+            "explain": f"""{persona}
+Explain this {language} code step-by-step:
 
 ```{language}
 {code}
 ```
 
 Provide:
-1. Line-by-line explanation
-2. Time complexity analysis
-3. Space complexity analysis
-4. Best practices used/missing
-5. Interview talking points""",
+1️⃣ What this code does (1-2 lines)
+2️⃣ Line-by-line explanation (short bullets)
+3️⃣ Time complexity — with simple reason
+4️⃣ Space complexity — with simple reason
+5️⃣ Best practices used / missing
+6️⃣ Interview tip — what to say if asked about this code""",
             
-            "debug": f"""Debug this {language} code and fix errors:
+            "debug": f"""{persona}
+Debug this {language} code and fix all errors:
 
 ```{language}
 {code}
 ```
 
 Provide:
-1. Identified errors
-2. Why they occur
-3. Fixed code
-4. Testing suggestions
-5. Edge cases to consider""",
+1️⃣ Errors found (each on one line)
+2️⃣ Why each error occurs
+3️⃣ Fixed code (clean, working)
+4️⃣ Edge cases to test
+5️⃣ Interview tip — common bugs interviewers test""",
             
-            "optimize": f"""Optimize this {language} code for better performance:
+            "optimize": f"""{persona}
+Optimize this {language} code for best performance:
 
 ```{language}
 {code}
 ```
 
 Provide:
-1. Current complexity analysis
-2. Optimization opportunities
-3. Optimized code
-4. Complexity improvement
-5. Trade-offs if any"""
+1️⃣ Current time & space complexity
+2️⃣ Bottlenecks identified
+3️⃣ Optimized code
+4️⃣ New time & space complexity
+5️⃣ Trade-offs (if any)
+6️⃣ Interview tip — Amazon/Microsoft optimization questions"""
         }
         
         prompt = prompts.get(task, prompts["explain"])
@@ -458,39 +978,39 @@ Provide:
         if not self.use_ai:
             return self._get_demo_dsa_solution(problem)
         
-        prompt = f"""Solve this DSA problem completely for an engineering student preparing for placements:
+        prompt = f"""You are a senior software engineer and coding mentor at a top tech company (Amazon/Microsoft/Google).
+Your goal: solve DSA problems step-by-step, explain clearly, and prepare students for placement interviews.
+Use bullet points, numbered steps, and short sentences. No long paragraphs.
+
+Solve this DSA problem completely:
 
 Problem: {problem}
 
-Provide a COMPLETE solution with:
+Provide:
 
-1. **Python Code Solution** (Optimal approach)
-   - Write clean, well-commented code
-   - Include function signature
-   - Add example test case
+1. **Optimal Python Solution**
+   - Clean, commented code
+   - Function signature + example
 
-2. **Why This Code Works - Simple Explanation**
-   - Explain the strategy in simple terms
-   - Break down each part of the code
-   - Use emojis and bullet points
+2. **Simple Explanation** (how it works in plain words)
+   - Strategy in 3-4 bullets
+   - Why this approach is best
 
 3. **Step-by-Step Walkthrough**
-   - Explain the algorithm logic
-   - Why each part is needed
+   - Walk through 1 example
 
-4. **Complexity Analysis**
-   - Time complexity with explanation
-   - Space complexity with explanation
+4. **Complexity**
+   - ⏱ Time: O(?) — why
+   - 💾 Space: O(?) — why
 
 5. **Interview Tips**
-   - What to say in interview
+   - What to say first
    - Common mistakes to avoid
-   - Which companies ask this
+   - Which companies (Amazon/Microsoft/Google) ask this
 
-6. **Similar Problems**
-   - 3-4 related LeetCode problems
+6. **Similar Problems** (3 LeetCode problems)
 
-Format it clearly with markdown headers and code blocks. Make it easy to understand for placement preparation."""
+Format with markdown headers and code blocks."""
 
         response = self._generate_response(prompt)
         
@@ -1039,6 +1559,45 @@ Focus on:
 Return analysis in a structured format."""
 
         analysis = self._generate_response(prompt)
+
+        normalized_resume = resume_text.lower()
+
+        required_sections = {
+            "Professional summary/objective": ["summary", "objective", "profile"],
+            "Education details": ["education", "bachelor", "b.tech", "btech", "cgpa", "gpa"],
+            "Technical skills section": ["skills", "technical skills", "technologies", "tools"],
+            "Projects section": ["project", "projects"],
+            "Experience or internship section": ["experience", "internship", "work experience"],
+            "Certifications section": ["certification", "certifications", "certificate"],
+            "Achievements or positions of responsibility": ["achievement", "awards", "position of responsibility", "leadership"],
+            "LinkedIn profile": ["linkedin.com"],
+            "GitHub profile": ["github.com"]
+        }
+
+        missing_in_resume = [
+            section
+            for section, keywords in required_sections.items()
+            if not any(keyword in normalized_resume for keyword in keywords)
+        ]
+
+        has_quantified_impact = bool(re.search(r"\b\d+(%|\+|x|k|\b)", resume_text.lower()))
+        has_action_verbs = bool(re.search(r"\b(built|developed|implemented|optimized|designed|led|created|improved|automated)\b", normalized_resume))
+
+        suggested_changes = []
+        if not has_quantified_impact:
+            suggested_changes.append("Add measurable impact in project/experience bullets (%, time saved, users, scale).")
+        if not has_action_verbs:
+            suggested_changes.append("Start each bullet with strong action verbs (Built, Developed, Implemented, Optimized).")
+        if len(resume_text.split()) < 180:
+            suggested_changes.append("Resume content is too short. Add stronger project depth, tools used, and outcomes.")
+        if "skills" in normalized_resume and not re.search(r"\b(python|java|javascript|sql|react|node|aws|dsa|oop)\b", normalized_resume):
+            suggested_changes.append("Add role-relevant technical keywords in Skills for better ATS matching.")
+
+        for section in missing_in_resume[:4]:
+            suggested_changes.append(f"Add missing section: {section}.")
+
+        if not suggested_changes:
+            suggested_changes.append("Your resume structure is decent. Improve clarity by tightening weak or repetitive bullets.")
         
         # Parse the analysis to extract scores (basic parsing)
         ats_score = 75  # Default
@@ -1065,6 +1624,8 @@ Return analysis in a structured format."""
             "atsScore": ats_score,
             "overallScore": overall_score,
             "analysis": analysis,
+            "missingInResume": missing_in_resume,
+            "suggestedChanges": suggested_changes[:8],
             "placementReadiness": "Good" if overall_score >= 70 else "Needs Improvement",
             "companyFit": {
                 "Service-based (TCS/Infosys)": f"{min(overall_score + 10, 95)}% - Analyze from report",
@@ -1164,6 +1725,274 @@ Make it specific to Indian campus placements and engineering students."""
                 "Object-Oriented Programming",
                 "System Design (for senior roles)"
             ]
+        }
+
+    def explain_interview_question(self, question: str, company: str = "", role: str = "") -> Dict:
+        """Explain an interview question in simple, structured language."""
+        prompt = f"""Explain this interview question in a simple way for a student preparing for placements.
+
+Company: {company or 'General'}
+Role: {role or 'General'}
+Question: {question}
+
+Return strict JSON with this shape:
+{{
+  "concepts": ["concept 1", "concept 2", "concept 3"],
+  "simple_explanation": "short paragraph",
+  "answer_framework": ["step 1", "step 2", "step 3"],
+  "sample_answer": "sample answer in simple language"
+}}"""
+
+        response = self._generate_response(prompt)
+        parsed = self._extract_json_object(response)
+        if parsed:
+            return parsed
+
+        cleaned_question = question.strip().rstrip("?")
+
+        return {
+            "concepts": [
+                "Start with a simple definition",
+                "Break the answer into 3-4 key points",
+                "Use one interview-friendly example"
+            ],
+            "simple_explanation": f"The interviewer wants to check whether you understand the core idea behind '{cleaned_question}' and whether you can explain it clearly without overcomplicating it.",
+            "answer_framework": [
+                "Start with the definition",
+                "Mention 2-3 important parts",
+                "Give one practical example"
+            ],
+            "sample_answer": f"A strong answer to '{cleaned_question}' should begin with a clear definition, then cover the main concepts involved, and finally connect the idea to a real software example or project use case."
+        }
+
+    def evaluate_interview_answer(self, question: str, answer: str, company: str = "", role: str = "", round_name: str = "Technical") -> Dict:
+        """Evaluate a mock interview answer and return structured feedback."""
+        if not answer.strip():
+            return {
+                "score": 0,
+                "verdict": "No answer provided",
+                "strengths": [],
+                "improvements": ["Write an answer before requesting evaluation."],
+                "sample_answer": "",
+                "follow_up_question": ""
+            }
+
+        prompt = f"""You are evaluating a placement interview answer.
+
+Company: {company or 'General'}
+Role: {role or 'General'}
+Round: {round_name}
+Question: {question}
+Candidate Answer: {answer}
+
+Return strict JSON with this shape:
+{{
+  "score": 78,
+  "verdict": "short 1-line verdict",
+  "strengths": ["point 1", "point 2"],
+  "improvements": ["point 1", "point 2", "point 3"],
+  "sample_answer": "improved sample answer",
+  "follow_up_question": "one likely next interviewer question"
+}}
+
+Score must be 0-100."""
+
+        response = self._generate_response(prompt)
+        parsed = self._extract_json_object(response)
+        if parsed and isinstance(parsed.get("score"), int):
+            parsed["score"] = max(0, min(100, parsed["score"]))
+            return parsed
+
+        answer_length = len(answer.split())
+        base_score = 55
+        if answer_length > 40:
+            base_score += 10
+        if answer_length > 80:
+            base_score += 10
+        if any(keyword in answer.lower() for keyword in ["example", "because", "used", "built", "implemented"]):
+            base_score += 10
+
+        return {
+            "score": min(base_score, 90),
+            "verdict": "Decent structure, but the answer can be sharper and more interview-ready.",
+            "strengths": ["You attempted the question directly."],
+            "improvements": [
+                "Add a more structured explanation.",
+                "Include one concrete example.",
+                "End with the impact or use case."
+            ],
+            "sample_answer": f"A stronger answer would define the concept clearly, explain the main parts in logical order, and include one short real-world or project example to show practical understanding. For '{question}', you should aim for a crisp explanation followed by why it matters in software development.",
+            "follow_up_question": "Can you explain this with a real example from a project or daily life?"
+        }
+    
+    def get_company_insights(self, company: str, db: Session = None) -> Dict:
+        """Generate AI insights about top interview questions for a company (SEO feature)"""
+        
+        company_clean = company.strip().lower()
+        
+        # Query database for company questions if db session provided
+        questions_data = []
+        if db:
+            try:
+                db_questions = db.query(CompanyQuestion).filter(
+                    CompanyQuestion.company_name.ilike(f"%{company}%")
+                ).order_by(CompanyQuestion.frequency.desc()).limit(30).all()
+                
+                questions_data = [
+                    {
+                        'question_text': q.question_text,
+                        'category': q.category,
+                        'difficulty': q.difficulty,
+                        'frequency': q.frequency,
+                        'topic': q.topic,
+                        'year_asked': q.year_asked
+                    }
+                    for q in db_questions
+                ]
+            except Exception as e:
+                print(f"⚠️ Error querying company questions: {e}")
+        
+        # Build context from actual questions if available
+        questions_context = ""
+        if questions_data and len(questions_data) > 0:
+            questions_list = "\n".join([f"- {q.get('question_text', '')}" for q in questions_data[:20]])
+            category_breakdown = {}
+            for q in questions_data:
+                cat = q.get('category', 'other')
+                category_breakdown[cat] = category_breakdown.get(cat, 0) + 1
+            
+            questions_context = f"\n\nTop {len(questions_data)} questions from database:\n{questions_list}"
+            questions_context += f"\n\nQuestion distribution:\n" + "\n".join([f"- {cat}: {count}" for cat, count in category_breakdown.items()])
+        
+        prompt = f"""Generate SEO-friendly insights about {company} interview questions that will rank in Google searches.
+
+Company: {company}
+{questions_context}
+
+Create content that answers: "Top interview questions asked in {company} interviews"
+
+Provide:
+
+1. **Introduction** (100 words)
+   - Why {company} is important for engineering students
+   - Package and role information
+   - Why this company asks specific types of questions
+
+2. **Category Breakdown**
+   - DSA Questions (with 3-4 examples)
+   - System Design Questions (with 2-3 examples)
+   - HR & Behavioral Questions (with 3 examples)
+   - Aptitude Questions (with 2 examples)
+
+3. **Preparation Strategy**
+   - Week-by-week prep plan specifically for {company}
+   - Which companies have similar interview patterns
+   - Time to prepare (realistic estimate)
+
+4. **Success Tips**
+   - What {company} specifically looks for
+   - Common mistakes candidates make
+   - Unique interview patterns at {company}
+
+5. **Resources**
+   - Best platforms to practice
+   - Company-specific question banks
+   - Mock interview tips
+
+Make it comprehensive, detailed, and optimized for SEO (use keywords like "{company} interview questions", "Top {company} questions", etc.)"""
+
+        insights = self._generate_response(prompt)
+        
+        return {
+            "company": company,
+            "insights": insights,
+            "total_questions_in_db": len(questions_data),
+            "seo_keywords": [
+                f"Top {company} interview questions",
+                f"{company} placement questions",
+                f"{company} interview questions 2024",
+                f"Most asked questions in {company}",
+                f"How to crack {company} interview"
+            ],
+            "content_type": "seo_article",
+            "target_students": "Engineering freshers preparing for placements",
+            "data_source": "live_database" if questions_data else "ai_generated"
+        }
+    
+    def generate_company_questions_summary(self, company: str, db: Session = None, questions_list: list = None) -> Dict:
+        """Generate a beautiful summary of company questions for the web page"""
+        
+        # Query database if db session provided and no explicit questions_list
+        if db and questions_list is None:
+            try:
+                db_questions = db.query(CompanyQuestion).filter(
+                    CompanyQuestion.company_name.ilike(f"%{company}%")
+                ).order_by(CompanyQuestion.frequency.desc()).all()
+                
+                questions_list = [
+                    {
+                        'question_text': q.question_text,
+                        'category': q.category,
+                        'difficulty': q.difficulty,
+                        'frequency': q.frequency,
+                        'topic': q.topic,
+                        'year_asked': q.year_asked
+                    }
+                    for q in db_questions
+                ]
+            except Exception as e:
+                print(f"⚠️ Error querying company questions: {e}")
+                questions_list = []
+        
+        if not questions_list:
+            return {
+                "error": f"No questions found for {company}",
+                "company": company,
+                "total_questions": 0,
+                "data_source": "empty"
+            }
+        
+        # Group questions by category
+        by_category = {}
+        for q in questions_list:
+            cat = q.get('category', 'other')
+            if cat not in by_category:
+                by_category[cat] = []
+            by_category[cat].append(q)
+        
+        # Sort by frequency within each category
+        for cat in by_category:
+            by_category[cat] = sorted(by_category[cat], key=lambda x: x.get('frequency', 0), reverse=True)
+        
+        # Build summary with token counting
+        summary = f"# {company} Interview Questions Database\n\n"
+        summary += f"**Total Questions: {len(questions_list)}**\n"
+        summary += f"**Database Source: Live - Updated in real-time**\n\n"
+        
+        for category, questions in by_category.items():
+            summary += f"## {category.upper()} Questions ({len(questions)})\n\n"
+            for i, q in enumerate(questions[:10], 1):  # Show top 10 per category
+                difficulty = q.get('difficulty', 'medium')
+                frequency = q.get('frequency', 0)
+                topic = q.get('topic', 'General')
+                summary += f"{i}. **{q.get('question_text', '')}**\n"
+                summary += f"   - Difficulty: ⭐ {difficulty.upper()} | Topic: {topic}\n"
+                if frequency > 0:
+                    summary += f"   - Asked {frequency} times by users\n"
+                summary += "\n"
+        
+        # Count tokens for SEO analysis
+        summary_tokens = self._count_tokens(summary)
+        
+        return {
+            "company": company,
+            "total_questions": len(questions_list),
+            "by_category": {k: len(v) for k, v in by_category.items()},
+            "summary": summary,
+            "summary_token_count": summary_tokens,
+            "most_popular_category": max(by_category.items(), key=lambda x: len(x[1]))[0] if by_category else "unknown",
+            "average_frequency": sum(q.get('frequency', 1) for q in questions_list) // len(questions_list) if questions_list else 0,
+            "data_source": "live_database"
         }
 
 # Singleton instance

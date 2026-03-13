@@ -1,6 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { Home, Code, Bug, Lightbulb, Rocket } from 'lucide-react'
+import { Code, Bug, Lightbulb, Rocket } from 'lucide-react'
 import { codingAPI } from '../api/client'
 import Header from '../components/Header'
 
@@ -66,6 +65,28 @@ export default function CodingHelpPage() {
       <Header />
 
       <div className="max-w-6xl mx-auto px-4 py-8">
+        {/* Senior Mentor Banner */}
+        <div className="mb-8 rounded-2xl border border-green-200 bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 px-6 py-5 shadow-sm">
+          <div className="flex flex-wrap items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-green-600 text-white text-2xl shadow">
+              👨‍💻
+            </div>
+            <div className="flex-1">
+              <div className="text-xs font-semibold uppercase tracking-widest text-green-700 mb-1">AI Coding Mentor</div>
+              <h2 className="text-lg font-bold text-stone-900 mb-1">Senior Software Engineer Mode</h2>
+              <p className="text-sm text-stone-600 leading-relaxed">
+                Act as a senior software engineer and coding mentor — explains problems step-by-step, provides optimized solutions, and breaks down time &amp; space complexity in simple terms.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <span className="inline-flex items-center gap-1 rounded-full bg-white border border-green-200 px-3 py-1 text-xs font-medium text-green-700">✅ Code Explanation</span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-white border border-blue-200 px-3 py-1 text-xs font-medium text-blue-700">⚡ Optimization</span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-white border border-purple-200 px-3 py-1 text-xs font-medium text-purple-700">🎯 DSA Concepts</span>
+                <span className="inline-flex items-center gap-1 rounded-full bg-white border border-orange-200 px-3 py-1 text-xs font-medium text-orange-700">🏢 Amazon &amp; Microsoft Ready</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="flex gap-4 mb-8 flex-wrap">
           <button
             onClick={() => setSelectedTab('explain')}

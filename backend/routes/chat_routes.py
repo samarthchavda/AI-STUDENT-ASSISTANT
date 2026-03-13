@@ -11,13 +11,33 @@ import json
 
 router = APIRouter(prefix="/api", tags=["Chat & Learning"])
 
+
+def detect_message_language(text: str) -> str:
+    """Infer the response language from the user's message text."""
+    if any('\u0A80' <= char <= '\u0AFF' for char in text):
+        return "gujarati"
+    if any('\u0900' <= char <= '\u097F' for char in text):
+        return "hindi"
+    return "english"
+
+
+def resolve_chat_language(chat_request: ChatRequest) -> str:
+    requested_language = (chat_request.language or "").strip().lower()
+    if requested_language and requested_language not in {"auto", "english"}:
+        return requested_language
+
+    last_user_message = next(
+        (msg.content for msg in reversed(chat_request.messages) if msg.role == "user"),
+        ""
+    )
+    return detect_message_language(last_user_message)
+
 @router.post("/chat", response_model=ChatResponse)
 @rate_limit("30/minute")  # 30 chat messages per minute
 async def chat(request: Request, chat_request: ChatRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """Main chat endpoint with streaming, history saving and multi-language support"""
     
-    # Detect language from user message
-    language = chat_request.language if hasattr(chat_request, 'language') else "english"
+    language = resolve_chat_language(chat_request)
     
     # Build messages with language instruction
     messages = [{"role": msg.role, "content": msg.content} for msg in chat_request.messages]
@@ -60,8 +80,7 @@ async def chat(request: Request, chat_request: ChatRequest, db: Session = Depend
 async def chat_stream(request: Request, chat_request: ChatRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """Streaming chat endpoint - responses appear word by word like ChatGPT"""
     
-    # Detect language from user message
-    language = chat_request.language if hasattr(chat_request, 'language') else "english"
+    language = resolve_chat_language(chat_request)
     
     # Build messages with language instruction
     messages = [{"role": msg.role, "content": msg.content} for msg in chat_request.messages]
@@ -167,3 +186,8 @@ def solve_doubt(request: SolveDoubtRequest):
     """Solve student doubts 24/7"""
     result = ai_service.solve_doubt(request.question, request.subject)
     return result
+
+@router.get("/cache/stats")
+def get_cache_stats():
+    """Get response cache statistics and estimated cost savings"""
+    return ai_service.get_cache_stats()

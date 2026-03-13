@@ -42,6 +42,12 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'app-storage',
+        onRehydrateStorage: () => (state) => {
+          const token = localStorage.getItem('token')
+          if (!token && state?.isAuthenticated) {
+            state.logout()
+          }
+        },
     }
   )
 )

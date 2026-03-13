@@ -1,10 +1,12 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { useEffect } from 'react'
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
 import HomePage from './pages/HomePage'
 import AuthPage from './pages/AuthPage'
 import ChatPage from './pages/ChatPage'
 import ExamPrepPage from './pages/ExamPrepPage'
 import CodingHelpPage from './pages/CodingHelpPage'
 import CareerPage from './pages/CareerPage'
+import CompanyPrepPage from './pages/CompanyPrepPage'
 import PricingPage from './pages/PricingPage'
 import DashboardPage from './pages/DashboardPage'
 import AdminPage from './pages/AdminPage'
@@ -15,6 +17,13 @@ import { useAutoLogout } from './hooks/useAutoLogout'
 
 function AppRoutes() {
   useAutoLogout()
+  const location = useLocation()
+
+  useEffect(() => {
+    if (location.pathname !== '/chat') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+    }
+  }, [location.pathname])
 
   return (
     <Routes>
@@ -26,6 +35,7 @@ function AppRoutes() {
       <Route path="/exam-prep" element={<ExamPrepPage />} />
       <Route path="/coding-help" element={<CodingHelpPage />} />
       <Route path="/career" element={<CareerPage />} />
+      <Route path="/company-prep" element={<CompanyPrepPage />} />
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/dashboard" element={<DashboardPage />} />
       <Route path="/admin" element={<AdminPage />} />
@@ -38,7 +48,7 @@ function AppRoutes() {
 
 function App() {
   return (
-    <Router>
+    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AppRoutes />
     </Router>
   )

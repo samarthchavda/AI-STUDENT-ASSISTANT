@@ -1,13 +1,49 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { Home, Briefcase, FileText, Users, Upload, X } from 'lucide-react'
+import { Briefcase, FileText, Users, Upload, X } from 'lucide-react'
 import { careerAPI } from '../api/client'
 import Header from '../components/Header'
+
+const actionKeywords = {
+  update: ['improve', 'add', 'include', 'update', 'rewrite', 'optimize', 'highlight', 'quantify', 'missing', 'recommend', 'enhance', 'should'],
+  remove: ['remove', 'avoid', 'delete', 'omit', 'redundant', 'unnecessary', 'irrelevant', 'too long', 'weak statement']
+}
+
+function cleanLine(line: string) {
+  return line
+    .replace(/^[-*•\d.)\s]+/, '')
+    .replace(/^\*+\s*/, '')
+    .replace(/\*+/g, '')
+    .trim()
+}
+
+function extractActionItems(analysis: string) {
+  const lines = analysis
+    .split('\n')
+    .map(cleanLine)
+    .filter((line) => line.length > 14)
+
+  const updateItems = lines.filter((line) =>
+    actionKeywords.update.some((keyword) => line.toLowerCase().includes(keyword))
+  )
+
+  const removeItems = lines.filter((line) =>
+    actionKeywords.remove.some((keyword) => line.toLowerCase().includes(keyword))
+  )
+
+  const unique = (items: string[]) => [...new Set(items)]
+
+  return {
+    update: unique(updateItems).slice(0, 6),
+    remove: unique(removeItems).slice(0, 6)
+  }
+}
 
 export default function CareerPage() {
   const [selectedTab, setSelectedTab] = useState<'resume' | 'interview' | 'builder'>('resume')
   const [loading, setLoading] = useState(false)
+  const [pdfLoading, setPdfLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
+  const [resumeTemplate, setResumeTemplate] = useState<'classic' | 'modern' | 'minimal'>('modern')
 
   const [resumeText, setResumeText] = useState('')
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
@@ -64,6 +100,41 @@ export default function CareerPage() {
       alert('Error generating interview prep. Please try again.')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleDownloadUpdatedResume = async () => {
+    setPdfLoading(true)
+    try {
+      let response
+
+      if (uploadMethod === 'pdf' && result?.extractedText) {
+        response = await careerAPI.generateResumePDF(result.extractedText, resumeTemplate)
+      } else if (uploadMethod === 'pdf' && uploadedFile) {
+        const formData = new FormData()
+        formData.append('file', uploadedFile)
+        response = await careerAPI.generateResumePDFFromUpload(formData, resumeTemplate)
+      } else if (resumeText.trim()) {
+        response = await careerAPI.generateResumePDF(resumeText, resumeTemplate)
+      } else {
+        alert('Please analyze your resume first, then download updated PDF.')
+        return
+      }
+
+      const blob = new Blob([response.data], { type: 'application/pdf' })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = 'updated_resume.pdf'
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+    } catch (error: any) {
+      console.error('Error generating updated resume PDF:', error)
+      alert(error.response?.data?.detail || 'Could not generate updated resume PDF. Please try again.')
+    } finally {
+      setPdfLoading(false)
     }
   }
 
@@ -300,6 +371,11 @@ export default function CareerPage() {
                 {/* Resume Analysis Result */}
                 {selectedTab === 'resume' && result.analysis && (
                   <div className="space-y-4">
+                    {(() => {
+                      const actionItems = extractActionItems(result.analysis)
+
+                      return (
+                        <>
                     <div className="grid grid-cols-2 gap-4 mb-6">
                       <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
                         <p className="text-sm text-blue-700 mb-1">ATS Score</p>
@@ -316,6 +392,86 @@ export default function CareerPage() {
                     <div className="whitespace-pre-wrap bg-white p-6 rounded-lg border text-sm leading-relaxed">
                       {result.analysis}
                     </div>
+
+                    <div className="bg-gray-50 border rounded-lg p-4">
+                      <label className="block text-sm font-semibold text-gray-700 mb-2">Resume Design Template</label>
+                      <select
+                        value={resumeTemplate}
+                        onChange={(e) => setResumeTemplate(e.target.value as 'classic' | 'modern' | 'minimal')}
+                        className="w-full border rounded-lg px-3 py-2 text-sm"
+                      >
+                        <option value="classic">Classic</option>
+                        <option value="modern">Modern</option>
+                        <option value="minimal">Minimal</option>
+                      </select>
+                    </div>
+
+                    <button
+                      onClick={handleDownloadUpdatedResume}
+                      disabled={pdfLoading || (uploadMethod === 'pdf' ? !uploadedFile : !resumeText.trim())}
+                      className="w-full bg-gradient-to-r from-teal-600 to-emerald-600 text-white font-semibold py-3 px-4 rounded-lg hover:from-teal-700 hover:to-emerald-700 transition-all disabled:opacity-50"
+                    >
+                      {pdfLoading ? 'Generating Updated PDF...' : 'Download Updated Resume PDF'}
+                    </button>
+
+                    {(result.missingInResume?.length > 0 || result.suggestedChanges?.length > 0) && (
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="bg-amber-50 border-l-4 border-amber-500 p-4 rounded">
+                          <p className="font-semibold text-amber-900 mb-3">🧩 What is missing in your resume</p>
+                          {result.missingInResume?.length > 0 ? (
+                            <ul className="list-disc list-inside space-y-2 text-amber-800 text-sm">
+                              {result.missingInResume.map((item: string, idx: number) => (
+                                <li key={idx} className="ml-1">{item}</li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="text-sm text-amber-800">No major structural section is missing. Focus on improving quality and impact.</p>
+                          )}
+                        </div>
+
+                        <div className="bg-cyan-50 border-l-4 border-cyan-500 p-4 rounded">
+                          <p className="font-semibold text-cyan-900 mb-3">🛠️ Changes to make now</p>
+                          {result.suggestedChanges?.length > 0 ? (
+                            <ul className="list-disc list-inside space-y-2 text-cyan-800 text-sm">
+                              {result.suggestedChanges.map((item: string, idx: number) => (
+                                <li key={idx} className="ml-1">{item}</li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p className="text-sm text-cyan-800">Add quantified achievements, stronger action verbs, and role-specific keywords.</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="bg-emerald-50 border-l-4 border-emerald-500 p-4 rounded">
+                        <p className="font-semibold text-emerald-900 mb-3">✅ Update in Resume</p>
+                        {actionItems.update.length > 0 ? (
+                          <ul className="list-disc list-inside space-y-2 text-emerald-800 text-sm">
+                            {actionItems.update.map((item, idx) => (
+                              <li key={idx} className="ml-1">{item}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-sm text-emerald-800">Add stronger achievements with numbers, better keywords, and clearer project impact points.</p>
+                        )}
+                      </div>
+
+                      <div className="bg-rose-50 border-l-4 border-rose-500 p-4 rounded">
+                        <p className="font-semibold text-rose-900 mb-3">❌ Remove from Resume</p>
+                        {actionItems.remove.length > 0 ? (
+                          <ul className="list-disc list-inside space-y-2 text-rose-800 text-sm">
+                            {actionItems.remove.map((item, idx) => (
+                              <li key={idx} className="ml-1">{item}</li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="text-sm text-rose-800">Remove repetitive lines, vague claims, and irrelevant details that don’t support your target role.</p>
+                        )}
+                      </div>
+                    </div>
+
                     {result.companyFit && (
                       <div className="bg-gray-50 p-4 rounded-lg">
                         <p className="font-semibold text-gray-900 mb-3">🏢 Company Fit Analysis:</p>
@@ -329,6 +485,9 @@ export default function CareerPage() {
                         </div>
                       </div>
                     )}
+                        </>
+                      )
+                    })()}
                   </div>
                 )}
                 

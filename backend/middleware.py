@@ -24,11 +24,14 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         
         # Security headers
         response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-Frame-Options"] = "SAMEORIGIN"  # Changed from DENY to allow Google OAuth
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
+        
+        # Don't set restrictive COOP for auth endpoints (breaks Google OAuth)
+        if "/auth/google" not in request.url.path:
+            response.headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups"
         
         # Remove server header
         if "server" in response.headers:
@@ -162,4 +165,58 @@ def rate_limit(limit: str):
     Usage: @rate_limit("5/minute")
     """
     return limiter.limit(limit, key_func=get_rate_limit_key)
+
+
+class RateLimitMiddleware(BaseHTTPMiddleware):
+    """
+    Global rate limiting middleware
+    100 requests per minute per IP/user
+    """
+    
+    def __init__(self, app, requests_per_minute: int = 100):
+        super().__init__(app)
+        self.requests_per_minute = requests_per_minute
+        self.request_counts = {}  # {key: [(timestamp, count)]}
+        self.window_size = 60  # 60 seconds
+    
+    async def dispatch(self, request: Request, call_next: Callable):
+        # Get client identifier (IP or user token)
+        client_key = get_rate_limit_key(request)
+        current_time = time.time()
+        
+        # Clean old entries
+        if client_key in self.request_counts:
+            self.request_counts[client_key] = [
+                (ts, count) for ts, count in self.request_counts[client_key]
+                if current_time - ts < self.window_size
+            ]
+        
+        # Count requests in current window
+        if client_key not in self.request_counts:
+            self.request_counts[client_key] = []
+        
+        total_requests = sum(count for _, count in self.request_counts[client_key])
+        
+        # Check rate limit
+        if total_requests >= self.requests_per_minute:
+            return JSONResponse(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                content={
+                    "detail": f"Rate limit exceeded. Maximum {self.requests_per_minute} requests per minute.",
+                    "retry_after": 60
+                }
+            )
+        
+        # Add current request
+        self.request_counts[client_key].append((current_time, 1))
+        
+        # Process request
+        response = await call_next(request)
+        
+        # Add rate limit headers
+        response.headers["X-RateLimit-Limit"] = str(self.requests_per_minute)
+        response.headers["X-RateLimit-Remaining"] = str(self.requests_per_minute - total_requests - 1)
+        response.headers["X-RateLimit-Reset"] = str(int(current_time + self.window_size))
+        
+        return response
 
