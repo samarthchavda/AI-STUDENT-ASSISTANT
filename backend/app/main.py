@@ -60,30 +60,30 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # Security Middleware (order matters!)
 # --- AA PASTE KARO ---
 
-# 1. CORS Middleware (Must be FIRST to handle pre-flight requests)
+# 1. Security Headers
+app.add_middleware(SecurityHeadersMiddleware)
+
+# 2. IP Blocking & Validation
+app.add_middleware(IPBlockingMiddleware)
+app.add_middleware(RequestValidationMiddleware)
+
+# 3. Request Logging
+app.add_middleware(RequestLoggingMiddleware)
+
+# 4. Rate Limiting
+app.add_middleware(RateLimitMiddleware, requests_per_minute=100)
+
+# 5. CORS Middleware (Added LAST so it wraps all middleware and handles preflight early)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_build_allowed_origins(),
-    allow_origin_regex=r"https://ai-student-assistant(?:-[a-z0-9-]+)?\.vercel\.app",
+    allow_origin_regex=r"https://[a-z0-9-]+\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"],
     max_age=3600,
 )
-
-# 2. Security Headers
-app.add_middleware(SecurityHeadersMiddleware)
-
-# 3. IP Blocking & Validation
-app.add_middleware(IPBlockingMiddleware)
-app.add_middleware(RequestValidationMiddleware)
-
-# 4. Request Logging
-app.add_middleware(RequestLoggingMiddleware)
-
-# 5. Rate Limiting (Last)
-app.add_middleware(RateLimitMiddleware, requests_per_minute=100)
 
 # Include routers
 app.include_router(auth_routes.router)
