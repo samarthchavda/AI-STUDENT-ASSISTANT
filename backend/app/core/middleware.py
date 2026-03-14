@@ -29,8 +29,6 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         
-        response.headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups"
-        
         # Remove server header
         if "server" in response.headers:
             del response.headers["server"]
