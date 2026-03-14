@@ -1,13 +1,20 @@
 import axios from 'axios';
 
-const normalizeApiBaseUrl = (rawUrl: string) => {
-  const trimmed = rawUrl.trim().replace(/\/+$/, '');
-  if (!trimmed) return 'http://localhost:8000/api';
-  if (/\/api(?:\/|$)/i.test(trimmed)) return trimmed;
-  return `${trimmed}/api`;
+const resolveApiOrigin = (rawUrl: string) => {
+  const trimmed = rawUrl.trim();
+  if (!trimmed) return 'http://localhost:8000';
+
+  try {
+    const urlWithProtocol = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+    const parsed = new URL(urlWithProtocol);
+    return `${parsed.protocol}//${parsed.host}`;
+  } catch {
+    return 'http://localhost:8000';
+  }
 };
 
-const API_URL = normalizeApiBaseUrl(import.meta.env.VITE_API_URL || 'http://localhost:8000/api');
+const API_PREFIX = '/api';
+const API_URL = `${resolveApiOrigin(import.meta.env.VITE_API_URL || 'http://localhost:8000')}${API_PREFIX}`;
 
 const api = axios.create({
   baseURL: API_URL,
@@ -18,6 +25,11 @@ const api = axios.create({
 
 // Add token to requests
 api.interceptors.request.use((config) => {
+  if (config.url && !/^https?:\/\//i.test(config.url)) {
+    const normalizedPath = config.url.startsWith('/') ? config.url : `/${config.url}`;
+    config.url = normalizedPath.startsWith(`${API_PREFIX}/`) ? normalizedPath : `${API_PREFIX}${normalizedPath}`;
+  }
+
   const token = localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
