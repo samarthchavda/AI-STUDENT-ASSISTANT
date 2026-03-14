@@ -94,7 +94,13 @@ export const adminAPI = {
 
   getAllUsers: async (): Promise<AdminUser[]> => {
     const response = await api.get('/admin/users');
-    return response.data;
+    if (Array.isArray(response.data)) {
+      return response.data;
+    }
+    if (response.data?.users && Array.isArray(response.data.users)) {
+      return response.data.users;
+    }
+    return [];
   },
 
   getAllChats: async (): Promise<AdminChat[]> => {

@@ -4,7 +4,7 @@ from datetime import timedelta, datetime
 from google.oauth2 import id_token
 from google.auth.transport import requests
 from app.core.database import get_db
-from app.models import User as UserModel, RefreshToken, TokenBlacklist, PasswordResetOTP
+from app.models import User as UserModel, RefreshToken, TokenBlacklist, PasswordResetOTP, PlanType
 from app.models.schemas import UserCreate, UserLogin, User, Token, RefreshTokenRequest, ForgotPasswordRequest, ResetPasswordRequest
 from app.core.email import send_otp_email
 import hmac
@@ -29,6 +29,15 @@ from app.core.middleware import rate_limit
 import secrets
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
+
+
+def _user_plan_value(user: UserModel) -> str:
+    plan = getattr(user, "plan", None)
+    if hasattr(plan, "value"):
+        return plan.value
+    if isinstance(plan, str) and plan:
+        return plan
+    return PlanType.FREE.value
 
 
 def _hash_otp(otp: str) -> str:
@@ -98,7 +107,7 @@ async def register(request: Request, user: UserCreate, db: Session = Depends(get
             "id": db_user.id,
             "email": db_user.email,
             "name": db_user.name,
-            "plan_type": db_user.plan.value,
+                "plan_type": _user_plan_value(db_user),
             "is_admin": db_user.is_admin
         }
     }
@@ -121,12 +130,11 @@ async def login(request: Request, user_login: UserLogin, db: Session = Depends(g
             detail="Invalid credentials"
         )
     
-    # Check if this is a social-login-only account
+    # If password hash is missing, this is a Google sign-up account
     if not user.hashed_password:
-        provider = user.auth_provider or "Google"
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"This account was registered with {provider.capitalize()} Sign-In. Please use the Google button to log in."
+            detail="This account was created with Google. Please use 'Sign in with Google' to login."
         )
     
     # Check if account is locked
@@ -137,8 +145,8 @@ async def login(request: Request, user_login: UserLogin, db: Session = Depends(g
             detail=lock_message
         )
     
-    # Verify password
-    if not user.hashed_password or not verify_password(user_login.password, user.hashed_password):
+    # Verify password only for local accounts with a stored password hash
+    if not verify_password(user_login.password, user.hashed_password):
         # Handle failed login attempt
         handle_failed_login(user, db)
         
@@ -178,7 +186,7 @@ async def login(request: Request, user_login: UserLogin, db: Session = Depends(g
             "id": user.id,
             "email": user.email,
             "name": user.name,
-            "plan_type": user.plan.value,
+            "plan_type": _user_plan_value(user),
             "is_admin": user.is_admin
         }
     }
@@ -247,7 +255,7 @@ async def refresh_access_token(
             "id": user.id,
             "email": user.email,
             "name": user.name,
-            "plan_type": user.plan.value,
+            "plan_type": _user_plan_value(user),
             "is_admin": user.is_admin
         }
     }
@@ -301,6 +309,12 @@ async def logout(
 async def google_auth(request: Request, auth_data: GoogleAuthRequest, db: Session = Depends(get_db)):
     """Authenticate user with Google OAuth"""
     try:
+        if not settings.google_client_id:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Google OAuth is not configured on server. Set GOOGLE_CLIENT_ID in backend/.env and restart backend."
+            )
+
         # Verify the Google token
         idinfo = id_token.verify_oauth2_token(
             auth_data.credential, 
@@ -362,23 +376,25 @@ async def google_auth(request: Request, auth_data: GoogleAuthRequest, db: Sessio
                 "id": user.id,
                 "email": user.email,
                 "name": user.name,
-                "plan_type": user.plan.value,
+                "plan_type": _user_plan_value(user),
                 "is_admin": user.is_admin
             }
         }
         
-    except ValueError as e:
-        # Invalid token - don't expose internal error details
+    except HTTPException:
+        raise
+    except ValueError:
+        # Invalid token or audience mismatch
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication token"
+            detail="Invalid Google authentication token. Check Google OAuth Client ID match in frontend and backend."
         )
     except Exception as e:
         # Log error internally but don't expose details to user
         print(f"[SECURITY] Google auth error: {type(e).__name__}")  # Log error type only, not details
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Authentication failed"
+            detail="Google authentication failed"
         )
 
 
@@ -389,7 +405,7 @@ async def get_current_user_info(current_user: UserModel = Depends(get_current_us
         "id": current_user.id,
         "email": current_user.email,
         "name": current_user.name,
-        "plan_type": current_user.plan.value,
+        "plan_type": _user_plan_value(current_user),
         "is_admin": current_user.is_admin,
         "auth_provider": current_user.auth_provider,
         "created_at": current_user.created_at
@@ -412,12 +428,12 @@ async def forgot_password(
     and email it to the user.
 
     Always returns the same response to avoid leaking whether an email exists.
-    Only local-account users (those with a hashed_password) can reset via OTP.
+    Users from any auth provider can reset via OTP to set/update a password.
     """
     normalized_email = normalize_email(body.email)
     user = db.query(UserModel).filter(UserModel.email == normalized_email).first()
 
-    if user and user.hashed_password:
+    if user:
         otp = str(secrets.randbelow(900_000) + 100_000)  # 100000–999999
 
         # Invalidate any previous unused OTPs for this email

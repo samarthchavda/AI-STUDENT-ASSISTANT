@@ -5,12 +5,17 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
+from passlib.hash import pbkdf2_sha256
 from app.core.config import settings
 import re
 import secrets
 
 security = HTTPBearer()
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(
+    schemes=["pbkdf2_sha256", "bcrypt"],
+    deprecated="auto",
+    bcrypt__truncate_error=False,
+)
 
 # Password validation regex
 PASSWORD_REGEX = re.compile(
@@ -47,16 +52,25 @@ def normalize_email(email: str) -> str:
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify password against hash"""
+    """Verify password against hash with extra safety"""
+    # 1. Check if hashed_password exists (Google users don't have it)
     if not hashed_password:
+        print("[AUTH] No hashed password found for this user.")
         return False
-    return pwd_context.verify(plain_password, hashed_password)
-
+        
+    try:
+        # 2. Use pwd_context to verify
+        return pwd_context.verify(plain_password, hashed_password)
+    except Exception as e:
+        # 3. Log the error if bcrypt/passlib fails
+        print(f"[AUTH] Password verification error: {e}")
+        return False
 
 def get_password_hash(password: str) -> str:
-    """Hash password (bcrypt has 72 byte limit)"""
-    # Truncate password to 72 bytes for bcrypt compatibility
-    if len(password.encode('utf-8')) > 72:
+    """Hash password with safety check for bcrypt 72-byte limit"""
+    # UTF-8 encoding check jaruri che karan ke special chars vadhare jagya roke
+    pw_bytes = password.encode('utf-8')
+    if len(pw_bytes) > 72:
         password = password[:72]
     return pwd_context.hash(password)
 
@@ -125,7 +139,8 @@ def is_account_locked(user) -> tuple[bool, Optional[str]]:
 
 def handle_failed_login(user, db: Session):
     """Handle failed login attempt - lock account after 5 failures"""
-    user.failed_login_attempts += 1
+    current_attempts = user.failed_login_attempts or 0
+    user.failed_login_attempts = current_attempts + 1
     
     if user.failed_login_attempts >= 5:
         # Lock account for 15 minutes

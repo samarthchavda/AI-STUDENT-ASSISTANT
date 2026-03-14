@@ -33,22 +33,9 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Security Middleware (order matters!)
-# 1. Rate Limiting (100 requests per minute)
-app.add_middleware(RateLimitMiddleware, requests_per_minute=100)
+# --- AA PASTE KARO ---
 
-# 2. IP Blocking (first line of defense)
-app.add_middleware(IPBlockingMiddleware)
-
-# 3. Request Validation (check for malicious patterns)
-app.add_middleware(RequestValidationMiddleware)
-
-# 4. Security Headers (add security headers to responses)
-app.add_middleware(SecurityHeadersMiddleware)
-
-# 5. Request Logging (log requests for monitoring)
-app.add_middleware(RequestLoggingMiddleware)
-
-# 6. CORS middleware (must be last)
+# 1. CORS Middleware (Must be FIRST to handle pre-flight requests)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -58,15 +45,26 @@ app.add_middleware(
         "http://127.0.0.1:3000",
         "http://127.0.0.1:3001",
         "http://127.0.0.1:5173",
-        "https://accounts.google.com",  # Google OAuth
     ],
-    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"],
     max_age=3600,
 )
+
+# 2. Security Headers
+app.add_middleware(SecurityHeadersMiddleware)
+
+# 3. IP Blocking & Validation
+app.add_middleware(IPBlockingMiddleware)
+app.add_middleware(RequestValidationMiddleware)
+
+# 4. Request Logging
+app.add_middleware(RequestLoggingMiddleware)
+
+# 5. Rate Limiting (Last)
+app.add_middleware(RateLimitMiddleware, requests_per_minute=100)
 
 # Include routers
 app.include_router(auth_routes.router)

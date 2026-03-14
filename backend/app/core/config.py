@@ -1,4 +1,7 @@
 from pydantic_settings import BaseSettings
+from pathlib import Path
+
+ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
 
 class Settings(BaseSettings):
     # App
@@ -35,6 +38,7 @@ class Settings(BaseSettings):
     mail_from_name: str = "CodeCampus AI"
     
     class Config:
-        env_file = ".env"
+        env_file = str(ENV_FILE)
+        env_file_encoding = "utf-8"
 
 settings = Settings()

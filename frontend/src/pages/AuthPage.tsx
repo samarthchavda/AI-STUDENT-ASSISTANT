@@ -15,12 +15,11 @@ export default function AuthPage() {
     .map((origin) => origin.trim())
     .filter(Boolean)
 
-  // Google Sign-In is disabled on localhost for this app, but we still keep
-  // the origin metadata defined so error handlers never reference missing vars.
+  // Google Sign-In is shown when a client ID is configured and the current
+  // origin is allowed by VITE_GOOGLE_AUTHORIZED_ORIGINS (if provided).
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() || ''
-  const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(currentOrigin)
   const isCurrentOriginAuthorized = configuredGoogleOrigins.length === 0 || configuredGoogleOrigins.includes(currentOrigin)
-  const canShowGoogleLogin = Boolean(googleClientId) && !isLocalhost
+  const canShowGoogleLogin = Boolean(googleClientId) && isCurrentOriginAuthorized
   
   const [authMode, setAuthMode] = useState<'login' | 'register' | 'forgot' | 'reset'>('login')
   const [loading, setLoading] = useState(false)
@@ -259,7 +258,11 @@ export default function AuthPage() {
       navigate(from, { replace: true })
     } catch (err: any) {
       console.error('Google auth error:', err)
-      setError('Google OAuth not configured yet. Please use email/password login instead.')
+      setError(
+        err?.response?.data?.detail ||
+        err?.message ||
+        'Google authentication failed. Please try again.'
+      )
     } finally {
       setLoading(false)
     }
@@ -274,11 +277,6 @@ export default function AuthPage() {
 
       if (!isCurrentOriginAuthorized) {
         setError(`Google Sign-In is disabled for this origin (${currentOrigin}). Add this origin to VITE_GOOGLE_AUTHORIZED_ORIGINS and in Google Cloud Console > Authorized JavaScript origins.`)
-        return
-      }
-
-      if (isLocalhost) {
-        setError(`Google Sign-In is disabled on localhost (${currentOrigin}) in local development. Use email/password login or enable your deployed domain in Google Cloud Console.`)
         return
       }
 
@@ -616,17 +614,6 @@ export default function AuthPage() {
             </div>
           )}
 
-          {/* Demo Credentials */}
-          {authMode === 'login' && (
-            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-xs text-blue-800 font-semibold mb-2">Test Credentials:</p>
-              <div className="space-y-1">
-                <p className="text-xs text-blue-700"><span className="font-medium">Admin:</span> admin@gmail.com / Admin@1234</p>
-                <p className="text-xs text-blue-700"><span className="font-medium">User:</span> chavdasamarth02@gmail.com / Chavda@1234</p>
-              </div>
-              <p className="text-xs text-blue-500 mt-2">Or create your own account via Sign Up.</p>
-            </div>
-          )}
         </div>
 
         {/* Back to Home */}
