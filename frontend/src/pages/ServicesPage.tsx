@@ -73,15 +73,28 @@ export default function ServicesPage() {
     {
       icon: Target,
       title: 'Personalized Roadmap',
-      description: 'Get a customized learning path based on your goals and current skill level.',
+      description: 'A complete AI-driven path for placements including DSA and Projects.',
       features: [
-        '3-month placement plan',
-        'Daily study schedule',
-        'Skills tracking',
-        'Branch-specific preparation'
+        '300+ DSA Problem Roadmap (Topic-wise)',
+        'Best Industry-Level Project Ideas',
+        'Source Code & Architecture Guidance',
+        'Tech-stack specific learning paths'
       ],
       color: 'from-indigo-500 to-indigo-600',
-      link: '/chat'
+      link: '/roadmap'
+    },
+    {
+      icon: Code,
+      title: 'DSA Challenge',
+      description: 'Sharpen problem-solving with structured DSA challenges and placement-focused patterns.',
+      features: [
+        'Daily and weekly challenge tracks',
+        'Topic-wise coding challenge sets',
+        'Pattern-based revision roadmap',
+        'Placement company question focus'
+      ],
+      color: 'from-teal-500 to-cyan-600',
+      link: '/dsa/dashboard'
     }
   ]
 
@@ -113,9 +126,9 @@ export default function ServicesPage() {
           {services.map((service, index) => (
             <div
               key={index}
-              className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden group"
+              className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden group h-full"
             >
-              <div className="p-8">
+              <div className="p-8 h-full flex flex-col">
                 <div className={`w-16 h-16 bg-gradient-to-br ${service.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300`}>
                   <service.icon className="w-8 h-8 text-white" />
                 </div>
@@ -129,7 +142,7 @@ export default function ServicesPage() {
                 
                 <p className="text-gray-600 mb-6">{service.description}</p>
                 
-                <ul className="space-y-3 mb-6">
+                <ul className="space-y-3 mb-6 flex-1">
                   {service.features.map((feature, idx) => (
                     <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
                       <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />

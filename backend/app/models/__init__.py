@@ -71,6 +71,18 @@ class TokenBlacklist(Base):
     expires_at = Column(DateTime, nullable=False)
 
 
+class PasswordResetOTP(Base):
+    """Store HMAC-SHA256-hashed OTPs for password reset (10-minute expiry)"""
+    __tablename__ = "password_reset_otps"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, index=True, nullable=False)
+    otp_hash = Column(String, nullable=False)  # HMAC-SHA256 of the 6-digit OTP
+    expires_at = Column(DateTime, nullable=False)
+    used = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 class ChatHistory(Base):
     __tablename__ = "chat_history"
     
@@ -125,6 +137,22 @@ class CompanyQuestion(Base):
     topic = Column(String)  # "Binary Search", "Dynamic Programming", etc.
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class DSAChallengeProblem(Base):
+    __tablename__ = "dsa_challenge_problems"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=False)
+    constraints = Column(Text, nullable=True)
+    test_cases = Column(Text, nullable=True)
+    starter_code = Column(Text, nullable=True)
+    language = Column(String, default="python")
+    difficulty = Column(Enum(DifficultyLevel), default=DifficultyLevel.MEDIUM)
+    time_limit_seconds = Column(Integer, default=1800)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
     
     # Indexes for fast querying
     __table_args__ = (

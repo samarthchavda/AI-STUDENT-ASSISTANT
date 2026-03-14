@@ -26,6 +26,7 @@ import { useAppStore } from '../store/useAppStore';
 
 const APTITUDE_PROGRESS_KEY = 'aptitude_progress';
 const RESUME_ATS_SCORE_KEY = 'latest_resume_ats_score';
+const DSA_SOLVED_WITHIN_TIME_KEY = 'dsa_solved_within_time';
 
 const upcomingPlacements = [
   { companyId: 'tcs', company: 'TCS NQT', role: 'Ninja / Digital', date: '15 April 2026', package: '3.3 - 7.0 LPA', color: 'from-blue-500 to-cyan-500' },
@@ -131,6 +132,22 @@ function readAptitudeProgress(): AptitudeProgress {
   }
 }
 
+function readNumericFromStorage(keys: string[]): number {
+  for (const key of keys) {
+    const raw = localStorage.getItem(key);
+    if (raw === null || raw === undefined || raw === '') {
+      continue;
+    }
+
+    const value = Number(raw);
+    if (Number.isFinite(value) && value >= 0) {
+      return value;
+    }
+  }
+
+  return 0;
+}
+
 function toRelativeTime(dateString: string): string {
   const date = new Date(dateString);
   const now = new Date();
@@ -226,8 +243,14 @@ export default function DashboardPage() {
       );
       const overallReadiness = totalAttempts > 0 ? Math.round(weightedScore / totalAttempts) : 0;
 
-      const resumeAtsScore = Number(localStorage.getItem(RESUME_ATS_SCORE_KEY) || 0);
-      const dsaSolved = practiceHistory.filter(isDsaLike).length;
+      const resumeAtsScore = readNumericFromStorage([
+        RESUME_ATS_SCORE_KEY,
+        'resume_ats_score',
+        'resumeATSScore'
+      ]);
+      const dsaFromHistory = practiceHistory.filter(isDsaLike).length;
+      const dsaFromChallenge = readNumericFromStorage([DSA_SOLVED_WITHIN_TIME_KEY]);
+      const dsaSolved = Math.max(dsaFromHistory, dsaFromChallenge);
 
       setStats({
         overallReadiness,

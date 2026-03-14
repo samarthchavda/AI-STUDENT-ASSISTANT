@@ -945,6 +945,159 @@ Make it realistic and achievable for engineering students."""
             "dailyHours": 8,
             "targetCompanies": ["TCS", "Infosys", "Amazon", "Microsoft"]
         }
+
+    def generate_personalized_roadmap(self, tech_stack: str, level: str = "beginner", timeline_weeks: int = 12) -> Dict:
+        """
+        Generate structured roadmap JSON for a specific stack.
+        Output keys:
+        - LearningPath
+        - DSA_Problems
+        - Project_Idea
+        """
+        if not tech_stack or not tech_stack.strip():
+            return {
+                "error": "tech_stack is required"
+            }
+
+        timeline_weeks = max(4, min(int(timeline_weeks or 12), 24))
+        level = (level or "beginner").strip().lower()
+
+        system_prompt = """You are a senior placement mentor and software architect.
+Your task is to generate ONLY valid JSON for a personalized placement roadmap.
+
+STRICT OUTPUT RULES:
+1) Return ONLY one JSON object.
+2) Do not include markdown, code fences, commentary, or extra keys.
+3) JSON must contain exactly these top-level keys:
+   - LearningPath
+   - DSA_Problems
+   - Project_Idea
+
+SCHEMA:
+{
+  "LearningPath": [
+    {
+      "Week": "Week 1",
+      "Topics": ["topic1", "topic2", "topic3"],
+      "Outcome": "short outcome"
+    }
+  ],
+  "DSA_Problems": [
+    {
+      "Title": "problem name",
+      "Topic": "Arrays | Strings | Trees | Graphs | DP | etc",
+      "Difficulty": "Easy|Medium|Hard",
+      "LeetCodeLink": "https://leetcode.com/problems/.../"
+    }
+  ],
+  "Project_Idea": {
+    "Title": "unique project title",
+    "Description": "what to build",
+    "KeyFeatures": ["feature1", "feature2", "feature3", "feature4"],
+    "BoilerplateCode": "starter snippet or folder structure"
+  }
+}
+
+CONTENT RULES:
+- LearningPath must be week-by-week and practical for placements.
+- DSA_Problems must contain exactly 5 stack-relevant problems with valid LeetCode URLs.
+- Project_Idea must be advanced and portfolio-worthy for the given stack.
+- BoilerplateCode can be a short snippet or clean folder structure text.
+"""
+
+        user_prompt = f"""Tech Stack: {tech_stack}
+Skill Level: {level}
+Timeline (weeks): {timeline_weeks}
+
+Generate the roadmap JSON now."""
+
+        if not self.use_ai:
+            return {
+                "LearningPath": [
+                    {
+                        "Week": "Week 1",
+                        "Topics": [f"{tech_stack} fundamentals", "Environment setup", "Core syntax"],
+                        "Outcome": "Build and run a basic app setup"
+                    }
+                ],
+                "DSA_Problems": [
+                    {
+                        "Title": "Two Sum",
+                        "Topic": "Arrays",
+                        "Difficulty": "Easy",
+                        "LeetCodeLink": "https://leetcode.com/problems/two-sum/"
+                    },
+                    {
+                        "Title": "Best Time to Buy and Sell Stock",
+                        "Topic": "Arrays",
+                        "Difficulty": "Easy",
+                        "LeetCodeLink": "https://leetcode.com/problems/best-time-to-buy-and-sell-stock/"
+                    },
+                    {
+                        "Title": "Longest Substring Without Repeating Characters",
+                        "Topic": "Strings",
+                        "Difficulty": "Medium",
+                        "LeetCodeLink": "https://leetcode.com/problems/longest-substring-without-repeating-characters/"
+                    },
+                    {
+                        "Title": "Binary Tree Level Order Traversal",
+                        "Topic": "Trees",
+                        "Difficulty": "Medium",
+                        "LeetCodeLink": "https://leetcode.com/problems/binary-tree-level-order-traversal/"
+                    },
+                    {
+                        "Title": "Course Schedule",
+                        "Topic": "Graphs",
+                        "Difficulty": "Medium",
+                        "LeetCodeLink": "https://leetcode.com/problems/course-schedule/"
+                    }
+                ],
+                "Project_Idea": {
+                    "Title": f"{tech_stack} Placement Tracker Pro",
+                    "Description": "A full-stack platform to track applications, coding progress, and interview prep milestones.",
+                    "KeyFeatures": [
+                        "Role-based auth with JWT and refresh tokens",
+                        "DSA practice tracker with streak analytics",
+                        "Interview question workspace with AI feedback",
+                        "Realtime notifications and progress dashboard"
+                    ],
+                    "BoilerplateCode": "frontend/\n  src/\n    components/\n    pages/\n    api/\nbackend/\n  app/\n    routes/\n    services/\n    models/\n    core/"
+                }
+            }
+
+        try:
+            generation_config = {
+                "temperature": 0.3,
+                "top_p": 0.9,
+                "top_k": 40,
+                "max_output_tokens": 1800,
+            }
+            prompt = f"SYSTEM:\n{system_prompt}\n\nUSER:\n{user_prompt}"
+            response = self.model.generate_content(prompt, generation_config=generation_config)
+            raw_text = self._extract_text_from_gemini_response(response)
+
+            if raw_text:
+                raw_text = re.sub(r"^```(?:json)?\s*", "", raw_text.strip())
+                raw_text = re.sub(r"\s*```$", "", raw_text.strip())
+
+            parsed = self._extract_json_object(raw_text)
+            if not parsed:
+                raise ValueError("Could not parse roadmap JSON from Gemini response")
+
+            if not isinstance(parsed.get("LearningPath"), list):
+                parsed["LearningPath"] = []
+            if not isinstance(parsed.get("DSA_Problems"), list):
+                parsed["DSA_Problems"] = []
+            if not isinstance(parsed.get("Project_Idea"), dict):
+                parsed["Project_Idea"] = {}
+
+            parsed["DSA_Problems"] = parsed["DSA_Problems"][:5]
+            return parsed
+        except Exception as e:
+            print(f"Error generating personalized roadmap: {e}")
+            return {
+                "error": "Could not generate roadmap right now. Please try again."
+            }
     
     def explain_code(self, code: str, language: str, task: str) -> Dict:
         """Explain, debug, or optimize code"""

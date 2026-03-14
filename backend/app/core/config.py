@@ -25,6 +25,14 @@ class Settings(BaseSettings):
     stripe_webhook_secret: str = ""
     razorpay_key_id: str = ""
     razorpay_key_secret: str = ""
+
+    # Email / SMTP (for OTP delivery)
+    mail_server: str = "smtp.gmail.com"
+    mail_port: int = 587
+    mail_username: str = ""
+    mail_password: str = ""
+    mail_from: str = ""
+    mail_from_name: str = "CodeCampus AI"
     
     class Config:
         env_file = ".env"

@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import { Briefcase, FileText, Users, Upload, X, Sparkles, FileSearch, Loader2, CheckCircle2 } from 'lucide-react'
+import { Briefcase, FileText, Upload, X, Sparkles, FileSearch, Loader2, CheckCircle2 } from 'lucide-react'
 import { careerAPI } from '../api/client'
 import Header from '../components/Header'
 
 export default function CareerPage() {
-  const [selectedTab, setSelectedTab] = useState<'resume' | 'interview' | 'builder'>('resume')
+  const [selectedTab, setSelectedTab] = useState<'resume' | 'builder'>('resume')
   const [loading, setLoading] = useState(false)
   const [pdfLoading, setPdfLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
@@ -15,10 +15,6 @@ export default function CareerPage() {
   const [uploadMethod, setUploadMethod] = useState<'text' | 'pdf'>('pdf')
   const [targetRole, setTargetRole] = useState('')
   const [jobDescription, setJobDescription] = useState('')
-  const [interviewForm, setInterviewForm] = useState({
-    company: '',
-    role: ''
-  })
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -57,19 +53,6 @@ export default function CareerPage() {
     } catch (error: any) {
       console.error('Error:', error)
       alert(error.response?.data?.detail || 'Error analyzing resume. Please try again.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleInterviewPrep = async () => {
-    setLoading(true)
-    try {
-      const response = await careerAPI.interviewPrep(interviewForm.company, interviewForm.role)
-      setResult(response.data)
-    } catch (error) {
-      console.error('Error:', error)
-      alert('Error generating interview prep. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -128,17 +111,6 @@ export default function CareerPage() {
             Resume Analysis
           </button>
           <button
-            onClick={() => setSelectedTab('interview')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
-              selectedTab === 'interview' 
-                ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg' 
-                : 'bg-white text-gray-700 hover:shadow-md'
-            }`}
-          >
-            <Users className="w-5 h-5" />
-            Interview Prep
-          </button>
-          <button
             onClick={() => setSelectedTab('builder')}
             className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
               selectedTab === 'builder' 
@@ -155,7 +127,6 @@ export default function CareerPage() {
           <div className="feature-card">
             <h2 className="text-2xl font-bold mb-6 gradient-text">
               {selectedTab === 'resume' && '📄 Resume & ATS Analysis'}
-              {selectedTab === 'interview' && '🎤 Interview Preparation'}
               {selectedTab === 'builder' && '✨ Build Professional Resume'}
             </h2>
 
@@ -322,48 +293,6 @@ export default function CareerPage() {
               </div>
             )}
 
-            {selectedTab === 'interview' && (
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Company Name</label>
-                  <input
-                    type="text"
-                    value={interviewForm.company}
-                    onChange={(e) => setInterviewForm({ ...interviewForm, company: e.target.value })}
-                    placeholder="e.g., Google, TCS, Infosys"
-                    className="w-full border rounded-lg px-4 py-2"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Role</label>
-                  <input
-                    type="text"
-                    value={interviewForm.role}
-                    onChange={(e) => setInterviewForm({ ...interviewForm, role: e.target.value })}
-                    placeholder="e.g., Software Engineer, Data Analyst"
-                    className="w-full border rounded-lg px-4 py-2"
-                  />
-                </div>
-                <button
-                  onClick={handleInterviewPrep}
-                  disabled={loading || !interviewForm.company || !interviewForm.role}
-                  className="w-full btn-primary disabled:opacity-50"
-                >
-                  {loading ? 'Generating...' : 'Get Interview Prep'}
-                </button>
-                <div className="text-sm text-gray-600 bg-purple-50 p-4 rounded-lg">
-                  <strong>You'll get:</strong>
-                  <ul className="list-disc ml-5 mt-2">
-                    <li>Common interview questions</li>
-                    <li>Company-specific tips</li>
-                    <li>Technical topics to prepare</li>
-                    <li>Behavioral questions</li>
-                    <li>Salary negotiation tips</li>
-                  </ul>
-                </div>
-              </div>
-            )}
-
             {selectedTab === 'builder' && (
               <div className="space-y-4">
                 <div className="text-center py-8">
@@ -495,28 +424,6 @@ export default function CareerPage() {
                             </div>
                           ))}
                         </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-                
-                {/* Interview Prep Result */}
-                {selectedTab === 'interview' && result.preparation && (
-                  <div className="space-y-4">
-                    <div className="bg-orange-50 border-l-4 border-orange-500 p-4 rounded">
-                      <p className="font-semibold text-orange-900">🎤 Interview Prep: {result.company} - {result.role}</p>
-                    </div>
-                    <div className="whitespace-pre-wrap bg-white p-6 rounded-lg border text-sm leading-relaxed">
-                      {result.preparation}
-                    </div>
-                    {result.commonQuestions && result.commonQuestions.length > 0 && (
-                      <div className="bg-blue-50 p-4 rounded-lg">
-                        <p className="font-semibold text-blue-900 mb-3">❓ Common Questions:</p>
-                        <ol className="list-decimal list-inside space-y-2 text-blue-800">
-                          {result.commonQuestions.map((q: string, idx: number) => (
-                            <li key={idx} className="ml-2">{q}</li>
-                          ))}
-                        </ol>
                       </div>
                     )}
                   </div>

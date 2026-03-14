@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { Brain, Mail, Lock, User, AlertCircle, Sparkles } from 'lucide-react'
+import { Brain, Mail, Lock, User, AlertCircle, Sparkles, KeyRound, CheckCircle } from 'lucide-react'
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google'
 import { userAPI } from '../api/client'
 import { useAppStore } from '../store/useAppStore'
@@ -9,17 +9,31 @@ export default function AuthPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const setUser = useAppStore((state) => state.setUser)
-  // Google Sign-In is disabled on localhost — Google Cloud Console rejects these
-  // origins with a 403. The GoogleOAuthProvider in main.tsx already sets clientId
-  // to '' on localhost so this will always be false during local development.
+  const currentOrigin = window.location.origin
+  const configuredGoogleOrigins = (import.meta.env.VITE_GOOGLE_AUTHORIZED_ORIGINS || '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean)
+
+  // Google Sign-In is disabled on localhost for this app, but we still keep
+  // the origin metadata defined so error handlers never reference missing vars.
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() || ''
-  const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(window.location.origin)
+  const isLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(currentOrigin)
+  const isCurrentOriginAuthorized = configuredGoogleOrigins.length === 0 || configuredGoogleOrigins.includes(currentOrigin)
   const canShowGoogleLogin = Boolean(googleClientId) && !isLocalhost
   
-  const [isLogin, setIsLogin] = useState(true)
+  const [authMode, setAuthMode] = useState<'login' | 'register' | 'forgot' | 'reset'>('login')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [infoMessage, setInfoMessage] = useState('')
+
+  const [forgotEmail, setForgotEmail] = useState('')
+  const [forgotOtp, setForgotOtp] = useState('')
+  const [forgotNewPassword, setForgotNewPassword] = useState('')
+  const [forgotConfirmPassword, setForgotConfirmPassword] = useState('')
+  const [forgotLoading, setForgotLoading] = useState(false)
+  const [forgotError, setForgotError] = useState('')
+  const [forgotSuccess, setForgotSuccess] = useState('')
   
   const [formData, setFormData] = useState({
     name: '',
@@ -48,7 +62,7 @@ export default function AuthPage() {
       return
     }
     
-    if (!isLogin) {
+    if (authMode === 'register') {
       if (!formData.name) {
         setError('Please enter your name')
         return
@@ -79,7 +93,7 @@ export default function AuthPage() {
     setLoading(true)
 
     try {
-      if (isLogin) {
+      if (authMode === 'login') {
         // Login
         const response = await userAPI.login(formData.email, formData.password)
         const { access_token, refresh_token, user } = response.data
@@ -148,8 +162,65 @@ export default function AuthPage() {
     }
   }
 
+  const handleForgotPasswordRequest = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setForgotError('')
+    if (!forgotEmail) {
+      setForgotError('Please enter your email address.')
+      return
+    }
+    setForgotLoading(true)
+    try {
+      await userAPI.forgotPassword(forgotEmail)
+      setAuthMode('reset')
+    } catch (err: any) {
+      setForgotError(err.response?.data?.detail || 'Failed to send OTP. Please try again.')
+    } finally {
+      setForgotLoading(false)
+    }
+  }
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setForgotError('')
+    if (!forgotOtp || forgotOtp.length !== 6) {
+      setForgotError('Please enter the 6-digit OTP.')
+      return
+    }
+    if (forgotNewPassword.length < 8) {
+      setForgotError('Password must be at least 8 characters.')
+      return
+    }
+    if (!/[A-Za-z]/.test(forgotNewPassword) || !/\d/.test(forgotNewPassword) || !/[@$!%*#?&]/.test(forgotNewPassword)) {
+      setForgotError('Password must contain a letter, a number, and a special character (@$!%*#?&).')
+      return
+    }
+    if (forgotNewPassword !== forgotConfirmPassword) {
+      setForgotError('Passwords do not match.')
+      return
+    }
+    setForgotLoading(true)
+    try {
+      await userAPI.resetPassword(forgotEmail, forgotOtp, forgotNewPassword)
+      setForgotSuccess('Password reset successfully! You can now sign in.')
+      setTimeout(() => {
+        setAuthMode('login')
+        setForgotEmail('')
+        setForgotOtp('')
+        setForgotNewPassword('')
+        setForgotConfirmPassword('')
+        setForgotSuccess('')
+        setForgotError('')
+      }, 2500)
+    } catch (err: any) {
+      setForgotError(err.response?.data?.detail || 'Invalid OTP or it has expired. Please try again.')
+    } finally {
+      setForgotLoading(false)
+    }
+  }
+
   const toggleMode = () => {
-    setIsLogin(!isLogin)
+    setAuthMode(authMode === 'login' ? 'register' : 'login')
     setError('')
     setFormData({
       name: '',
@@ -164,21 +235,18 @@ export default function AuthPage() {
     setLoading(true)
 
     try {
-      if (!credentialResponse.credential) {
+      if (!credentialResponse?.credential) {
         throw new Error('No credential received from Google')
       }
 
-      // Send the credential to backend for verification
       const response = await userAPI.googleAuth(credentialResponse.credential)
       const { access_token, refresh_token, user } = response.data
-      
-      // Store tokens
+
       localStorage.setItem('token', access_token)
       if (refresh_token) {
         localStorage.setItem('refresh_token', refresh_token)
       }
-      
-      // Update user state
+
       setUser({
         id: user.id,
         email: user.email,
@@ -186,33 +254,39 @@ export default function AuthPage() {
         plan: user.plan_type,
         isAdmin: user.is_admin
       })
-      
-      // Redirect to the page they were trying to access, or dashboard
+
       const from = (location.state as any)?.from?.pathname || (user.is_admin ? '/admin' : '/dashboard')
       navigate(from, { replace: true })
-      
     } catch (err: any) {
       console.error('Google auth error:', err)
-      setError(
-        'Google OAuth not configured yet. Please use email/password login instead.'
-      )
+      setError('Google OAuth not configured yet. Please use email/password login instead.')
     } finally {
       setLoading(false)
     }
   }
 
   const handleGoogleError = () => {
-    if (!googleClientId) {
-      setError('Google Sign-In is not configured. Please set VITE_GOOGLE_CLIENT_ID in frontend/.env')
-      return
-    }
+    try {
+      if (!googleClientId) {
+        setError('Google Sign-In is not configured. Please set VITE_GOOGLE_CLIENT_ID in frontend/.env')
+        return
+      }
 
-    if (!isCurrentOriginAuthorized) {
-      setError(`Google Sign-In is disabled for this origin (${currentOrigin}). Add this origin to VITE_GOOGLE_AUTHORIZED_ORIGINS and in Google Cloud Console > Authorized JavaScript origins.`)
-      return
-    }
+      if (!isCurrentOriginAuthorized) {
+        setError(`Google Sign-In is disabled for this origin (${currentOrigin}). Add this origin to VITE_GOOGLE_AUTHORIZED_ORIGINS and in Google Cloud Console > Authorized JavaScript origins.`)
+        return
+      }
 
-    setError('Google authentication failed. If console shows "origin is not allowed", add this origin in Google Cloud Console Authorized JavaScript origins.')
+      if (isLocalhost) {
+        setError(`Google Sign-In is disabled on localhost (${currentOrigin}) in local development. Use email/password login or enable your deployed domain in Google Cloud Console.`)
+        return
+      }
+
+      setError('Google authentication failed. If console shows "origin is not allowed", add this origin in Google Cloud Console Authorized JavaScript origins.')
+    } catch (err) {
+      console.error('Google error handler failed:', err)
+      setError('Authentication is temporarily unavailable. Please use email/password login instead.')
+    }
   }
 
   return (
@@ -231,179 +305,319 @@ export default function AuthPage() {
             <span className="text-4xl font-bold gradient-text">CodeCampus AI</span>
           </Link>
           <h1 className="text-3xl font-bold text-gray-900 mb-3">
-            {isLogin ? 'Welcome Back! 👋' : 'Start Your Journey 🚀'}
+            {authMode === 'login' && 'Welcome Back! 👋'}
+            {authMode === 'register' && 'Start Your Journey 🚀'}
+            {authMode === 'forgot' && 'Reset Password 🔑'}
+            {authMode === 'reset' && 'Verify OTP 🔐'}
           </h1>
           <p className="text-gray-600 text-lg">
-            {isLogin 
-              ? 'Continue your placement preparation' 
-              : 'Join thousands of engineering students getting placed'}
+            {authMode === 'login' && 'Continue your placement preparation'}
+            {authMode === 'register' && 'Join thousands of engineering students getting placed'}
+            {authMode === 'forgot' && "We'll send a 6-digit OTP to your email"}
+            {authMode === 'reset' && `OTP sent to ${forgotEmail}`}
           </p>
         </div>
 
-        {/* Auth Form */}
+        {/* Card */}
         <div className="glass-effect rounded-3xl shadow-2xl p-8 border border-white/20">
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Info Message (Session expiration, etc.) */}
-            {infoMessage && (
-              <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                <span className="text-sm">{infoMessage}</span>
-              </div>
-            )}
 
-            {/* Error Message */}
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
-                <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                <span className="text-sm">{error}</span>
-              </div>
-            )}
-
-            {/* Name Field (Register Only) */}
-            {!isLogin && (
+          {/* ── Panel: Login / Register ── */}
+          {(authMode === 'login' || authMode === 'register') && (
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {infoMessage && (
+                <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                  <span className="text-sm">{infoMessage}</span>
+                </div>
+              )}
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                  <span className="text-sm">{error}</span>
+                </div>
+              )}
+              {authMode === 'register' && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Full Name</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="text"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="input-modern pl-12"
+                      placeholder="John Doe"
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+              )}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Full Name
-                </label>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
                 <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="input-modern pl-12"
-                    placeholder="John Doe"
+                    placeholder="you@example.com"
                     disabled={loading}
                   />
                 </div>
               </div>
-            )}
-
-            {/* Email Field */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Email Address
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="input-modern pl-12"
-                  placeholder="you@example.com"
-                  disabled={loading}
-                />
-              </div>
-            </div>
-
-            {/* Password Field */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Password {!isLogin && <span className="text-xs text-gray-500">(8+ chars, 1 number, 1 special char)</span>}
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="input-modern pl-12"
-                  placeholder="••••••••"
-                  disabled={loading}
-                />
-              </div>
-            </div>
-
-            {/* Confirm Password (Register Only) */}
-            {!isLogin && (
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Confirm Password
+                  Password{authMode === 'register' && <span className="text-xs text-gray-500 ml-1">(8+ chars, 1 number, 1 special char)</span>}
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
                     type="password"
-                    value={formData.confirmPassword}
-                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     className="input-modern pl-12"
                     placeholder="••••••••"
                     disabled={loading}
                   />
                 </div>
               </div>
-            )}
-
-            {/* Submit Button */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full btn-primary py-4 text-lg font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <>
-                  <div className="loading-spinner w-5 h-5"></div>
-                  {isLogin ? 'Signing In...' : 'Creating Account...'}
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-5 h-5" />
-                  {isLogin ? 'Sign In' : 'Create Account'}
-                </>
-              )}
-            </button>
-          </form>
-
-          {/* Divider */}
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Or continue with</span>
-            </div>
-          </div>
-
-          {/* Google OAuth Button */}
-          <div className="flex justify-center">
-            <div className="w-full max-w-sm">
-              {canShowGoogleLogin ? (
-                <GoogleLogin
-                  onSuccess={handleGoogleSuccess}
-                  onError={handleGoogleError}
-                  theme="outline"
-                  size="large"
-                  text={isLogin ? "signin_with" : "signup_with"}
-                  width="320"
-                  logo_alignment="left"
-                />
-              ) : (
-                <div className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
-                  {!googleClientId
-                    ? 'Google Sign-In is not configured for this app.'
-                    : `Google Sign-In is disabled for this origin: ${currentOrigin}`}
+              {authMode === 'login' && (
+                <div className="text-right -mt-2">
+                  <button
+                    type="button"
+                    onClick={() => { setAuthMode('forgot'); setForgotError(''); setForgotEmail(''); }}
+                    className="text-sm text-primary-600 hover:text-primary-700 font-medium transition-colors"
+                  >
+                    Forgot Password?
+                  </button>
                 </div>
               )}
-            </div>
-          </div>
-
-          {/* Toggle Mode */}
-          <div className="mt-6 text-center">
-            <p className="text-gray-600">
-              {isLogin ? "Don't have an account? " : "Already have an account? "}
+              {authMode === 'register' && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Confirm Password</label>
+                  <div className="relative">
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="password"
+                      value={formData.confirmPassword}
+                      onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                      className="input-modern pl-12"
+                      placeholder="••••••••"
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+              )}
               <button
-                onClick={toggleMode}
-                className="text-primary-600 font-semibold hover:text-primary-700 transition-colors"
+                type="submit"
                 disabled={loading}
+                className="w-full btn-primary py-4 text-lg font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isLogin ? 'Sign Up' : 'Sign In'}
+                {loading ? (
+                  <>
+                    <div className="loading-spinner w-5 h-5"></div>
+                    {authMode === 'login' ? 'Signing In...' : 'Creating Account...'}
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-5 h-5" />
+                    {authMode === 'login' ? 'Sign In' : 'Create Account'}
+                  </>
+                )}
               </button>
-            </p>
-          </div>
+            </form>
+          )}
 
-          {/* Demo Credentials (for testing) */}
-          {isLogin && (
+          {/* ── Panel: Forgot Password (Step 1 — Email) ── */}
+          {authMode === 'forgot' && (
+            <form onSubmit={handleForgotPasswordRequest} className="space-y-5">
+              {forgotError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                  <span className="text-sm">{forgotError}</span>
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="email"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    className="input-modern pl-12"
+                    placeholder="you@example.com"
+                    autoFocus
+                    disabled={forgotLoading}
+                  />
+                </div>
+              </div>
+              <button
+                type="submit"
+                disabled={forgotLoading}
+                className="w-full btn-primary py-4 text-lg font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {forgotLoading
+                  ? <div className="loading-spinner w-5 h-5" />
+                  : <><KeyRound className="w-5 h-5" /> Send OTP</>}
+              </button>
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => { setAuthMode('login'); setForgotError(''); }}
+                  className="text-sm text-primary-600 hover:text-primary-700 font-medium transition-colors"
+                >
+                  ← Back to Login
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* ── Panel: Reset Password (Step 2 — OTP + New Password) ── */}
+          {authMode === 'reset' && (
+            <form onSubmit={handleResetPassword} className="space-y-5">
+              {forgotError && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                  <span className="text-sm">{forgotError}</span>
+                </div>
+              )}
+              {forgotSuccess && (
+                <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 flex-shrink-0" />
+                  <span className="text-sm">{forgotSuccess}</span>
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">6-Digit OTP</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={forgotOtp}
+                  onChange={(e) => setForgotOtp(e.target.value.replace(/\D/g, ''))}
+                  className="input-modern tracking-[0.5em] text-center text-xl font-bold"
+                  placeholder="000000"
+                  autoFocus
+                  disabled={forgotLoading || !!forgotSuccess}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  New Password <span className="text-xs text-gray-500">(8+ chars, 1 number, 1 special)</span>
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="password"
+                    value={forgotNewPassword}
+                    onChange={(e) => setForgotNewPassword(e.target.value)}
+                    className="input-modern pl-12"
+                    placeholder="••••••••"
+                    disabled={forgotLoading || !!forgotSuccess}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Confirm New Password
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="password"
+                    value={forgotConfirmPassword}
+                    onChange={(e) => setForgotConfirmPassword(e.target.value)}
+                    className={`input-modern pl-12 ${
+                      forgotConfirmPassword && forgotNewPassword !== forgotConfirmPassword
+                        ? 'border-red-400 focus:ring-red-300'
+                        : ''
+                    }`}
+                    placeholder="••••••••"
+                    disabled={forgotLoading || !!forgotSuccess}
+                  />
+                </div>
+                {forgotConfirmPassword && forgotNewPassword !== forgotConfirmPassword && (
+                  <p className="mt-1.5 text-xs text-red-600 flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5" /> Passwords do not match
+                  </p>
+                )}
+              </div>
+              <button
+                type="submit"
+                disabled={forgotLoading || !!forgotSuccess || (!!forgotConfirmPassword && forgotNewPassword !== forgotConfirmPassword)}
+                className="w-full btn-primary py-4 text-lg font-semibold flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {forgotLoading
+                  ? <div className="loading-spinner w-5 h-5" />
+                  : <><Sparkles className="w-5 h-5" /> Reset Password</>}
+              </button>
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => { setAuthMode('login'); setForgotError(''); setForgotOtp(''); setForgotNewPassword(''); setForgotConfirmPassword(''); setForgotSuccess(''); }}
+                  className="text-sm text-primary-600 hover:text-primary-700 font-medium transition-colors"
+                >
+                  ← Back to Login
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* Divider + Google OAuth (login/register only) */}
+          {(authMode === 'login' || authMode === 'register') && (
+            <>
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-300"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-gray-500">Or continue with</span>
+                </div>
+              </div>
+              <div className="flex justify-center">
+                <div className="w-full max-w-sm">
+                  {canShowGoogleLogin ? (
+                    <GoogleLogin
+                      onSuccess={handleGoogleSuccess}
+                      onError={handleGoogleError}
+                      theme="outline"
+                      size="large"
+                      text={authMode === 'login' ? 'signin_with' : 'signup_with'}
+                      width="320"
+                      logo_alignment="left"
+                    />
+                  ) : (
+                    <div className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+                      {!googleClientId
+                        ? 'Google Sign-In is not configured for this app.'
+                        : `Google Sign-In is disabled for this origin: ${currentOrigin}`}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Toggle Mode (login/register only) */}
+          {(authMode === 'login' || authMode === 'register') && (
+            <div className="mt-6 text-center">
+              <p className="text-gray-600">
+                {authMode === 'login' ? "Don't have an account? " : 'Already have an account? '}
+                <button
+                  onClick={toggleMode}
+                  className="text-primary-600 font-semibold hover:text-primary-700 transition-colors"
+                  disabled={loading}
+                >
+                  {authMode === 'login' ? 'Sign Up' : 'Sign In'}
+                </button>
+              </p>
+            </div>
+          )}
+
+          {/* Demo Credentials */}
+          {authMode === 'login' && (
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-xs text-blue-800 font-semibold mb-2">Test Credentials:</p>
               <div className="space-y-1">
@@ -417,8 +631,8 @@ export default function AuthPage() {
 
         {/* Back to Home */}
         <div className="text-center mt-6">
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             className="text-gray-600 hover:text-gray-900 transition-colors font-medium"
           >
             ← Back to Home

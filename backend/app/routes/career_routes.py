@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, Form, Depends, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
-from app.models.schemas import ResumeAnalyzeRequest, InterviewPrepRequest, ResumeGenerateRequest
+from app.models.schemas import ResumeAnalyzeRequest, InterviewPrepRequest, ResumeGenerateRequest, PersonalizedRoadmapRequest
 from app.services.ai_service import ai_service
 from app.core.middleware import rate_limit
 from app.core.database import get_db
@@ -355,6 +355,25 @@ async def match_job_description(
 async def interview_preparation(request: Request, req: InterviewPrepRequest):
     """Get company-specific interview preparation"""
     result = ai_service.interview_prep(req.company, req.role)
+    return result
+
+
+@router.post("/roadmap")
+@rate_limit("10/minute")
+async def generate_personalized_roadmap(request: Request, req: PersonalizedRoadmapRequest):
+    """
+    Generate structured personalized roadmap JSON for a given tech stack.
+
+    Returns JSON with keys:
+    - LearningPath
+    - DSA_Problems
+    - Project_Idea
+    """
+    result = ai_service.generate_personalized_roadmap(
+        tech_stack=req.tech_stack,
+        level=req.level or "beginner",
+        timeline_weeks=req.timeline_weeks or 12,
+    )
     return result
 
 

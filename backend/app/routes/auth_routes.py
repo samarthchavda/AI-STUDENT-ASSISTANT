@@ -4,8 +4,11 @@ from datetime import timedelta, datetime
 from google.oauth2 import id_token
 from google.auth.transport import requests
 from app.core.database import get_db
-from app.models import User as UserModel, RefreshToken, TokenBlacklist
-from app.models.schemas import UserCreate, UserLogin, User, Token, RefreshTokenRequest
+from app.models import User as UserModel, RefreshToken, TokenBlacklist, PasswordResetOTP
+from app.models.schemas import UserCreate, UserLogin, User, Token, RefreshTokenRequest, ForgotPasswordRequest, ResetPasswordRequest
+from app.core.email import send_otp_email
+import hmac
+import hashlib
 from app.core.auth import (
     verify_password, 
     get_password_hash, 
@@ -26,6 +29,13 @@ from app.core.middleware import rate_limit
 import secrets
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
+
+
+def _hash_otp(otp: str) -> str:
+    """Return the HMAC-SHA256 hex digest of an OTP using the app secret key."""
+    return hmac.new(
+        settings.secret_key.encode(), otp.encode(), hashlib.sha256
+    ).hexdigest()
 
 class GoogleAuthRequest(BaseModel):
     credential: str
@@ -384,3 +394,108 @@ async def get_current_user_info(current_user: UserModel = Depends(get_current_us
         "auth_provider": current_user.auth_provider,
         "created_at": current_user.created_at
     }
+
+
+# ---------------------------------------------------------------------------
+# Forgot-password / Reset-password (OTP-based)
+# ---------------------------------------------------------------------------
+
+@router.post("/forgot-password")
+@rate_limit("5/minute")
+async def forgot_password(
+    request: Request,
+    body: ForgotPasswordRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Generate a 6-digit OTP, store it (HMAC-hashed) with a 10-minute expiry,
+    and email it to the user.
+
+    Always returns the same response to avoid leaking whether an email exists.
+    Only local-account users (those with a hashed_password) can reset via OTP.
+    """
+    normalized_email = normalize_email(body.email)
+    user = db.query(UserModel).filter(UserModel.email == normalized_email).first()
+
+    if user and user.hashed_password:
+        otp = str(secrets.randbelow(900_000) + 100_000)  # 100000–999999
+
+        # Invalidate any previous unused OTPs for this email
+        db.query(PasswordResetOTP).filter(
+            PasswordResetOTP.email == normalized_email,
+            PasswordResetOTP.used == False,
+        ).update({"used": True})
+
+        otp_entry = PasswordResetOTP(
+            email=normalized_email,
+            otp_hash=_hash_otp(otp),
+            expires_at=datetime.utcnow() + timedelta(minutes=10),
+        )
+        db.add(otp_entry)
+        db.commit()
+
+        try:
+            send_otp_email(normalized_email, otp)
+        except RuntimeError:
+            # Email delivery failed — roll back the OTP so the user can retry
+            db.delete(otp_entry)
+            db.commit()
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Could not deliver OTP email. Please try again later.",
+            )
+
+    # Always return the same message (don't reveal whether the email exists)
+    return {"message": "If this email is registered, you will receive an OTP shortly."}
+
+
+@router.post("/reset-password")
+@rate_limit("10/minute")
+async def reset_password(
+    request: Request,
+    body: ResetPasswordRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Verify the OTP submitted by the user, check expiry, then update the
+    password (hashed) in the database and mark the OTP as used.
+    """
+    normalized_email = normalize_email(body.email)
+
+    # Find the most-recent valid (unused, non-expired) OTP for this email
+    otp_entry = (
+        db.query(PasswordResetOTP)
+        .filter(
+            PasswordResetOTP.email == normalized_email,
+            PasswordResetOTP.used == False,
+            PasswordResetOTP.expires_at > datetime.utcnow(),
+        )
+        .order_by(PasswordResetOTP.created_at.desc())
+        .first()
+    )
+
+    # Constant-time comparison to prevent timing attacks
+    if not otp_entry or not hmac.compare_digest(
+        otp_entry.otp_hash, _hash_otp(body.otp)
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired OTP.",
+        )
+
+    # Validate new password strength
+    is_valid, message = validate_password_strength(body.new_password)
+    if not is_valid:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
+
+    user = db.query(UserModel).filter(UserModel.email == normalized_email).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found."
+        )
+
+    user.hashed_password = get_password_hash(body.new_password)
+    otp_entry.used = True
+    db.commit()
+
+    return {"message": "Password updated successfully."}

@@ -39,6 +39,16 @@ class Token(BaseModel):
 class RefreshTokenRequest(BaseModel):
     refresh_token: str
 
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    otp: str
+    new_password: str
+
 # Chat Schemas
 class ChatMessage(BaseModel):
     role: str
@@ -95,6 +105,19 @@ class ProjectGuideRequest(BaseModel):
     projectType: str
     techStack: List[str]
 
+
+class ChallengeSubmitRequest(BaseModel):
+    problem_id: int
+    code: str
+    language: str = "python"
+    submission_reason: Optional[str] = "manual"  # manual | timeout | disqualified
+    time_left_seconds: Optional[int] = 0
+    disqualified: Optional[bool] = False
+
+
+class ChallengeRewardRequest(BaseModel):
+    solved_count: int
+
 # Career Schemas
 class ResumeAnalyzeRequest(BaseModel):
     resumeText: str
@@ -108,6 +131,12 @@ class ResumeGenerateRequest(BaseModel):
 class InterviewPrepRequest(BaseModel):
     company: str
     role: str
+
+
+class PersonalizedRoadmapRequest(BaseModel):
+    tech_stack: str
+    level: Optional[str] = "beginner"
+    timeline_weeks: Optional[int] = 12
 
 # Payment Schemas
 class PaymentCheckoutRequest(BaseModel):

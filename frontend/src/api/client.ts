@@ -227,6 +227,27 @@ export const codingAPI = {
   
   projectGuidance: (projectType: string, techStack: string[]) => 
     api.post('/coding/project-guide', { projectType, techStack }),
+
+  getChallengeProblem: () =>
+    api.get('/coding/challenge/problem'),
+
+  getChallengeProblemById: (id: number | string) =>
+    api.get(`/coding/challenge/problem/${id}`),
+
+  getChallengeQuestions: () =>
+    api.get<{ questions: Array<{ id: number; title: string; difficulty: 'easy' | 'medium' | 'hard'; time_limit_seconds: number }> }>('/coding/challenge/questions'),
+
+  submitChallengeSolution: (payload: {
+    problem_id: number | string
+    code: string
+    language: string
+    submission_reason?: 'manual' | 'timeout' | 'disqualified'
+    time_left_seconds?: number
+    disqualified?: boolean
+  }) => api.post('/coding/challenge/submit', payload),
+
+  grantFifteenDayReward: (payload: { solved_count: number }) =>
+    api.post('/coding/challenge/reward', payload),
 }
 
 export const careerAPI = {
@@ -331,6 +352,12 @@ export const userAPI = {
   
   googleAuth: (credential: string) =>
     api.post('/auth/google', { credential }),
+
+  forgotPassword: (email: string) =>
+    api.post('/auth/forgot-password', { email }),
+
+  resetPassword: (email: string, otp: string, new_password: string) =>
+    api.post('/auth/reset-password', { email, otp, new_password }),
   
   getProfile: () =>
     api.get('/user/profile'),

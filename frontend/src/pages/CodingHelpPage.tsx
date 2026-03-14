@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Code, Bug, Lightbulb, Rocket, Terminal, Loader2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Code, Bug, Lightbulb, Rocket, Terminal, Loader2, Clock3, ShieldAlert } from 'lucide-react'
 import { codingAPI } from '../api/client'
 import Header from '../components/Header'
 
@@ -43,7 +43,7 @@ print(two_sum([2, 7, 11, 15], 9))  # Output: [0, 1]`,
 ]
 
 export default function CodingHelpPage() {
-  const [selectedTab, setSelectedTab] = useState<'explain' | 'debug' | 'dsa' | 'project'>('explain')
+  const [selectedTab, setSelectedTab] = useState<'explain' | 'debug' | 'dsa' | 'project' | 'challenge'>('explain')
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
 
@@ -58,6 +58,157 @@ export default function CodingHelpPage() {
     projectType: '',
     techStack: ''
   })
+
+  const [challengeProblem, setChallengeProblem] = useState<any>(null)
+  const [challengeCode, setChallengeCode] = useState('')
+  const [challengeLoading, setChallengeLoading] = useState(false)
+  const [challengeSubmitting, setChallengeSubmitting] = useState(false)
+  const [timeLeft, setTimeLeft] = useState(30 * 60)
+  const [tabSwitchWarnings, setTabSwitchWarnings] = useState(0)
+  const [warningMessage, setWarningMessage] = useState('')
+  const [isLocked, setIsLocked] = useState(false)
+  const [isSubmitted, setIsSubmitted] = useState(false)
+  const [isDisqualified, setIsDisqualified] = useState(false)
+  const [challengeResult, setChallengeResult] = useState<any>(null)
+  const [rewardStatus, setRewardStatus] = useState('')
+  const [solvedWithinTime, setSolvedWithinTime] = useState<number>(() => Number(localStorage.getItem('dsa_solved_within_time') || 0))
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+  }
+
+  const fetchChallengeProblem = async () => {
+    setChallengeLoading(true)
+    setWarningMessage('')
+    try {
+      const response = await codingAPI.getChallengeProblem()
+      const problem = response.data
+      setChallengeProblem(problem)
+      setChallengeCode(problem?.starter_code || '')
+      setTimeLeft(problem?.time_limit_seconds || 30 * 60)
+      setTabSwitchWarnings(0)
+      setIsLocked(false)
+      setIsSubmitted(false)
+      setIsDisqualified(false)
+      setChallengeResult(null)
+      setRewardStatus('')
+    } catch (error) {
+      console.error('Error fetching challenge problem:', error)
+      setWarningMessage('Could not load challenge problem. Please try again.')
+    } finally {
+      setChallengeLoading(false)
+    }
+  }
+
+  const handleChallengeSubmit = async (reason: 'manual' | 'timeout' | 'disqualified' = 'manual') => {
+    if (!challengeProblem || isSubmitted) return
+
+    setChallengeSubmitting(true)
+    setIsSubmitted(true)
+    setIsLocked(true)
+
+    try {
+      const response = await codingAPI.submitChallengeSolution({
+        problem_id: challengeProblem.id,
+        code: challengeCode,
+        language: codeForm.language,
+        submission_reason: reason,
+        time_left_seconds: timeLeft,
+        disqualified: reason === 'disqualified'
+      })
+
+      const data = response.data
+      setChallengeResult(data)
+
+      const solved = Boolean(data?.passed || data?.success)
+      if (solved && reason !== 'timeout' && reason !== 'disqualified' && timeLeft > 0) {
+        const updated = solvedWithinTime + 1
+        setSolvedWithinTime(updated)
+        localStorage.setItem('dsa_solved_within_time', String(updated))
+
+        if (updated >= 5) {
+          try {
+            await codingAPI.grantFifteenDayReward({ solved_count: updated })
+            setRewardStatus('🎉 Reward unlocked! Your plan expiry has been extended by 15 days.')
+            localStorage.setItem('dsa_solved_within_time', '0')
+            setSolvedWithinTime(0)
+          } catch (rewardError) {
+            console.error('Reward API error:', rewardError)
+            setRewardStatus('Solved 5 challenges! Reward update is pending due to API error.')
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error submitting challenge:', error)
+      setWarningMessage('Auto-submit failed. Please try submitting again.')
+      setIsSubmitted(false)
+      setIsLocked(false)
+    } finally {
+      setChallengeSubmitting(false)
+    }
+  }
+
+  useEffect(() => {
+    if (selectedTab === 'challenge' && !challengeProblem && !challengeLoading) {
+      fetchChallengeProblem()
+    }
+  }, [selectedTab])
+
+  useEffect(() => {
+    if (selectedTab !== 'challenge' || isLocked || isSubmitted) return
+
+    if (timeLeft <= 0) {
+      setIsLocked(true)
+      setWarningMessage('⏰ Time is up! Your solution was auto-submitted.')
+      handleChallengeSubmit('timeout')
+      return
+    }
+
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => prev - 1)
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [selectedTab, timeLeft, isLocked, isSubmitted])
+
+  useEffect(() => {
+    if (selectedTab !== 'challenge' || isSubmitted || isDisqualified) return
+
+    const handleTabSwitch = () => {
+      const nextCount = tabSwitchWarnings + 1
+      setTabSwitchWarnings(nextCount)
+
+      if (nextCount >= 3) {
+        setIsDisqualified(true)
+        setIsLocked(true)
+        setWarningMessage('❌ Disqualified due to 3 tab switches. Auto-failed.')
+        handleChallengeSubmit('disqualified')
+        return
+      }
+
+      setWarningMessage(`⚠️ Tab switch warning ${nextCount}/3. One more violation and you may be disqualified.`)
+    }
+
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        handleTabSwitch()
+      }
+    }
+
+    const onWindowBlur = () => {
+      handleTabSwitch()
+    }
+
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    window.addEventListener('blur', onWindowBlur)
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+      window.removeEventListener('blur', onWindowBlur)
+    }
+  }, [selectedTab, tabSwitchWarnings, isSubmitted, isDisqualified])
 
   const handleCodeHelp = async () => {
     setLoading(true)
@@ -163,6 +314,15 @@ export default function CodingHelpPage() {
             <Rocket className="w-5 h-5" />
             Project Guide
           </button>
+          <button
+            onClick={() => setSelectedTab('challenge')}
+            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold ${
+              selectedTab === 'challenge' ? 'bg-green-600 text-white' : 'bg-white text-gray-700'
+            }`}
+          >
+            <Clock3 className="w-5 h-5" />
+            DSA Challenge
+          </button>
         </div>
 
         <div className="grid md:grid-cols-2 gap-8">
@@ -172,6 +332,7 @@ export default function CodingHelpPage() {
               {selectedTab === 'debug' && 'Debug Your Code'}
               {selectedTab === 'dsa' && 'DSA Problem Help'}
               {selectedTab === 'project' && 'Project Guidance'}
+              {selectedTab === 'challenge' && '⏱️ Timed DSA Coding Challenge'}
             </h2>
 
             {(selectedTab === 'explain' || selectedTab === 'debug') && (
@@ -298,6 +459,82 @@ export default function CodingHelpPage() {
                 </button>
               </div>
             )}
+
+            {selectedTab === 'challenge' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+                  <div className="flex items-center gap-2 text-amber-800 font-semibold">
+                    <Clock3 className="w-4 h-4" />
+                    Time Left: {formatTime(timeLeft)}
+                  </div>
+                  <div className="text-sm text-amber-700">Warnings: {tabSwitchWarnings}/3</div>
+                </div>
+
+                {warningMessage && (
+                  <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 flex items-center gap-2">
+                    <ShieldAlert className="w-4 h-4" />
+                    {warningMessage}
+                  </div>
+                )}
+
+                <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+                  ✅ Security: Copy, Paste, and Cut are disabled in the challenge editor.
+                </div>
+
+                {challengeLoading ? (
+                  <div className="py-10 text-center text-gray-500">Loading challenge problem...</div>
+                ) : challengeProblem ? (
+                  <>
+                    <div className="rounded-lg border bg-white p-4">
+                      <p className="font-bold text-lg mb-2">{challengeProblem.title}</p>
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap mb-4">{challengeProblem.description}</p>
+
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <div className="rounded border p-3 bg-gray-50">
+                          <p className="font-semibold text-sm mb-2">Test Cases</p>
+                          <pre className="text-xs whitespace-pre-wrap">{challengeProblem.test_cases || 'No test cases provided.'}</pre>
+                        </div>
+                        <div className="rounded border p-3 bg-gray-50">
+                          <p className="font-semibold text-sm mb-2">Constraints</p>
+                          <pre className="text-xs whitespace-pre-wrap">{challengeProblem.constraints || 'No constraints provided.'}</pre>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Your Solution</label>
+                      <textarea
+                        value={challengeCode}
+                        onChange={(e) => setChallengeCode(e.target.value)}
+                        rows={16}
+                        placeholder="Write your solution here..."
+                        className="w-full rounded-lg px-4 py-3 font-mono text-sm bg-gray-900 text-gray-100 placeholder-gray-500 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 resize-y leading-relaxed"
+                        onPaste={(e) => e.preventDefault()}
+                        onCopy={(e) => e.preventDefault()}
+                        onCut={(e) => e.preventDefault()}
+                        disabled={isLocked || isDisqualified || isSubmitted}
+                      />
+                    </div>
+
+                    <button
+                      onClick={() => handleChallengeSubmit('manual')}
+                      disabled={challengeSubmitting || isLocked || isDisqualified || isSubmitted || !challengeCode.trim()}
+                      className="w-full btn-primary disabled:opacity-50"
+                    >
+                      {challengeSubmitting ? 'Submitting...' : 'Submit Challenge'}
+                    </button>
+
+                    {rewardStatus && (
+                      <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+                        {rewardStatus}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="py-10 text-center text-gray-500">No challenge problem available.</div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="card">
@@ -366,6 +603,26 @@ export default function CodingHelpPage() {
                     </div>
                     <div className="whitespace-pre-wrap bg-gray-50 p-6 rounded-lg text-sm leading-relaxed">
                       {result.guidance}
+                    </div>
+                  </div>
+                )}
+
+                {selectedTab === 'challenge' && challengeResult && (
+                  <div className="space-y-4">
+                    <div className={`border-l-4 p-4 rounded ${
+                      challengeResult.passed
+                        ? 'bg-green-50 border-green-500'
+                        : 'bg-red-50 border-red-500'
+                    }`}>
+                      <p className={`font-semibold ${challengeResult.passed ? 'text-green-900' : 'text-red-900'}`}>
+                        {challengeResult.passed ? '✅ Challenge Passed' : '❌ Challenge Failed'}
+                      </p>
+                    </div>
+                    <div className="whitespace-pre-wrap bg-gray-50 p-6 rounded-lg text-sm leading-relaxed">
+                      {challengeResult.feedback || challengeResult.message || 'Submission recorded.'}
+                    </div>
+                    <div className="text-sm text-gray-600 bg-blue-50 p-4 rounded-lg">
+                      Solved within time streak: <strong>{solvedWithinTime}/5</strong>
                     </div>
                   </div>
                 )}
