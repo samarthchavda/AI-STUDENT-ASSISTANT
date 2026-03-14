@@ -18,6 +18,31 @@ from slowapi.errors import RateLimitExceeded
 # Import routes
 from app.routes import auth_routes, chat_routes, exam_routes, coding_routes, career_routes, payment_routes, admin_routes, company_routes, company_prep_routes, public_routes
 
+
+def _build_allowed_origins() -> list[str]:
+    local_origins = [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://localhost:5173",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
+        "http://127.0.0.1:5173",
+    ]
+
+    configured_origins = [
+        origin.strip()
+        for origin in settings.frontend_urls.split(",")
+        if origin.strip()
+    ]
+
+    default_prod_origins = [
+        "https://ai-student-assistant-xi.vercel.app",
+        "https://ai-student-assistant.vercel.app",
+    ]
+
+    all_origins = local_origins + configured_origins + default_prod_origins
+    return list(dict.fromkeys(all_origins))
+
 # Create tables
 Base.metadata.create_all(bind=engine)
 
@@ -38,14 +63,8 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # 1. CORS Middleware (Must be FIRST to handle pre-flight requests)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "http://localhost:5173",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:3001",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=_build_allowed_origins(),
+    allow_origin_regex=r"https://ai-student-assistant(?:-[a-z0-9-]+)?\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

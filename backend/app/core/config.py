@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     
     # Google OAuth
     google_client_id: str = ""
+
+    # Frontend / CORS
+    frontend_urls: str = ""
     
     # AI APIs (Only Gemini is used)
     gemini_api_key: str = ""
