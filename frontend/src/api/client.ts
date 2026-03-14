@@ -374,14 +374,23 @@ export const userAPI = {
     
     // Calculate stats from chat history
     const userMessages = messages.filter((m: any) => m.role === 'user')
+    const sessionIds = new Set(
+      messages
+        .map((m: any) => m.session_id)
+        .filter((sessionId: any) => sessionId !== undefined && sessionId !== null && sessionId !== '')
+    )
+    const lastActiveMessage = messages[0]
+    const lastActive =
+      lastActiveMessage?.timestamp ||
+      lastActiveMessage?.created_at ||
+      lastActiveMessage?.updated_at ||
+      null
     
-    // For now, return mock placement stats (will be replaced with real backend data later)
     return {
-      placementReadiness: 0,
-      mockTestsAttempted: 0,
-      resumeATSScore: 0,
+      chatSessions: sessionIds.size,
+      totalMessages: messages.length,
       questionsAsked: userMessages.length,
-      status: 'Active'
+      lastActive,
     }
   },
 }

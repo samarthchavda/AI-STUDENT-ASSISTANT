@@ -182,30 +182,6 @@ const AdminPage = () => {
     }
   };
 
-  const downloadSampleTemplate = async () => {
-    try {
-      const data = await adminAPI.getCompanyQuestionsTemplate();
-      
-      // Create a blob and download
-      const blob = new Blob([data.template], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'sample_company_questions.csv';
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (err: any) {
-      if (err.response?.status === 401 || err.response?.status === 403) {
-        logout();
-        navigate('/auth');
-        return;
-      }
-      setError(err.response?.data?.detail || 'Failed to download template');
-    }
-  };
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString();
   };

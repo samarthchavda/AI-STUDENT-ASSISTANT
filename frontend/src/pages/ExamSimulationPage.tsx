@@ -222,7 +222,7 @@ export default function ExamSimulationPage() {
       stats.totalQuestions += questions.length
 
       // Update category-specific stats
-      const categoryId = testConfig.category
+      const categoryId = testConfig?.category || 'quantitative'
       if (!stats.categories[categoryId]) {
         stats.categories[categoryId] = { correct: 0, total: 0 }
       }
