@@ -26,11 +26,6 @@ export const api = axios.create({
 
 // Add token to requests if available
 api.interceptors.request.use((config) => {
-  if (config.url && !/^https?:\/\//i.test(config.url)) {
-    const normalizedPath = config.url.startsWith('/') ? config.url : `/${config.url}`
-    config.url = normalizedPath.startsWith(`${API_PREFIX}/`) ? normalizedPath : `${API_PREFIX}${normalizedPath}`
-  }
-
   const token = localStorage.getItem('token')
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
