@@ -128,6 +128,15 @@ class ResumeGenerateRequest(BaseModel):
     resumeText: str
     templateType: str = "classic"
 
+
+class ResumeSectionEnhanceRequest(BaseModel):
+    section: str
+    content: str
+
+class ResumeAIActionRequest(BaseModel):
+    action: str  # "suggest_skills" | "enhance_bullets" | "generate_summary"
+    context: dict  # flexible key-value context
+
 class InterviewPrepRequest(BaseModel):
     company: str
     role: str
@@ -145,6 +154,10 @@ class PaymentCheckoutRequest(BaseModel):
 
 class PaymentVerifyRequest(BaseModel):
     sessionId: str
+
+
+class UpgradePlanRequest(BaseModel):
+    plan_type: str
 
 # Company Questions Schemas (SEO Feature)
 class CompanyQuestionRequest(BaseModel):

@@ -6,9 +6,10 @@ import { useAppStore } from '../store/useAppStore'
 import Header from '../components/Header'
 
 export default function PricingPage() {
-  const { isAuthenticated, user } = useAppStore()
+  const { isAuthenticated, user, setUser } = useAppStore()
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly')
   const [loading, setLoading] = useState<string | null>(null)
+  const [showBasicUpgradeModal, setShowBasicUpgradeModal] = useState(false)
 
   const plans = [
     {
@@ -18,7 +19,7 @@ export default function PricingPage() {
       color: 'text-gray-600',
       price: { monthly: 0, yearly: 0 },
       features: [
-        '10 AI queries per day',
+        '25 AI queries per day',
         'Basic topic explanations',
         'Limited note generation',
         'Community support',
@@ -36,7 +37,7 @@ export default function PricingPage() {
       name: 'Basic',
       icon: Zap,
       color: 'text-blue-600',
-      price: { monthly: 299, yearly: 2999 },
+      price: { monthly: 259, yearly: 2599 },
       popular: false,
       features: [
         '100 AI queries per day',
@@ -76,25 +77,52 @@ export default function PricingPage() {
     }
   ]
 
-  const handleSubscribe = async (planId: string) => {
+  const processUpgrade = async (planId: 'free' | 'basic' | 'pro') => {
     setLoading(planId)
     
     try {
       // Demo payment - using demo API keys
-      const response = await paymentAPI.createCheckout({
+      await paymentAPI.createCheckout({
         plan: planId,
         paymentMethod: 'demo'
       })
-      
-      // Simulate payment success
-      alert(`Demo payment initiated for ${planId} plan!\n\nIn production, you would be redirected to a payment gateway.\n\nDemo API Response: ${JSON.stringify(response.data)}`)
+
+      // Simulate successful payment
+      await new Promise((resolve) => setTimeout(resolve, 1200))
+
+      // Update plan in backend DB
+      await paymentAPI.upgradePlan(planId)
+
+      // Update frontend user store immediately
+      if (user) {
+        setUser({
+          ...user,
+          plan: planId,
+        })
+      }
+
+      alert(`Payment successful! Your plan has been upgraded to ${planId.toUpperCase()}.`)
       
     } catch (error) {
       console.error('Payment error:', error)
-      alert('Demo payment flow. In production, this would redirect to Stripe/Razorpay.')
+      alert('Payment failed or plan upgrade failed. Please try again.')
     } finally {
       setLoading(null)
     }
+  }
+
+  const handleSubscribe = async (planId: string) => {
+    if (planId === 'basic') {
+      setShowBasicUpgradeModal(true)
+      return
+    }
+
+    await processUpgrade(planId as 'free' | 'basic' | 'pro')
+  }
+
+  const handleBasicUpgradeConfirm = async () => {
+    setShowBasicUpgradeModal(false)
+    await processUpgrade('basic')
   }
 
   const savingsPercent = 17 // ~17% savings on yearly
@@ -293,6 +321,33 @@ export default function PricingPage() {
           </div>
         </div>
       </div>
+
+      {showBasicUpgradeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-3">Confirm Upgrade</h3>
+            <p className="text-gray-700 mb-6">
+              Upgrading to Basic will give you 100 queries/day. Proceed to payment?
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowBasicUpgradeModal(false)}
+                className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
+                disabled={loading === 'basic'}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleBasicUpgradeConfirm}
+                className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                disabled={loading === 'basic'}
+              >
+                {loading === 'basic' ? 'Processing...' : 'Proceed to Payment'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

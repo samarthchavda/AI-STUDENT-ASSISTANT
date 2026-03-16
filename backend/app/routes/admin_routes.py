@@ -222,6 +222,133 @@ async def get_all_chats(
     
     return result
 
+# Get users with chat counts (for user-wise chat history view)
+@router.get("/chats/users-summary")
+async def get_chat_users_summary(
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    """Get all users who have chats, with their chat count and latest message time"""
+    rows = (
+        db.query(
+            User.id,
+            User.name,
+            User.email,
+            User.plan,
+            func.count(ChatHistory.id).label("chat_count"),
+            func.max(ChatHistory.timestamp).label("last_message_at"),
+        )
+        .join(ChatHistory, ChatHistory.user_id == User.id)
+        .group_by(User.id, User.name, User.email, User.plan)
+        .order_by(func.max(ChatHistory.timestamp).desc())
+        .all()
+    )
+    return [
+        {
+            "user_id": row.id,
+            "user_name": row.name,
+            "user_email": row.email,
+            "plan": row.plan.value if hasattr(row.plan, "value") else row.plan,
+            "chat_count": row.chat_count,
+            "last_message_at": row.last_message_at,
+        }
+        for row in rows
+    ]
+
+# Get chat history for a specific user
+@router.get("/chats/user/{user_id}", response_model=List[ChatHistoryResponse])
+async def get_user_chats(
+    user_id: int,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    """Get all chat messages for a specific user"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    chats = (
+        db.query(ChatHistory)
+        .filter(ChatHistory.user_id == user_id)
+        .order_by(ChatHistory.timestamp.asc())
+        .all()
+    )
+    return [
+        {
+            "id": chat.id,
+            "user_id": chat.user_id,
+            "user_name": user.name,
+            "user_email": user.email,
+            "role": chat.role,
+            "content": chat.content,
+            "timestamp": chat.timestamp,
+        }
+        for chat in chats
+    ]
+
+# GET /api/admin/chats/{email} — all messages for a specific user email
+@router.get("/chats/{email}", response_model=List[ChatHistoryResponse])
+async def get_chats_by_email(
+    email: str,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    """Fetch all chat messages for a specific user identified by email"""
+    user = db.query(User).filter(User.email == email).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="No user found with that email")
+
+    chats = (
+        db.query(ChatHistory)
+        .filter(ChatHistory.user_id == user.id)
+        .order_by(ChatHistory.timestamp.asc())
+        .all()
+    )
+    return [
+        {
+            "id": chat.id,
+            "user_id": chat.user_id,
+            "user_name": user.name,
+            "user_email": user.email,
+            "role": chat.role,
+            "content": chat.content,
+            "timestamp": chat.timestamp,
+        }
+        for chat in chats
+    ]
+
+# GET /api/admin/chat-users — unique users from chats table with message count, grouped by email
+@router.get("/chat-users")
+async def get_chat_users(
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    """
+    Query the chats table, group by user email, and return unique users
+    with their name, email, and total message count.
+    Note: /api/admin/users already exists as a full user-management endpoint,
+    so this chat-analytics view lives at /api/admin/chat-users.
+    """
+    rows = (
+        db.query(
+            User.name,
+            User.email,
+            func.count(ChatHistory.id).label("message_count"),
+        )
+        .join(ChatHistory, ChatHistory.user_id == User.id)
+        .group_by(User.email, User.name)
+        .order_by(func.count(ChatHistory.id).desc())
+        .all()
+    )
+    return [
+        {
+            "name": row.name,
+            "email": row.email,
+            "message_count": row.message_count,
+        }
+        for row in rows
+    ]
+
 # Get all user progress
 @router.get("/progress", response_model=List[UserProgressResponse])
 async def get_all_progress(

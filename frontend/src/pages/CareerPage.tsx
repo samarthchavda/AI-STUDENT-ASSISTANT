@@ -1,10 +1,16 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Briefcase, FileText, Upload, X, Sparkles, FileSearch, Loader2, CheckCircle2 } from 'lucide-react'
 import { careerAPI } from '../api/client'
 import Header from '../components/Header'
+import MultiStepResumeBuilder from '../components/MultiStepResumeBuilder'
 
 export default function CareerPage() {
-  const [selectedTab, setSelectedTab] = useState<'resume' | 'builder'>('resume')
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [selectedTab, setSelectedTab] = useState<'resume' | 'builder'>(
+    location.pathname.includes('/resume-builder') ? 'builder' : 'resume'
+  )
   const [loading, setLoading] = useState(false)
   const [pdfLoading, setPdfLoading] = useState(false)
   const [result, setResult] = useState<any>(null)
@@ -15,6 +21,19 @@ export default function CareerPage() {
   const [uploadMethod, setUploadMethod] = useState<'text' | 'pdf'>('pdf')
   const [targetRole, setTargetRole] = useState('')
   const [jobDescription, setJobDescription] = useState('')
+
+  useEffect(() => {
+    if (location.pathname.includes('/resume-builder')) {
+      setSelectedTab('builder')
+    } else {
+      setSelectedTab('resume')
+    }
+  }, [location.pathname])
+
+  const handleTabChange = (tab: 'resume' | 'builder') => {
+    setSelectedTab(tab)
+    navigate(tab === 'builder' ? '/career/resume-builder' : '/career/resume-analysis')
+  }
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -97,10 +116,10 @@ export default function CareerPage() {
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50">
       <Header />
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className={`${selectedTab === 'builder' ? 'w-full px-4 md:px-6 py-4' : 'max-w-6xl mx-auto px-4 py-8'}`}>
         <div className="flex gap-4 mb-8 flex-wrap">
           <button
-            onClick={() => setSelectedTab('resume')}
+            onClick={() => handleTabChange('resume')}
             className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
               selectedTab === 'resume' 
                 ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg' 
@@ -111,7 +130,7 @@ export default function CareerPage() {
             Resume Analysis
           </button>
           <button
-            onClick={() => setSelectedTab('builder')}
+            onClick={() => handleTabChange('builder')}
             className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
               selectedTab === 'builder' 
                 ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg' 
@@ -123,7 +142,8 @@ export default function CareerPage() {
           </button>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8">
+        {selectedTab === 'resume' ? (
+          <div className="grid md:grid-cols-2 gap-8">
           <div className="feature-card">
             <h2 className="text-2xl font-bold mb-6 gradient-text">
               {selectedTab === 'resume' && '📄 Resume & ATS Analysis'}
@@ -300,7 +320,7 @@ export default function CareerPage() {
                     Resume builder coming soon! For now, use our analysis tool to improve your existing resume.
                   </p>
                   <button
-                    onClick={() => setSelectedTab('resume')}
+                    onClick={() => handleTabChange('resume')}
                     className="btn-primary"
                   >
                     Go to Resume Analysis
@@ -448,19 +468,23 @@ export default function CareerPage() {
               </div>
             )}
           </div>
-        </div>
-
-        {/* Popular Companies */}
-        <div className="mt-12 card">
-          <h3 className="text-xl font-bold mb-6">Popular Companies We Help You Prepare For</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {['Google', 'Microsoft', 'Amazon', 'TCS', 'Infosys', 'Wipro', 'Accenture', 'Cognizant'].map((company) => (
-              <div key={company} className="border rounded-lg p-4 text-center hover:shadow-md transition-shadow">
-                <strong>{company}</strong>
-              </div>
-            ))}
           </div>
-        </div>
+        ) : (
+          <MultiStepResumeBuilder />
+        )}
+
+        {selectedTab === 'resume' && (
+          <div className="mt-12 card">
+            <h3 className="text-xl font-bold mb-6">Popular Companies We Help You Prepare For</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {['Google', 'Microsoft', 'Amazon', 'TCS', 'Infosys', 'Wipro', 'Accenture', 'Cognizant'].map((company) => (
+                <div key={company} className="border rounded-lg p-4 text-center hover:shadow-md transition-shadow">
+                  <strong>{company}</strong>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

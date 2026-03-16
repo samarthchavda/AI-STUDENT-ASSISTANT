@@ -65,6 +65,15 @@ export interface AdminChat {
   timestamp: string;
 }
 
+export interface AdminChatUserSummary {
+  user_id: number;
+  user_name: string;
+  user_email: string;
+  plan: string;
+  chat_count: number;
+  last_message_at: string;
+}
+
 export interface AdminPayment {
   id: number;
   user_id: number;
@@ -119,6 +128,21 @@ export const adminAPI = {
 
   getAllChats: async (): Promise<AdminChat[]> => {
     const response = await api.get('/admin/chats');
+    return response.data;
+  },
+
+  getChatUsersSummary: async (): Promise<AdminChatUserSummary[]> => {
+    const response = await api.get('/admin/chats/users-summary');
+    return response.data;
+  },
+
+  getUserChats: async (userId: number): Promise<AdminChat[]> => {
+    const response = await api.get(`/admin/chats/user/${userId}`);
+    return response.data;
+  },
+
+  getChatsByEmail: async (email: string): Promise<AdminChat[]> => {
+    const response = await api.get(`/admin/chats/${encodeURIComponent(email)}`);
     return response.data;
   },
 

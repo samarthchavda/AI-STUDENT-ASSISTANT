@@ -52,9 +52,7 @@ export function useAutoLogout() {
   // Auto logout when page becomes hidden (tab switched/browser minimized)
   const handleVisibilityChange = () => {
     if (document.hidden && isAuthenticated) {
-      // Optional: You can add a timer here to logout after specific time in hidden state
-      // For now, just logging as a reference point
-      console.log('Page hidden - user may be inactive')
+      return
     }
   }
 

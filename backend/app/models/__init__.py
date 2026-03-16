@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey, Enum, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, Date, Text, ForeignKey, Enum, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import enum
@@ -36,6 +36,8 @@ class User(Base):
     auth_provider = Column(String, default="local")  # 'local', 'google'
     failed_login_attempts = Column(Integer, default=0)
     account_locked_until = Column(DateTime, nullable=True)
+    queries_today = Column(Integer, default=0)
+    last_query_date = Column(Date, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

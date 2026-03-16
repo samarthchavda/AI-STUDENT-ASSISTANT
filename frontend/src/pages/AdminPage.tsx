@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store/useAppStore';
-import { adminAPI, AdminStats, AdminUser, AdminChat, AdminPayment, AdminProgress, CompanyQuestion } from '../services/adminAPI';
+import { adminAPI, AdminStats, AdminUser, AdminChat, AdminChatUserSummary, AdminPayment, AdminProgress, CompanyQuestion } from '../services/adminAPI';
 import Header from '../components/Header';
 
 const AdminPage = () => {
@@ -12,6 +12,9 @@ const AdminPage = () => {
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [chats, setChats] = useState<AdminChat[]>([]);
+  const [chatUsersSummary, setChatUsersSummary] = useState<AdminChatUserSummary[]>([]);
+  const [selectedChatUser, setSelectedChatUser] = useState<AdminChatUserSummary | null>(null);
+  const [userChats, setUserChats] = useState<AdminChat[]>([]);
   const [payments, setPayments] = useState<AdminPayment[]>([]);
   const [progress, setProgress] = useState<AdminProgress[]>([]);
   const [companyQuestions, setCompanyQuestions] = useState<CompanyQuestion[]>([]);
@@ -20,6 +23,7 @@ const AdminPage = () => {
   const [uploadResult, setUploadResult] = useState<any | null>(null);
   
   const [loading, setLoading] = useState(false);
+  const [chatLoading, setChatLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -66,13 +70,29 @@ const AdminPage = () => {
   const loadChats = async () => {
     setLoading(true);
     setError(null);
+    setSelectedChatUser(null);
+    setUserChats([]);
     try {
-      const data = await adminAPI.getAllChats();
-      setChats(data);
+      const data = await adminAPI.getChatUsersSummary();
+      setChatUsersSummary(data);
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to load chats');
+      setError(err.response?.data?.detail || 'Failed to load chat history');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadUserChats = async (chatUser: AdminChatUserSummary) => {
+    setChatLoading(true);
+    setError(null);
+    setSelectedChatUser(chatUser);
+    try {
+      const data = await adminAPI.getChatsByEmail(chatUser.user_email);
+      setUserChats(data);
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Failed to load user chat history');
+    } finally {
+      setChatLoading(false);
     }
   };
 
@@ -403,63 +423,118 @@ const AdminPage = () => {
           </div>
         )}
 
-        {/* Chats Tab */}
+        {/* Chats Tab — Sidebar + Panel layout */}
         {activeTab === 'chats' && !loading && (
-          <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      ID
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      User
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Role
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Content
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Timestamp
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {chats.map((chat) => (
-                    <tr key={chat.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {chat.id}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <div className="font-medium text-gray-900">{chat.user_name}</div>
-                        <div className="text-gray-500">{chat.user_email}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                          chat.role === 'user' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
-                        }`}>
-                          {chat.role}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-600 max-w-md truncate">
-                        {chat.content}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {formatDate(chat.timestamp)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {chats.length === 0 && (
-              <div className="text-center py-12 text-gray-500">
-                No chat history found
+          <div className="flex gap-0 bg-white rounded-lg shadow-sm overflow-hidden" style={{ minHeight: '600px' }}>
+
+            {/* LEFT SIDEBAR — User list */}
+            <div className="w-80 flex-shrink-0 border-r border-gray-200 flex flex-col">
+              <div className="px-4 py-4 border-b border-gray-200 bg-gray-50">
+                <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">💬 Users</h2>
+                <p className="text-xs text-gray-400 mt-0.5">{chatUsersSummary.length} user{chatUsersSummary.length !== 1 ? 's' : ''} with chats</p>
               </div>
-            )}
+              <div className="overflow-y-auto flex-1">
+                {chatUsersSummary.length === 0 && (
+                  <p className="text-center text-sm text-gray-400 py-10">No chat history found</p>
+                )}
+                {chatUsersSummary.map((cu) => (
+                  <button
+                    key={cu.user_id}
+                    onClick={() => loadUserChats(cu)}
+                    className={`w-full text-left px-4 py-3 border-b border-gray-100 transition-colors hover:bg-blue-50 ${
+                      selectedChatUser?.user_id === cu.user_id ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      {/* Avatar */}
+                      <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm flex-shrink-0">
+                        {cu.user_name.charAt(0).toUpperCase()}
+                      </div>
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-gray-900 text-sm truncate">{cu.user_name}</div>
+                        <div className="text-xs text-gray-500 truncate">{cu.user_email}</div>
+                      </div>
+                      {/* Message count badge */}
+                      <span className="flex-shrink-0 inline-flex items-center justify-center min-w-[24px] h-6 px-1.5 rounded-full bg-indigo-600 text-white text-xs font-bold">
+                        {cu.chat_count}
+                      </span>
+                    </div>
+                    <div className="mt-1 ml-12 text-xs text-gray-400">
+                      Last active: {formatDate(cu.last_message_at)}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* RIGHT PANEL — Chat messages */}
+            <div className="flex-1 flex flex-col">
+              {!selectedChatUser && (
+                <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
+                  <div className="text-5xl mb-4">💬</div>
+                  <h3 className="text-lg font-semibold text-gray-700">Please select a user to view chat history</h3>
+                  <p className="text-sm text-gray-400 mt-2">Choose a user from the sidebar on the left</p>
+                </div>
+              )}
+
+              {selectedChatUser && (
+                <>
+                  {/* Panel header */}
+                  <div className="px-6 py-4 border-b border-gray-200 flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-sm flex-shrink-0">
+                      {selectedChatUser.user_name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div className="font-semibold text-gray-900">{selectedChatUser.user_name}</div>
+                      <div className="text-xs text-gray-500">
+                        {selectedChatUser.user_email}
+                        <span className="mx-1.5">·</span>
+                        <span className={`px-1.5 py-0.5 rounded text-xs font-semibold ${
+                          selectedChatUser.plan === 'pro' ? 'bg-purple-100 text-purple-700' :
+                          selectedChatUser.plan === 'basic' ? 'bg-blue-100 text-blue-700' :
+                          'bg-gray-100 text-gray-600'
+                        }`}>{selectedChatUser.plan.toUpperCase()}</span>
+                        <span className="mx-1.5">·</span>
+                        {selectedChatUser.chat_count} messages
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Messages area */}
+                  <div className="flex-1 overflow-y-auto p-6 space-y-3" style={{ maxHeight: '520px' }}>
+                    {chatLoading && (
+                      <div className="flex justify-center py-12">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                      </div>
+                    )}
+                    {!chatLoading && userChats.map((msg) => (
+                      <div
+                        key={msg.id}
+                        className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div className={`max-w-xl px-4 py-3 rounded-2xl text-sm ${
+                          msg.role === 'user'
+                            ? 'bg-blue-600 text-white rounded-br-sm'
+                            : 'bg-gray-100 text-gray-800 rounded-bl-sm'
+                        }`}>
+                          <div className="whitespace-pre-wrap break-words">{msg.content}</div>
+                          <div className={`text-xs mt-1 ${
+                            msg.role === 'user' ? 'text-blue-200 text-right' : 'text-gray-400'
+                          }`}>
+                            {formatDate(msg.timestamp)}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {!chatLoading && userChats.length === 0 && (
+                      <div className="text-center py-12 text-gray-400 text-sm">No messages found for this user</div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+
           </div>
         )}
 

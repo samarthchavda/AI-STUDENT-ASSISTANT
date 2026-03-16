@@ -1,12 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
-from app.models.schemas import ChatRequest, ChatResponse, ExplainTopicRequest, GenerateNotesRequest, SolveDoubtRequest
+from app.models.schemas import ChatRequest, ChatResponse, ExplainTopicRequest, GenerateNotesRequest, SolveDoubtRequest, UpgradePlanRequest
 from app.services.ai_service import ai_service
 from app.core.database import get_db
-from app.models import ChatHistory, User
+from app.models import ChatHistory, User, PlanType
 from app.core.auth import get_current_user
 from app.core.middleware import rate_limit
+from datetime import date
 import json
 
 router = APIRouter(prefix="/api", tags=["Chat & Learning"])
@@ -32,6 +33,41 @@ def resolve_chat_language(chat_request: ChatRequest) -> str:
     )
     return detect_message_language(last_user_message)
 
+
+def check_user_limit(user_id: int, db: Session) -> None:
+    """
+    Enforce daily query limits by plan and increment usage if allowed.
+
+    - free: 25/day
+    - basic: 100/day
+    - pro: effectively unlimited (configured high at 500/day)
+    """
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    today = date.today()
+
+    if user.last_query_date != today:
+        user.queries_today = 0
+        user.last_query_date = today
+
+    plan_value = user.plan.value if hasattr(user.plan, "value") else str(user.plan)
+    plan_value = plan_value.lower()
+
+    if plan_value == "free" and user.queries_today >= 25:
+        raise HTTPException(status_code=403, detail="Daily limit reached")
+
+    if plan_value == "basic" and user.queries_today >= 100:
+        raise HTTPException(status_code=403, detail="Basic limit reached")
+
+    if plan_value == "pro" and user.queries_today >= 500:
+        raise HTTPException(status_code=403, detail="Pro plan limit reached")
+
+    user.queries_today += 1
+    db.commit()
+    db.refresh(user)
+
 @router.post("/chat", response_model=ChatResponse)
 @rate_limit("30/minute")  # 30 chat messages per minute
 async def chat(request: Request, chat_request: ChatRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
@@ -46,6 +82,9 @@ async def chat(request: Request, chat_request: ChatRequest, db: Session = Depend
     if language.lower() in ["hindi", "gujarati"]:
         language_instruction = f"\n\nIMPORTANT: Respond in {language.upper()} language. Translate your entire response to {language}."
         messages[-1]["content"] += language_instruction
+
+    # Enforce usage limits before Gemini call
+    check_user_limit(current_user.id, db)
     
     # Get AI response
     response = ai_service.chat_completion(messages)
@@ -105,6 +144,9 @@ async def chat_stream(request: Request, chat_request: ChatRequest, db: Session =
     if language.lower() in ["hindi", "gujarati"]:
         language_instruction = f"\n\nIMPORTANT: Respond in {language.upper()} language. Translate your entire response to {language}."
         messages[-1]["content"] += language_instruction
+
+    # Enforce usage limits before Gemini call
+    check_user_limit(current_user.id, db)
     
     # Save user message to history
     try:
@@ -207,3 +249,36 @@ def solve_doubt(request: SolveDoubtRequest):
 def get_cache_stats():
     """Get response cache statistics and estimated cost savings"""
     return ai_service.get_cache_stats()
+
+
+@router.post("/upgrade-plan")
+def upgrade_plan(
+    request: UpgradePlanRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Upgrade current user's plan type in database after successful payment."""
+    requested_plan = (request.plan_type or "").strip().lower()
+
+    allowed_plans = {
+        "free": PlanType.FREE,
+        "basic": PlanType.BASIC,
+        "pro": PlanType.PRO,
+    }
+
+    if requested_plan not in allowed_plans:
+        raise HTTPException(status_code=400, detail="Invalid plan_type")
+
+    current_user.plan = allowed_plans[requested_plan]
+    db.add(current_user)
+    db.commit()
+    db.refresh(current_user)
+
+    plan_value = current_user.plan.value if hasattr(current_user.plan, "value") else str(current_user.plan)
+
+    return {
+        "status": "success",
+        "message": f"Plan upgraded to {plan_value}",
+        "plan_type": plan_value,
+        "user_id": current_user.id,
+    }

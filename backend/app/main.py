@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 from app.core.database import engine, Base
 from app.core.config import settings
 from app.services.ai_service import ai_service
@@ -45,6 +46,14 @@ def _build_allowed_origins() -> list[str]:
 
 # Create tables
 Base.metadata.create_all(bind=engine)
+
+# Ensure usage-limit columns exist for existing deployments (e.g., Supabase/Postgres)
+try:
+    with engine.begin() as connection:
+        connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS queries_today INTEGER DEFAULT 0"))
+        connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS last_query_date DATE"))
+except Exception as migration_error:
+    print(f"⚠️ Could not run startup schema sync for usage limits: {migration_error}")
 
 # Initialize FastAPI app
 app = FastAPI(

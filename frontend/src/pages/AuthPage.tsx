@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { Brain, Mail, Lock, User, AlertCircle, Sparkles, KeyRound, CheckCircle } from 'lucide-react'
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google'
@@ -229,7 +229,7 @@ export default function AuthPage() {
     })
   }
 
-  const handleGoogleSuccess = async (credentialResponse: CredentialResponse) => {
+  const handleGoogleSuccess = useCallback(async (credentialResponse: CredentialResponse) => {
     setError('')
     setLoading(true)
 
@@ -266,9 +266,9 @@ export default function AuthPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [googleClientId, isCurrentOriginAuthorized, location.state, navigate, setUser])
 
-  const handleGoogleError = () => {
+  const handleGoogleError = useCallback(() => {
     try {
       if (!googleClientId) {
         setError('Google Sign-In is not configured. Please set VITE_GOOGLE_CLIENT_ID in frontend/.env')
@@ -285,7 +285,7 @@ export default function AuthPage() {
       console.error('Google error handler failed:', err)
       setError('Authentication is temporarily unavailable. Please use email/password login instead.')
     }
-  }
+  }, [currentOrigin, googleClientId, isCurrentOriginAuthorized])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 flex items-center justify-center px-4 py-8 relative overflow-hidden">
@@ -578,11 +578,12 @@ export default function AuthPage() {
                 <div className="w-full max-w-sm">
                   {canShowGoogleLogin ? (
                     <GoogleLogin
+                      key="google-login"
                       onSuccess={handleGoogleSuccess}
                       onError={handleGoogleError}
                       theme="outline"
                       size="large"
-                      text={authMode === 'login' ? 'signin_with' : 'signup_with'}
+                      text="continue_with"
                       width="320"
                       logo_alignment="left"
                     />

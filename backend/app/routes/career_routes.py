@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, Form, Depends, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
-from app.models.schemas import ResumeAnalyzeRequest, InterviewPrepRequest, ResumeGenerateRequest, PersonalizedRoadmapRequest
+from app.models.schemas import ResumeAnalyzeRequest, InterviewPrepRequest, ResumeGenerateRequest, PersonalizedRoadmapRequest, ResumeSectionEnhanceRequest, ResumeAIActionRequest
 from app.services.ai_service import ai_service
 from app.core.middleware import rate_limit
 from app.core.database import get_db
@@ -290,6 +290,63 @@ async def analyze_resume(request: Request, req: ResumeAnalyzeRequest):
     result["truncated"] = original_length > 4000
     
     return result
+
+
+@router.post("/resume-enhance-section")
+@rate_limit("20/minute")
+async def enhance_resume_section(request: Request, req: ResumeSectionEnhanceRequest):
+    """Enhance a specific resume section text with AI."""
+    if not req.content or len(req.content.strip()) < 5:
+        raise HTTPException(status_code=400, detail="Please provide section content to enhance")
+
+    content = req.content[:4000]
+    enhanced = ai_service.enhance_resume_section(req.section, content)
+
+    return {
+        "section": req.section,
+        "enhanced_content": enhanced,
+    }
+
+
+@router.post("/resume-ai-action")
+@rate_limit("20/minute")
+async def resume_ai_action(request: Request, req: ResumeAIActionRequest):
+    """Perform a specialised AI action: suggest_skills, enhance_bullets, generate_summary, generate_demo_resume."""
+    ctx = req.context
+
+    if req.action == "suggest_skills":
+        education_text = str(ctx.get("education", ""))[:2000]
+        experience_text = str(ctx.get("experience", ""))[:2000]
+        if not education_text and not experience_text:
+            raise HTTPException(status_code=400, detail="Provide education and experience context")
+        result = ai_service.suggest_skills(education_text, experience_text)
+        return {"action": req.action, "result": result}
+
+    elif req.action == "enhance_bullets":
+        title = str(ctx.get("title", ""))[:200]
+        company = str(ctx.get("company", ""))[:200]
+        raw_text = str(ctx.get("raw_text", ""))[:3000]
+        if not raw_text.strip():
+            raise HTTPException(status_code=400, detail="Provide experience description to enhance")
+        result = ai_service.enhance_experience_bullets(title, company, raw_text)
+        return {"action": req.action, "result": result}
+
+    elif req.action == "generate_summary":
+        name = str(ctx.get("name", ""))[:200]
+        role = str(ctx.get("role", ""))[:200]
+        education = str(ctx.get("education", ""))[:1000]
+        experience = str(ctx.get("experience", ""))[:1000]
+        skills = str(ctx.get("skills", ""))[:500]
+        result = ai_service.generate_professional_summary(name, role, education, experience, skills)
+        return {"action": req.action, "result": result}
+
+    elif req.action == "generate_demo_resume":
+        role = str(ctx.get("role", "Full Stack Developer"))[:200]
+        result = ai_service.generate_demo_resume_data(role)
+        return {"action": req.action, "result": result}
+
+    else:
+        raise HTTPException(status_code=400, detail=f"Unknown action: {req.action}")
 
 
 @router.post("/resume-ats-score")

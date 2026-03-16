@@ -373,7 +373,220 @@ Return only the improved resume text."""
             return self._build_resume_fallback(resume_text)
 
         return cleaned
-    
+
+    def enhance_resume_section(self, section: str, content: str) -> str:
+        """Enhance a specific resume section with professional, ATS-friendly wording."""
+        normalized_section = (section or "").strip().lower()
+        section_name = normalized_section if normalized_section in {
+            "personal",
+            "education",
+            "experience",
+            "projects",
+            "certificates",
+            "achievements",
+            "hobbies",
+            "languages",
+            "skills",
+        } else "resume"
+
+        prompt = f"""You are an expert resume writer.
+
+Enhance the following {section_name} section content for a professional resume.
+
+Rules:
+1. Keep facts truthful to the source. Do not invent companies, degree names, dates, or achievements.
+2. Improve wording to be concise, professional, and ATS-friendly.
+3. Use strong action-oriented language when relevant.
+4. Return plain text only (no markdown, no headings unless needed in content).
+5. Keep output practical and ready to paste in resume builder fields.
+
+SECTION: {section_name}
+SOURCE CONTENT:
+{content}
+
+Return only the enhanced text."""
+
+        enhanced = self._generate_response(prompt)
+        return enhanced.replace('```', '').replace('**', '').strip()
+
+    def suggest_skills(self, education_text: str, experience_text: str) -> str:
+        """Suggest missing technical skills based on education and experience."""
+        prompt = f"""You are an expert career counselor and technical resume advisor.
+
+A student has the following background:
+
+EDUCATION:
+{education_text}
+
+WORK EXPERIENCE / PROJECTS:
+{experience_text}
+
+Based on their educational background and experience, suggest the TOP 6-8 technical skills they are likely missing but should add to their resume.
+
+Rules:
+1. Only suggest skills logically relevant to their field and degree.
+2. Prioritize in-demand, modern skills for their specific domain.
+3. Do NOT suggest skills they likely already have (avoid repeating obvious basics).
+4. Format as a comma-separated list of skill names only.
+5. Include frameworks, tools, or relevant certifications.
+
+Return ONLY a comma-separated list of skill names. No extra text."""
+        result = self._generate_response(prompt)
+        return result.replace('**', '').replace('```', '').strip()
+
+    def enhance_experience_bullets(self, title: str, company: str, raw_text: str) -> str:
+        """Transform weak experience text into powerful action-oriented bullet points."""
+        prompt = f"""You are a professional resume writer specialising in tech industry resumes.
+
+Transform the following work or project experience into 3-5 powerful, ATS-optimised bullet points.
+
+JOB TITLE: {title}
+COMPANY / PROJECT: {company}
+RAW DESCRIPTION:
+{raw_text}
+
+Rules:
+1. Start EACH bullet with a strong past-tense action verb (Architected, Developed, Optimised, Led, Built, Engineered, Automated, Reduced, etc.).
+2. Include specific technologies, tools, or methodologies where evident from the raw text.
+3. Add plausible quantifiable impact (%, users, time saved, scale) where logically reasonable.
+4. Keep each bullet to 1-2 lines maximum.
+5. Do NOT invent companies, dates, or facts not present in the source.
+6. Return plain bullet points starting with \u2022, one per line, no extra text."""
+        result = self._generate_response(prompt)
+        return result.replace('**', '').replace('```', '').strip()
+
+    def generate_professional_summary(self, name: str, role: str, education: str, experience: str, skills: str) -> str:
+        """Auto-generate a compelling 3-sentence professional summary."""
+        prompt = f"""You are an expert resume writer. Create a compelling 3-sentence professional summary.
+
+CANDIDATE: {name}
+TARGET ROLE: {role}
+EDUCATION: {education}
+EXPERIENCE/PROJECTS: {experience}
+SKILLS: {skills}
+
+Rules:
+1. Write exactly 3 sentences, each on a new line.
+2. Sentence 1: Who they are — role identity + degree/background.
+3. Sentence 2: What they have done — key experience/projects + 1-2 standout skills.
+4. Sentence 3: The value they bring or what they are seeking.
+5. Keep it concise, impactful, and ATS-friendly.
+6. Do NOT use clich\u00e9 phrases like \"hard-working\", \"team player\", or \"passionate\".
+7. Return plain text only — no bullet points, no markdown, no headings.
+
+Return ONLY the 3-sentence summary."""
+        result = self._generate_response(prompt)
+        return result.replace('**', '').replace('```', '').strip()
+
+        def generate_demo_resume_data(self, role: str = "Full Stack Developer") -> Dict:
+                """Generate high-quality demo resume data in strict JSON format."""
+                prompt = f"""You are an expert resume writer.
+
+Generate a realistic sample resume persona for role: {role}.
+
+Return STRICT JSON only. No markdown. No explanations.
+Schema:
+{{
+    "personal": {{
+        "fullName": "",
+        "email": "",
+        "phone": "",
+        "location": "",
+        "desiredRole": "",
+        "summary": ""
+    }},
+    "education": [
+        {{"degree": "", "institution": "", "graduationYear": "", "details": ""}}
+    ],
+    "experience": [
+        {{"title": "", "company": "", "duration": "", "description": ""}}
+    ],
+    "projects": [
+        {{"title": "", "techStack": "", "description": ""}}
+    ],
+    "certificates": [
+        {{"title": "", "organization": "", "year": ""}}
+    ],
+    "achievements": [
+        {{"title": "", "organization": "", "year": ""}}
+    ],
+    "skills": {{
+        "technical": "",
+        "tools": "",
+        "soft": ""
+    }},
+    "hobbies": [""],
+    "languages": [""]
+}}
+
+Rules:
+1. Use realistic but fake identity details.
+2. Make experience and projects strong and ATS-friendly with quantified impact.
+3. Keep fields concise and production-quality.
+4. Ensure valid JSON only.
+"""
+
+                raw = self._generate_response(prompt).replace('```json', '').replace('```', '').strip()
+
+                try:
+                        parsed = json.loads(raw)
+                        return parsed
+                except Exception:
+                        return {
+                                "personal": {
+                                        "fullName": "Aarav Mehta",
+                                        "email": "aarav.mehta.dev@gmail.com",
+                                        "phone": "+91 98765 43210",
+                                        "location": "Bengaluru, India",
+                                        "desiredRole": role,
+                                        "summary": "Full Stack Developer with 3+ years of experience building scalable web applications using React, Node.js, and cloud-native architecture. Delivered high-impact features that improved conversion, reduced API latency, and optimized deployment pipelines. Seeking to contribute strong product thinking and engineering execution in a growth-focused tech team.",
+                                },
+                                "education": [
+                                        {
+                                                "degree": "B.Tech in Computer Science",
+                                                "institution": "Nirma University",
+                                                "graduationYear": "2022",
+                                                "details": "CGPA: 8.7/10. Coursework: Data Structures, DBMS, Cloud Computing, Software Engineering.",
+                                        }
+                                ],
+                                "experience": [
+                                        {
+                                                "title": "Software Engineer",
+                                                "company": "TechNova Solutions",
+                                                "duration": "Jul 2022 - Present",
+                                                "description": "• Built and shipped 20+ production features in a React + Node.js SaaS platform.\n• Improved API response time by 35% via query optimization and Redis caching.\n• Reduced deployment failures by 40% by introducing CI quality checks and release gates.",
+                                        }
+                                ],
+                                "projects": [
+                                        {
+                                                "title": "ShopSphere E-commerce Platform",
+                                                "techStack": "React, Node.js, Express, MongoDB, Stripe",
+                                                "description": "Designed and developed full-stack e-commerce platform with JWT auth, cart, and payment flow.\nImplemented product search and filtering, improving product discovery by 28%.\nIntegrated checkout and order pipeline with robust error handling and analytics hooks.",
+                                        }
+                                ],
+                                "certificates": [
+                                        {
+                                                "title": "AWS Certified Cloud Practitioner",
+                                                "organization": "Amazon Web Services",
+                                                "year": "2023",
+                                        }
+                                ],
+                                "achievements": [
+                                        {
+                                                "title": "Top Performer Award",
+                                                "organization": "TechNova Solutions",
+                                                "year": "2024",
+                                        }
+                                ],
+                                "skills": {
+                                        "technical": "JavaScript, TypeScript, React, Node.js, Express, MongoDB, PostgreSQL",
+                                        "tools": "Git, Docker, AWS, Postman, CI/CD, Redis",
+                                        "soft": "Problem Solving, Team Collaboration, Stakeholder Communication",
+                                },
+                                "hobbies": ["Reading tech blogs", "Badminton", "UI experimentation"],
+                                "languages": ["English", "Hindi", "Gujarati"],
+                        }
+
     def calculate_ats_score(self, resume_text: str) -> Dict:
         """
         Calculate detailed ATS score breakdown

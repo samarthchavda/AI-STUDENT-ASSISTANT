@@ -128,6 +128,24 @@ export interface PracticeHistoryItem {
   practice_date: string
 }
 
+export interface ResumeSectionEnhanceRequest {
+  section:
+    | 'personal'
+    | 'education'
+    | 'experience'
+    | 'projects'
+    | 'certificates'
+    | 'achievements'
+    | 'hobbies'
+    | 'skills'
+  content: string
+}
+
+export interface ResumeAIActionRequest {
+  action: 'suggest_skills' | 'enhance_bullets' | 'generate_summary' | 'generate_demo_resume'
+  context: Record<string, string>
+}
+
 // API Functions
 export const chatAPI = {
   sendMessage: (messages: ChatMessage[], language: string = 'auto') => 
@@ -285,6 +303,12 @@ export const careerAPI = {
       target_role: targetRole,
       job_description: jobDescription,
     }),
+
+  enhanceResumeSection: (data: ResumeSectionEnhanceRequest) =>
+    api.post('/career/resume-enhance-section', data),
+
+  resumeAIAction: (data: ResumeAIActionRequest) =>
+    api.post('/career/resume-ai-action', data),
   
   interviewPrep: (company: string, role: string) => 
     api.post('/career/interview-prep', { company, role }),
@@ -317,6 +341,9 @@ export const paymentAPI = {
   
   verifyPayment: (sessionId: string) => 
     api.post('/payment/verify', { sessionId }),
+
+  upgradePlan: (plan_type: 'free' | 'basic' | 'pro') =>
+    api.post('/upgrade-plan', { plan_type }),
   
   getPlans: () => 
     api.get('/payment/plans'),

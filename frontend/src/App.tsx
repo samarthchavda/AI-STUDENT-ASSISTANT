@@ -51,6 +51,8 @@ function AppRoutes() {
       <Route path="/dsa/editor/:id" element={<ProtectedRoute><DSAEditorDemoPage /></ProtectedRoute>} />
       <Route path="/roadmap" element={<ProtectedRoute><DSAPracticeDashboardPage /></ProtectedRoute>} />
       <Route path="/career" element={<ProtectedRoute><CareerPage /></ProtectedRoute>} />
+      <Route path="/career/resume-analysis" element={<ProtectedRoute><CareerPage /></ProtectedRoute>} />
+      <Route path="/career/resume-builder" element={<ProtectedRoute><CareerPage /></ProtectedRoute>} />
       <Route path="/company-prep" element={<ProtectedRoute><CompanyPrepPage /></ProtectedRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
