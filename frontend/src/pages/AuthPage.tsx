@@ -92,6 +92,8 @@ export default function AuthPage() {
     setLoading(true)
 
     try {
+      const destination = (location.state as any)?.from?.pathname
+
       if (authMode === 'login') {
         // Login
         const response = await userAPI.login(formData.email, formData.password)
@@ -114,9 +116,9 @@ export default function AuthPage() {
         
         // Redirect based on admin status
         if (user.is_admin) {
-          navigate('/admin')
+          navigate('/admin', { replace: true })
         } else {
-          navigate('/dashboard')
+          navigate(destination || '/dashboard', { replace: true })
         }
         
       } else {
@@ -145,9 +147,9 @@ export default function AuthPage() {
         
         // Redirect based on admin status
         if (user.is_admin) {
-          navigate('/admin')
+          navigate('/admin', { replace: true })
         } else {
-          navigate('/dashboard')
+          navigate(destination || '/dashboard', { replace: true })
         }
       }
     } catch (err: any) {

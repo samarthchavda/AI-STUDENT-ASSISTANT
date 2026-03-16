@@ -208,20 +208,43 @@ export default function DashboardPage() {
   });
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [activitiesLoaded, setActivitiesLoaded] = useState(false);
+  const [dashboardSyncing, setDashboardSyncing] = useState(false);
 
   useEffect(() => {
-    const loadDashboardData = async () => {
-      const aptitude = readAptitudeProgress();
-      const aptitudeAverage = aptitude.totalQuestions > 0
-        ? Math.round((aptitude.totalCorrect / aptitude.totalQuestions) * 100)
-        : 0;
+    const aptitude = readAptitudeProgress();
+    const aptitudeAverage = aptitude.totalQuestions > 0
+      ? Math.round((aptitude.totalCorrect / aptitude.totalQuestions) * 100)
+      : 0;
+    const resumeAtsScore = readNumericFromStorage([
+      RESUME_ATS_SCORE_KEY,
+      'resume_ats_score',
+      'resumeATSScore'
+    ]);
+    const dsaFromChallenge = readNumericFromStorage([DSA_SOLVED_WITHIN_TIME_KEY]);
 
+    setStats((current) => ({
+      ...current,
+      overallReadiness: aptitudeAverage,
+      mockTestsTaken: aptitude.totalQuizzes,
+      resumeAtsScore,
+      dsaSolved: dsaFromChallenge,
+      aptitudeAccuracy: aptitudeAverage,
+    }));
+
+    let active = true;
+    setDashboardSyncing(true);
+
+    const loadDashboardData = async () => {
       let practiceHistory: PracticeHistoryItem[] = [];
       try {
-        const historyResponse = await companyPrepAPI.getHistory(50);
+        const historyResponse = await companyPrepAPI.getHistory(20);
         practiceHistory = historyResponse.data || [];
       } catch {
         practiceHistory = [];
+      }
+
+      if (!active) {
+        return;
       }
 
       const companyAttempts = practiceHistory.length;
@@ -229,34 +252,24 @@ export default function DashboardPage() {
         ? Math.round(practiceHistory.reduce((sum, item) => sum + Number(item.score || 0), 0) / companyAttempts)
         : 0;
       const latestScore = companyAttempts > 0 ? Number(practiceHistory[0].score || 0) : 0;
-
       const hrRoundsPracticed = practiceHistory.filter((item) => item.round_name.toLowerCase().includes('hr')).length;
       const technicalRoundsPracticed = practiceHistory.filter((item) => {
         const normalized = item.round_name.toLowerCase();
         return normalized.includes('technical') || normalized.includes('coding');
       }).length;
-
       const totalAttempts = aptitude.totalQuizzes + companyAttempts;
       const weightedScore = (
         (aptitudeAverage * aptitude.totalQuizzes) +
         (companyAverage * companyAttempts)
       );
-      const overallReadiness = totalAttempts > 0 ? Math.round(weightedScore / totalAttempts) : 0;
-
-      const resumeAtsScore = readNumericFromStorage([
-        RESUME_ATS_SCORE_KEY,
-        'resume_ats_score',
-        'resumeATSScore'
-      ]);
+      const overallReadiness = totalAttempts > 0 ? Math.round(weightedScore / totalAttempts) : aptitudeAverage;
       const dsaFromHistory = practiceHistory.filter(isDsaLike).length;
-      const dsaFromChallenge = readNumericFromStorage([DSA_SOLVED_WITHIN_TIME_KEY]);
-      const dsaSolved = Math.max(dsaFromHistory, dsaFromChallenge);
 
       setStats({
         overallReadiness,
         mockTestsTaken: totalAttempts,
         resumeAtsScore,
-        dsaSolved,
+        dsaSolved: Math.max(dsaFromHistory, dsaFromChallenge),
         aptitudeAccuracy: aptitudeAverage,
         companyPracticeAverage: companyAverage,
         hrRoundsPracticed,
@@ -277,11 +290,20 @@ export default function DashboardPage() {
           };
         });
         setActivities(latestActivities);
+      } else {
+        setActivities([]);
       }
+
       setActivitiesLoaded(true);
+      setDashboardSyncing(false);
     };
 
-    loadDashboardData();
+    const timer = window.setTimeout(loadDashboardData, 0);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
   }, []);
 
   const statCards: StatCard[] = [
@@ -408,10 +430,31 @@ export default function DashboardPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
             <div className="lg:col-span-2 bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-              <h2 className="text-xl font-bold text-gray-900 mb-5">Recent Activity</h2>
+              <div className="mb-5 flex items-center justify-between gap-3">
+                <h2 className="text-xl font-bold text-gray-900">Recent Activity</h2>
+                {dashboardSyncing && (
+                  <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                    Syncing latest data...
+                  </span>
+                )}
+              </div>
 
               <div className="space-y-4">
-                {activitiesLoaded && activities.length === 0 ? (
+                {!activitiesLoaded ? (
+                  Array.from({ length: 3 }).map((_, index) => (
+                    <div
+                      key={`activity-skeleton-${index}`}
+                      className="rounded-xl border border-gray-100 bg-gray-50/80 p-4 flex items-start gap-4 animate-pulse"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-gray-200" />
+                      <div className="flex-1 min-w-0 space-y-2">
+                        <div className="h-4 w-3/4 rounded bg-gray-200" />
+                        <div className="h-3 w-1/3 rounded bg-gray-200" />
+                      </div>
+                      <div className="h-3 w-16 rounded bg-gray-200" />
+                    </div>
+                  ))
+                ) : activities.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-10 text-center">
                     <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mb-3">
                       <Activity className="w-7 h-7 text-gray-400" />
