@@ -443,11 +443,11 @@ export default function CareerPage() {
                   )}
 
                   {/* Resume Builder (Coming Soon) */}
-                  {selectedTab === 'builder' ? (
+                  {selectedTab === 'builder' && (
                     <div className="text-center py-8">
                       <p className="text-gray-600">Resume builder feature coming soon!</p>
                     </div>
-                  ) : null}
+                  )}
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
