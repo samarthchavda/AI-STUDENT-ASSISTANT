@@ -143,12 +143,12 @@ export default function CareerPage() {
           <div className="grid md:grid-cols-2 gap-8">
             <div className="feature-card">
               <h2 className="text-2xl font-bold mb-6 gradient-text">
-                {selectedTab === 'resume' && '📄 Resume & ATS Analysis'}
-                {selectedTab === 'builder' && '✨ Build Professional Resume'}
+                {selectedTab === 'resume' ? '📄 Resume & ATS Analysis' : '✨ Build Professional Resume'}
               </h2>
 
               {selectedTab === 'resume' && (
-                <div className="space-y-4">
+                {selectedTab === 'resume' ? (
+                  <div className="space-y-4">
                   {/* Target Role & JD */}
                   <div className="space-y-3 rounded-xl border border-teal-200 bg-teal-50/60 p-4">
                     <div>
@@ -308,7 +308,8 @@ export default function CareerPage() {
               )}
 
               {selectedTab === 'builder' && (
-                <div className="space-y-4">
+                {selectedTab === 'builder' ? (
+                  <div className="space-y-4">
                   <div className="text-center py-8">
                     <p className="text-gray-600 mb-4">
                       Resume builder coming soon! For now, use our analysis tool to improve your existing resume.
@@ -329,7 +330,7 @@ export default function CareerPage() {
               {result ? (
                 <div className="prose max-w-none">
                   {/* Resume Analysis Result */}
-                  {selectedTab === 'resume' && (result.atsScore !== undefined || result.overallScore !== undefined) && (
+                  {selectedTab === 'resume' && (result.atsScore !== undefined || result.overallScore !== undefined) ? (
                     <div className="space-y-4">
                       <div className="grid grid-cols-2 gap-4 mb-6">
                         <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
@@ -444,11 +445,11 @@ export default function CareerPage() {
                   )}
 
                   {/* Resume Builder (Coming Soon) */}
-                  {selectedTab === 'builder' && (
+                  {selectedTab === 'builder' ? (
                     <div className="text-center py-8">
                       <p className="text-gray-600">Resume builder feature coming soon!</p>
                     </div>
-                  )}
+                  ) : null}
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center gap-4 py-16 text-center">
