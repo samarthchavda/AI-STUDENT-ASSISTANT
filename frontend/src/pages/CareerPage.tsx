@@ -430,7 +430,7 @@ export default function CareerPage() {
                         <div className="bg-gray-50 p-4 rounded-lg">
                           <p className="font-semibold text-gray-900 mb-3">🏢 Company Fit Analysis:</p>
                           <div className="space-y-2">
-                            {Object.entries(result.companyFit).map(([company, fit]: [string, any]) => (
+                            {Object.entries(result.companyFit).map(([company, fit]) => (
                               <div key={company} className="flex justify-between items-center p-2 bg-white rounded">
                                 <span className="font-medium">{company}</span>
                                 <span className="text-sm text-gray-600">{fit}</span>
