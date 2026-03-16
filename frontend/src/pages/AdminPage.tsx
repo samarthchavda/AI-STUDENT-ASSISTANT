@@ -11,7 +11,7 @@ const AdminPage = () => {
   
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
-  const [chats, setChats] = useState<AdminChat[]>([]);
+  // Removed unused chats and setChats state
   const [chatUsersSummary, setChatUsersSummary] = useState<AdminChatUserSummary[]>([]);
   const [selectedChatUser, setSelectedChatUser] = useState<AdminChatUserSummary | null>(null);
   const [userChats, setUserChats] = useState<AdminChat[]>([]);
