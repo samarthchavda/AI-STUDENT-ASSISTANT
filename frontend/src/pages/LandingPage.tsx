@@ -1,8 +1,8 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { 
   Brain, ArrowRight, MessageSquare, FileText, BarChart3, 
-  Star, CheckCircle2, Zap, Trophy, ShieldCheck, Globe2, Sparkles, 
-  Code2, Rocket, Quote, Bot, Clock
+  Zap, Trophy, ShieldCheck, Globe2, Sparkles, 
+  Rocket, Bot, Clock
 } from 'lucide-react'
 import Footer from '../components/Footer'
 
@@ -44,7 +44,6 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white text-slate-900 selection:bg-blue-100 font-sans">
       
-      {/* NAVBAR */}
       <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/80 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 lg:px-8">
           <Link to="/" className="flex items-center gap-2.5 group">
@@ -63,9 +62,8 @@ export default function LandingPage() {
       </header>
 
       <main>
-        {/* HERO SECTION */}
         <section className="relative mx-auto max-w-5xl px-6 pt-24 pb-20 text-center lg:pt-32">
-          <div className="mx-auto mb-8 flex max-w-fit items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-1.5">
+          <div className="mx-auto mb-8 flex max-w-fit items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-1.5 shadow-sm">
             <Sparkles className="h-4 w-4 text-blue-600" />
             <p className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500">The New Standard for Campus Prep</p>
           </div>
@@ -89,24 +87,22 @@ export default function LandingPage() {
             </button>
             <button 
               onClick={() => navigate('/career/resume-analysis')}
-              className="h-14 rounded-xl border border-slate-200 bg-white px-10 font-bold text-slate-600 hover:bg-slate-50 transition-all"
+              className="h-14 rounded-xl border border-slate-200 bg-white px-10 font-bold text-slate-600 hover:bg-slate-50 transition-all shadow-sm"
             >
               Resume Analyzer
             </button>
           </div>
         </section>
 
-        {/* LOGO STRIP */}
-        <section className="mx-auto max-w-7xl px-6 py-12 border-y border-slate-100">
+        <section className="mx-auto max-w-7xl px-6 py-12 border-y border-slate-100 bg-slate-50/30">
           <p className="text-center text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-8">Trusted by students targeting top firms</p>
-          <div className="flex flex-wrap justify-center items-center gap-12 opacity-40 grayscale">
+          <div className="flex flex-wrap justify-center items-center gap-10 opacity-40 grayscale">
             {['TCS', 'Infosys', 'Amazon', 'Google', 'Wipro'].map(brand => (
-                <span key={brand} className="text-xl font-bold italic tracking-tighter text-slate-600">{brand}</span>
+                <span key={brand} className="text-lg font-bold italic tracking-tighter text-slate-600">{brand}</span>
             ))}
           </div>
         </section>
 
-        {/* STATS SECTION */}
         <section className="mx-auto max-w-7xl px-6 py-20 text-center">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-12">
                 <Stat val="500+" lab="Placement Tests"/>
@@ -116,7 +112,6 @@ export default function LandingPage() {
             </div>
         </section>
 
-        {/* FEATURES GRID - BENTO STYLE */}
         <section className="mx-auto max-w-7xl px-6 py-32 bg-[#F8FAFC]/50 border-y border-slate-100">
           <div className="text-center mb-20">
             <h2 className="text-4xl font-black text-slate-900">Complete Placement Platform</h2>
@@ -136,7 +131,6 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* WORKFLOW SECTION */}
         <section className="py-32 bg-white">
           <div className="max-w-5xl mx-auto px-6 text-center">
             <h2 className="text-4xl font-black mb-20 text-slate-900">How It Works</h2>
@@ -148,11 +142,10 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* BENEFITS SECTION */}
         <section className="py-32 bg-[#F8FAFC]">
             <div className="max-w-7xl mx-auto px-6 text-center">
                 <h2 className="text-4xl font-black mb-20 text-slate-900">Why Students Love CodeCampus</h2>
-                <div className="grid md:grid-cols-4 gap-12">
+                <div className="grid md:grid-cols-4 gap-12 text-center">
                     <Benefit icon={ShieldCheck} text="Reliable & Accurate AI Feedback"/>
                     <Benefit icon={Zap} text="Instant Answers to Coding Doubts"/>
                     <Benefit icon={Globe2} text="Practice Anywhere, Anytime"/>
@@ -161,7 +154,6 @@ export default function LandingPage() {
             </div>
         </section>
 
-        {/* FAQ SECTION */}
         <section className="py-32 bg-white">
           <div className="max-w-3xl mx-auto px-6">
             <h2 className="text-center text-4xl font-black mb-16 text-slate-900">Frequently Asked Questions</h2>
@@ -171,12 +163,11 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* FINAL CTA */}
         <section className="mx-auto max-w-5xl px-6 py-32 text-center">
           <div className="bg-slate-900 text-white rounded-[3rem] p-16 md:p-24 shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/20 rounded-full blur-3xl -mr-20 -mt-20" />
             <Brain className="mx-auto h-12 w-12 mb-8 text-blue-400" />
-            <h2 className="text-4xl md:text-6xl font-black mb-8 tracking-tight">Ready to secure your future?</h2>
+            <h2 className="text-4xl md:text-6xl font-black mb-8 tracking-tight leading-tight">Ready to secure your future?</h2>
             <p className="mb-10 text-xl text-slate-400 max-w-xl mx-auto">
               Join thousands of students who are already using AI to secure high-package roles.
             </p>
@@ -192,8 +183,6 @@ export default function LandingPage() {
   )
 }
 
-/* HELPER COMPONENTS WITH CLEAN WHITE STYLE */
-
 function Stat({val, lab}: {val: string, lab: string}) {
   return (
     <div>
@@ -208,7 +197,7 @@ function Step({number, icon:Icon, title, text}: {number: string, icon: any, titl
     <div className="relative group">
       <div className="text-8xl font-black text-slate-50 absolute -top-12 left-1/2 -translate-x-1/2 z-0 select-none group-hover:text-blue-50 transition-colors">{number}</div>
       <div className="relative z-10">
-        <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-6 text-blue-600 border border-blue-100 group-hover:scale-110 transition-transform">
+        <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-6 text-blue-600 border border-blue-100 group-hover:scale-110 transition-transform shadow-sm">
           <Icon size={32} />
         </div>
         <h3 className="font-bold text-2xl mb-3 text-slate-900">{title}</h3>
@@ -229,7 +218,7 @@ function Benefit({icon:Icon, text}: {icon: any, text: string}) {
 
 function FAQ({q, a}: {q: string, a: string}) {
   return (
-    <div className="bg-white border border-slate-100 p-7 rounded-2xl mb-4 hover:border-blue-200 transition-all cursor-default shadow-sm">
+    <div className="bg-white border border-slate-100 p-7 rounded-2xl mb-4 hover:border-blue-200 transition-all cursor-default shadow-sm text-left">
       <h3 className="font-bold text-slate-900 text-lg">{q}</h3>
       <p className="text-slate-500 mt-3 text-sm leading-relaxed">{a}</p>
     </div>
