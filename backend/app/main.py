@@ -17,7 +17,7 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
 # Import routes
-from app.routes import auth_routes, chat_routes, exam_routes, coding_routes, career_routes, payment_routes, admin_routes, company_routes, company_prep_routes, public_routes
+from app.routes import auth_routes, chat_routes, exam_routes, coding_routes, career_routes, payment_routes, admin_routes, company_routes, company_prep_routes, public_routes, aptitude_routes
 
 
 def _build_allowed_origins() -> list[str]:
@@ -105,6 +105,7 @@ app.include_router(company_routes.router)  # SEO feature: company question datab
 app.include_router(company_prep_routes.router)
 app.include_router(admin_routes.router, prefix="/api/admin", tags=["admin"])
 app.include_router(public_routes.router, prefix="/api", tags=["public"])  # Public company questions API
+app.include_router(aptitude_routes.router)  # Real aptitude questions from database
 
 @app.get("/")
 @rate_limit("10/minute")  # Rate limit: 10 requests per minute

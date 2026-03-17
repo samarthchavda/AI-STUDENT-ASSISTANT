@@ -1,129 +1,243 @@
-import { useState, useEffect } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Clock, AlertTriangle, CheckCircle, ArrowLeft, ArrowRight } from 'lucide-react'
-import Header from '../components/Header'
+import { Clock3 } from 'lucide-react'
+import { examAPI } from '../api/client'
 
-interface Question {
+type Difficulty = 'Easy' | 'Medium' | 'Hard'
+
+type ExamConfig = {
+  company: string
+  category: string
+  difficulty: Difficulty
+  questionCount: number
+  durationMinutes: number
+}
+
+type LiveQuestion = {
   id: number
   question: string
   options: string[]
-  correctAnswer: number
+  correctAnswer?: number  // Optional, only available after submission
+  explanation?: string
 }
 
-interface TestConfig {
-  company: string
-  category: string
-  difficulty: string
-}
-
-interface CategoryStats {
-  correct: number
-  total: number
-}
-
-interface ProgressStats {
-  totalQuizzes: number
-  totalCorrect: number
-  totalQuestions: number
-  categories: Record<string, CategoryStats>
-}
-
-const STATS_KEY = 'aptitude_progress'
-
-function loadStats(): ProgressStats {
-  try {
-    const raw = localStorage.getItem(STATS_KEY)
-    if (raw) return JSON.parse(raw)
-  } catch {}
-  return { totalQuizzes: 0, totalCorrect: 0, totalQuestions: 0, categories: {} }
-}
-
-function saveStats(stats: ProgressStats) {
-  localStorage.setItem(STATS_KEY, JSON.stringify(stats))
+type LiveExamState = {
+  config: ExamConfig
 }
 
 export default function ExamSimulationPage() {
-  const location = useLocation()
   const navigate = useNavigate()
-  
-  // Redirect if no test configuration
-  const testConfig = location.state as TestConfig | null
-  
-  useEffect(() => {
-    if (!testConfig) {
-      navigate('/exam-prep')
+  const location = useLocation()
+
+  const state = location.state as LiveExamState | null
+  const config = state?.config
+
+  const [questions, setQuestions] = useState<LiveQuestion[]>([])
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({})  // Changed to string (answer text)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [timeLeft, setTimeLeft] = useState((config?.durationMinutes || 15) * 60)
+  const [tabWarnings, setTabWarnings] = useState(0)
+  const [isPaused, setIsPaused] = useState(false)
+  const [pauseReason, setPauseReason] = useState('')
+  const [sessionId, setSessionId] = useState<string>('')  // Store session ID
+
+  const startTimeRef = useRef<number>(Date.now())
+  const submittedRef = useRef(false)
+
+  const requestExamFullscreen = useCallback(async () => {
+    if (typeof document === 'undefined') return false
+
+    try {
+      if (!document.fullscreenElement) {
+        await document.documentElement.requestFullscreen()
+      }
+      return true
+    } catch {
+      return false
     }
-  }, [testConfig, navigate])
+  }, [])
 
-  // State Management
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
-  const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({})
-  const [timeLeft, setTimeLeft] = useState(900) // 15 minutes in seconds
-  const [warnings, setWarnings] = useState(0)
-  const [isSubmitted, setIsSubmitted] = useState(false)
-
-  // Mock Questions Data
-  const questions: Question[] = [
-    {
-      id: 1,
-      question: "If a train travels 120 km in 2 hours, what is its average speed?",
-      options: ["50 km/h", "60 km/h", "70 km/h", "80 km/h"],
-      correctAnswer: 1
-    },
-    {
-      id: 2,
-      question: "What is the next number in the series: 2, 6, 12, 20, 30, ?",
-      options: ["40", "42", "44", "46"],
-      correctAnswer: 1
-    },
-    {
-      id: 3,
-      question: "If 5 workers can complete a task in 12 days, how many days will 10 workers take?",
-      options: ["4 days", "6 days", "8 days", "10 days"],
-      correctAnswer: 1
-    },
-    {
-      id: 4,
-      question: "The ratio of boys to girls in a class is 3:2. If there are 15 boys, how many girls are there?",
-      options: ["8", "10", "12", "15"],
-      correctAnswer: 1
-    },
-    {
-      id: 5,
-      question: "What is 15% of 200?",
-      options: ["25", "30", "35", "40"],
-      correctAnswer: 1
-    }
-  ]
-
-  // Timer Logic - Countdown
   useEffect(() => {
-    if (isSubmitted) return
+    if (!config) {
+      navigate('/exam-prep', { replace: true })
+      return
+    }
+
+    const fetchQuestions = async () => {
+      try {
+        setIsLoading(true)
+        setError('')
+
+        // Fetch real questions from database
+        const params = new URLSearchParams({
+          company: config.company,
+          difficulty: config.difficulty,
+          limit: config.questionCount.toString()
+        })
+
+        const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+        const fullUrl = `${apiBaseUrl}/aptitude/test?${params}`
+        
+        console.log('Fetching questions from:', fullUrl)
+        console.log('Config:', config)
+        
+        const response = await fetch(fullUrl)
+        
+        console.log('Response status:', response.status)
+        
+        if (!response.ok) {
+          const errorText = await response.text()
+          console.error('API Error:', errorText)
+          throw new Error('Failed to fetch questions')
+        }
+
+        const data = await response.json()
+        const rawQuestions = Array.isArray(data?.questions) ? data.questions : []
+
+        if (rawQuestions.length === 0) {
+          setError('No questions available for this configuration. Please try different settings.')
+          setIsLoading(false)
+          return
+        }
+
+        // Transform data to match LiveQuestion format
+        const normalized: LiveQuestion[] = rawQuestions.map((item: any) => ({
+          id: item.id,
+          question: item.question,
+          options: Array.isArray(item.options) ? item.options : []
+          // Note: correctAnswer and explanation are NOT included (secure mode)
+        }))
+
+        setQuestions(normalized)
+        setSessionId(data.session_id || '')  // Store session ID
+        setTimeLeft(config.durationMinutes * 60)
+        startTimeRef.current = Date.now()
+      } catch (err) {
+        console.error('Error fetching questions:', err)
+        setError('Unable to load questions right now. Please try again.')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchQuestions()
+  }, [config, navigate])
+
+  const totalQuestions = questions.length
+  const currentQuestion = questions[currentIndex]
+  const isLastQuestion = totalQuestions > 0 && currentIndex === totalQuestions - 1
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  }
+
+  const answeredCount = useMemo(
+    () => Object.keys(selectedAnswers).length,
+    [selectedAnswers]
+  )
+
+  const exitFullscreen = useCallback(async () => {
+    if (document.fullscreenElement) {
+      try {
+        await document.exitFullscreen()
+      } catch (error) {
+        console.error('Error exiting fullscreen:', error)
+      }
+    }
+  }, [])
+
+  const submitExam = useCallback(async () => {
+    if (submittedRef.current) return
+    submittedRef.current = true
+
+    // Exit fullscreen before navigating
+    await exitFullscreen()
+
+    if (!config || questions.length === 0) {
+      navigate('/exam-prep', { replace: true })
+      return
+    }
+
+    try {
+      // Prepare answers in the format: { question_id: selected_answer_text }
+      const answersPayload: Record<number, string> = {}
+      questions.forEach((question, index) => {
+        const selectedOptionText = selectedAnswers[index]
+        if (selectedOptionText !== undefined) {
+          answersPayload[question.id] = selectedOptionText
+        }
+      })
+
+      // Submit to backend for validation
+      const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+      const response = await fetch(`${apiBaseUrl}/aptitude/submit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          session_id: sessionId,
+          answers: answersPayload
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to submit answers')
+      }
+
+      const result = await response.json()
+
+      // Transform backend response to match frontend expectations
+      const questionsWithAnswers = result.questions.map((q: any) => ({
+        id: q.id,
+        question: q.question,
+        options: q.options,
+        correctAnswer: q.options.indexOf(q.correct_answer),
+        explanation: q.explanation,
+        userAnswer: q.user_answer,
+        isCorrect: q.is_correct
+      }))
+
+      const takenSeconds = Math.min(
+        config.durationMinutes * 60,
+        Math.round((Date.now() - startTimeRef.current) / 1000)
+      )
+
+      navigate('/exam-result', {
+        replace: true,
+        state: {
+          config,
+          questions: questionsWithAnswers,
+          selectedAnswers: selectedAnswers,
+          metrics: {
+            correct: result.correct,
+            wrong: result.wrong,
+            skipped: result.skipped,
+            scorePercent: result.score_percent,
+            timeTakenSeconds: takenSeconds,
+            totalTimeSeconds: config.durationMinutes * 60,
+          },
+        },
+      })
+    } catch (error) {
+      console.error('Error submitting exam:', error)
+      setError('Failed to submit exam. Please try again.')
+      submittedRef.current = false
+    }
+  }, [config, exitFullscreen, navigate, questions, selectedAnswers, sessionId])
+
+  useEffect(() => {
+    if (isLoading || questions.length === 0 || isPaused) return
 
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
-          // Auto-submit when time runs out
-          const correctCount = Object.entries(selectedAnswers).filter(
-            ([index, answer]) => questions[parseInt(index)].correctAnswer === answer
-          ).length
-
-          // Update progress stats
-          const stats = loadStats()
-          stats.totalQuizzes += 1
-          stats.totalCorrect += correctCount
-          stats.totalQuestions += questions.length
-
-          const categoryId = testConfig?.category || 'quantitative'
-          if (!stats.categories[categoryId]) {
-            stats.categories[categoryId] = { correct: 0, total: 0 }
-          }
-          stats.categories[categoryId].correct += correctCount
-          stats.categories[categoryId].total += questions.length
-
-          saveStats(stats)
-
-          setIsSubmitted(true)
+          clearInterval(timer)
+          submitExam()
           return 0
         }
         return prev - 1
@@ -131,374 +245,239 @@ export default function ExamSimulationPage() {
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [isSubmitted, selectedAnswers, questions, testConfig])
+  }, [isLoading, isPaused, questions.length, submitExam])
 
-  // Anti-Cheat: Tab Switch Detection
   useEffect(() => {
+    if (isLoading || questions.length === 0 || submittedRef.current) return
+
+    let mounted = true
+
+    const startFocusMode = async () => {
+      const entered = await requestExamFullscreen()
+      if (mounted && !entered) {
+        setIsPaused(true)
+        setPauseReason('Full screen is required to continue the exam.')
+      }
+    }
+
+    startFocusMode()
+
+    return () => {
+      mounted = false
+    }
+  }, [isLoading, questions.length, requestExamFullscreen])
+
+  useEffect(() => {
+    if (isLoading || questions.length === 0 || submittedRef.current) return
+
     const handleVisibilityChange = () => {
-      if (document.hidden && !isSubmitted) {
-        setWarnings((prev) => {
-          const newWarnings = prev + 1
-          
-          if (newWarnings >= 3) {
-            alert('⚠️ Test auto-submitted due to multiple tab switches!')
-            
-            // Calculate score and save stats before auto-submit
-            const correctCount = Object.entries(selectedAnswers).filter(
-              ([index, answer]) => questions[parseInt(index)].correctAnswer === answer
-            ).length
+      if (!document.hidden || submittedRef.current) return
 
-            const stats = loadStats()
-            stats.totalQuizzes += 1
-            stats.totalCorrect += correctCount
-            stats.totalQuestions += questions.length
+      setTabWarnings((prev) => {
+        const nextWarnings = prev + 1
+        window.alert('Warning: Tab switching is not allowed')
 
-            const categoryId = testConfig?.category || 'quantitative'
-            if (!stats.categories[categoryId]) {
-              stats.categories[categoryId] = { correct: 0, total: 0 }
-            }
-            stats.categories[categoryId].correct += correctCount
-            stats.categories[categoryId].total += questions.length
+        if (nextWarnings >= 2) {
+          submitExam()
+        }
 
-            saveStats(stats)
+        return nextWarnings
+      })
+    }
 
-            setIsSubmitted(true)
-          } else {
-            alert(`⚠️ Warning ${newWarnings}/3: Do not switch tabs during the test!`)
-          }
-          
-          return newWarnings
-        })
+    const handleContextMenu = (event: MouseEvent) => {
+      event.preventDefault()
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const key = event.key.toLowerCase()
+      const hasModifier = event.ctrlKey || event.metaKey
+      if (hasModifier && ['c', 'v', 'u'].includes(key)) {
+        event.preventDefault()
+      }
+    }
+
+    const handleFullscreenChange = () => {
+      if (submittedRef.current) return
+      if (!document.fullscreenElement) {
+        setIsPaused(true)
+        setPauseReason('Exam paused because full screen was exited. Resume to continue.')
       }
     }
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
-  }, [isSubmitted, selectedAnswers, questions, testConfig])
+    document.addEventListener('contextmenu', handleContextMenu)
+    document.addEventListener('keydown', handleKeyDown)
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
 
-  // Format time as MM:SS
-  const formatTime = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-  }
-
-  // Handle answer selection
-  const handleAnswerSelect = (optionIndex: number) => {
-    setSelectedAnswers({
-      ...selectedAnswers,
-      [currentQuestionIndex]: optionIndex
-    })
-  }
-
-  // Navigation handlers
-  const handlePrevious = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(currentQuestionIndex - 1)
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      document.removeEventListener('contextmenu', handleContextMenu)
+      document.removeEventListener('keydown', handleKeyDown)
+      document.removeEventListener('fullscreenchange', handleFullscreenChange)
     }
-  }
+  }, [isLoading, questions.length, submitExam])
 
-  const handleNext = () => {
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1)
+  const handleResumeExam = async () => {
+    const entered = await requestExamFullscreen()
+    if (!entered) {
+      setPauseReason('Please allow full screen to resume the exam.')
+      return
     }
+
+    setPauseReason('')
+    setIsPaused(false)
   }
 
-  const handleSubmit = () => {
-    const confirmSubmit = window.confirm(
-      `Are you sure you want to submit the test?\n\nAnswered: ${Object.keys(selectedAnswers).length}/${questions.length} questions`
-    )
-    
-    if (confirmSubmit) {
-      // Calculate score
-      const correctCount = Object.entries(selectedAnswers).filter(
-        ([index, answer]) => questions[parseInt(index)].correctAnswer === answer
-      ).length
-
-      // Update progress stats in localStorage
-      const stats = loadStats()
-      stats.totalQuizzes += 1
-      stats.totalCorrect += correctCount
-      stats.totalQuestions += questions.length
-
-      // Update category-specific stats
-      const categoryId = testConfig?.category || 'quantitative'
-      if (!stats.categories[categoryId]) {
-        stats.categories[categoryId] = { correct: 0, total: 0 }
-      }
-      stats.categories[categoryId].correct += correctCount
-      stats.categories[categoryId].total += questions.length
-
-      saveStats(stats)
-
-      setIsSubmitted(true)
-    }
+  if (!config) {
+    return null
   }
 
-  // If no config, show loading
-  if (!testConfig) {
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Redirecting...</p>
+      <div className="min-h-screen bg-white px-6 py-10 text-slate-900">
+        <div className="mx-auto max-w-4xl rounded-2xl border border-slate-200 p-8 text-center">
+          <p className="text-sm font-semibold uppercase tracking-wider text-slate-500">Step 2 · Live Exam</p>
+          <h1 className="mt-3 text-2xl font-bold">Preparing your assessment…</h1>
         </div>
       </div>
     )
   }
 
-  // Submission Screen
-  if (isSubmitted) {
-    const score = Object.entries(selectedAnswers).filter(
-      ([index, answer]) => questions[parseInt(index)].correctAnswer === answer
-    ).length
-
+  if (error || !currentQuestion) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
-        <Header />
-        <div className="max-w-2xl mx-auto px-4 py-16">
-          <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
-            <div className="mb-6">
-              <CheckCircle className="w-20 h-20 text-green-500 mx-auto mb-4" />
-              <h1 className="text-3xl font-bold text-gray-800 mb-2">
-                Test Submitted Successfully!
-              </h1>
-              <p className="text-gray-600">
-                Your {testConfig.company} {testConfig.category} test has been submitted
-              </p>
-            </div>
-
-            <div className="bg-blue-50 rounded-xl p-6 mb-6">
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <div className="text-3xl font-bold text-blue-600">{score}</div>
-                  <div className="text-sm text-gray-600">Correct</div>
-                </div>
-                <div>
-                  <div className="text-3xl font-bold text-gray-700">{questions.length}</div>
-                  <div className="text-sm text-gray-600">Total</div>
-                </div>
-                <div>
-                  <div className="text-3xl font-bold text-purple-600">
-                    {Math.round((score / questions.length) * 100)}%
-                  </div>
-                  <div className="text-sm text-gray-600">Score</div>
-                </div>
-              </div>
-            </div>
-
-            {warnings > 0 && (
-              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-                <p className="text-sm text-yellow-800">
-                  ⚠️ Tab Switch Warnings: {warnings}
-                </p>
-              </div>
-            )}
-
-            <div className="space-y-3">
-              <button
-                onClick={() => navigate('/dashboard')}
-                className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition"
-              >
-                Return to Dashboard
-              </button>
-              <button
-                onClick={() => navigate('/exam-prep')}
-                className="w-full bg-gray-100 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-200 transition"
-              >
-                Take Another Test
-              </button>
-            </div>
+      <div className="min-h-screen bg-white px-6 py-10 text-slate-900">
+        <div className="mx-auto max-w-4xl rounded-2xl border border-slate-200 p-8 text-center">
+          <p className="text-sm font-semibold text-red-600">{error || 'No question found'}</p>
+          <div className="mt-5 flex items-center justify-center gap-3">
+            <button
+              onClick={() => navigate('/exam-prep')}
+              className="rounded-xl border border-slate-200 px-5 py-2.5 font-semibold text-slate-700"
+            >
+              Back to Setup
+            </button>
+            <button
+              onClick={() => window.location.reload()}
+              className="rounded-xl bg-blue-600 px-5 py-2.5 font-semibold text-white"
+            >
+              Retry
+            </button>
           </div>
         </div>
       </div>
     )
   }
 
-  // Main Exam Screen
-  const currentQuestion = questions[currentQuestionIndex]
-  const isTimeCritical = timeLeft < 180 // Less than 3 minutes
+  const criticalTime = timeLeft <= 120
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header />
-      
-      {/* Exam Header - Company & Category */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-        <div className="max-w-6xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            {/* Test Info */}
-            <div>
-              <h1 className="text-2xl font-bold">
-                {testConfig.company} Simulation
-              </h1>
-              <p className="text-blue-100 text-sm mt-1">
-                {testConfig.category.charAt(0).toUpperCase() + testConfig.category.slice(1)} Aptitude • {testConfig.difficulty.charAt(0).toUpperCase() + testConfig.difficulty.slice(1)} Level
+    <div className="min-h-screen bg-white text-slate-900">
+      <div className="border-b border-slate-200 bg-white">
+        <div className="mx-auto flex max-w-5xl flex-col gap-4 px-6 py-5">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <p className="text-sm font-semibold text-slate-600">
+              Step 2 · Live Exam · {config.company}
+            </p>
+            <p className="text-sm font-semibold text-slate-600">
+              Question {currentIndex + 1} of {totalQuestions}
+            </p>
+            {tabWarnings > 0 && (
+              <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">
+                Warnings: {tabWarnings}/2
               </p>
-            </div>
-
-            {/* Timer & Warnings */}
-            <div className="flex items-center gap-3">
-              {/* Warnings Badge */}
-              {warnings > 0 && (
-                <div className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold ${
-                  warnings >= 2 
-                    ? 'bg-red-500 text-white border-2 border-red-300' 
-                    : 'bg-yellow-400 text-yellow-900 border-2 border-yellow-300'
-                }`}>
-                  <AlertTriangle className="w-5 h-5" />
-                  <span>Warnings: {warnings}/3</span>
-                </div>
-              )}
-
-              {/* Timer */}
-              <div
-                className={`flex items-center gap-2 px-5 py-3 rounded-lg font-mono text-2xl font-bold border-2 ${
-                  isTimeCritical
-                    ? 'bg-red-600 text-white border-red-400 animate-pulse shadow-lg'
-                    : 'bg-white text-green-600 border-green-300'
-                }`}
-              >
-                <Clock className="w-6 h-6" />
-                {formatTime(timeLeft)}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Progress Bar Section */}
-      <div className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
-            <span className="font-semibold">
-              Question {currentQuestionIndex + 1} of {questions.length}
-            </span>
-            <span className="font-semibold">
-              Answered: {Object.keys(selectedAnswers).length}/{questions.length}
-            </span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-3 shadow-inner">
+            )}
             <div
-              className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-300 shadow-md"
-              style={{
-                width: `${((currentQuestionIndex + 1) / questions.length) * 100}%`
-              }}
+              className={`inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-bold ${
+                criticalTime
+                  ? 'border-red-200 bg-red-50 text-red-700'
+                  : 'border-slate-200 bg-slate-50 text-slate-700'
+              }`}
+            >
+              <Clock3 className="h-4 w-4" />
+              {formatTime(timeLeft)}
+            </div>
+          </div>
+
+          <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+            <div
+              className="h-full rounded-full bg-blue-600 transition-all"
+              style={{ width: `${((currentIndex + 1) / totalQuestions) * 100}%` }}
             />
           </div>
         </div>
       </div>
 
-      {/* Question Body */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">
-          {/* Question Number Badge */}
-          <div className="inline-block bg-blue-100 text-blue-700 px-4 py-1 rounded-full text-sm font-semibold mb-4">
-            Question {currentQuestionIndex + 1}
+      <main className="mx-auto flex w-full max-w-5xl flex-col px-6 py-8">
+        <section className="rounded-3xl border border-slate-200 bg-white p-7 md:p-9">
+          <h1 className="text-2xl font-black leading-relaxed text-slate-900">{currentQuestion.question}</h1>
+
+          <div className="mt-7 grid gap-4">
+            {currentQuestion.options.map((option, optionIndex) => {
+              const selected = selectedAnswers[currentIndex] === option
+              return (
+                <button
+                  key={`${currentQuestion.id}-${optionIndex}`}
+                  onClick={() => setSelectedAnswers((prev) => ({ ...prev, [currentIndex]: option }))}
+                  className={`rounded-2xl border p-4 text-left text-base font-semibold transition ${
+                    selected
+                      ? 'border-blue-600 bg-blue-50 text-slate-900'
+                      : 'border-slate-200 bg-white text-slate-700 hover:border-blue-400 hover:bg-blue-50/40'
+                  }`}
+                >
+                  <span className="mr-2 font-bold text-slate-500">{String.fromCharCode(65 + optionIndex)}.</span>
+                  {option}
+                </button>
+              )
+            })}
           </div>
+        </section>
 
-          {/* Question Text */}
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">
-            {currentQuestion.question}
-          </h2>
+        <footer className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4">
+          <button
+            onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
+            disabled={currentIndex === 0}
+            className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Previous
+          </button>
 
-          {/* Options */}
-          <div className="space-y-3">
-            {currentQuestion.options.map((option, index) => (
-              <button
-                key={index}
-                onClick={() => handleAnswerSelect(index)}
-                className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
-                  selectedAnswers[currentQuestionIndex] === index
-                    ? 'border-blue-600 bg-blue-50 shadow-md'
-                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  {/* Radio Button */}
-                  <div
-                    className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                      selectedAnswers[currentQuestionIndex] === index
-                        ? 'border-blue-600 bg-blue-600'
-                        : 'border-gray-300'
-                    }`}
-                  >
-                    {selectedAnswers[currentQuestionIndex] === index && (
-                      <div className="w-3 h-3 bg-white rounded-full" />
-                    )}
-                  </div>
+          <button
+            onClick={() => setCurrentIndex((prev) => Math.min(totalQuestions - 1, prev + 1))}
+            className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-slate-300"
+          >
+            Skip
+          </button>
 
-                  {/* Option Text */}
-                  <span className="text-lg">
-                    <span className="font-semibold mr-2">
-                      {String.fromCharCode(65 + index)}.
-                    </span>
-                    {option}
-                  </span>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
+          <button
+            onClick={() => {
+              if (isLastQuestion) {
+                submitExam()
+                return
+              }
+              setCurrentIndex((prev) => Math.min(totalQuestions - 1, prev + 1))
+            }}
+            className="rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+          >
+            {isLastQuestion ? 'Save & Finish' : 'Save & Next'}
+          </button>
+        </footer>
+      </main>
 
-        {/* Navigation Footer */}
-        <div className="bg-white rounded-2xl shadow-lg p-6">
-          <div className="flex items-center justify-between gap-4">
-            {/* Previous Button */}
+      {isPaused && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 px-4">
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-xl">
+            <p className="text-sm font-semibold uppercase tracking-wider text-slate-500">Focus Mode</p>
+            <h2 className="mt-2 text-xl font-bold text-slate-900">Exam Paused</h2>
+            <p className="mt-3 text-sm text-slate-600">{pauseReason || 'Resume full screen mode to continue.'}</p>
             <button
-              onClick={handlePrevious}
-              disabled={currentQuestionIndex === 0}
-              className="flex items-center gap-2 px-6 py-3 rounded-lg border-2 border-gray-300 text-gray-700 font-semibold hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              onClick={handleResumeExam}
+              className="mt-5 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
             >
-              <ArrowLeft className="w-5 h-5" />
-              Previous
-            </button>
-
-            {/* Submit Button (show on last question or if all answered) */}
-            {(currentQuestionIndex === questions.length - 1 ||
-              Object.keys(selectedAnswers).length === questions.length) && (
-              <button
-                onClick={handleSubmit}
-                className="px-8 py-3 rounded-lg bg-green-600 text-white font-bold hover:bg-green-700 transition shadow-lg"
-              >
-                Submit Test
-              </button>
-            )}
-
-            {/* Next Button */}
-            <button
-              onClick={handleNext}
-              disabled={currentQuestionIndex === questions.length - 1}
-              className="flex items-center gap-2 px-6 py-3 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
-            >
-              Next
-              <ArrowRight className="w-5 h-5" />
+              Resume Exam
             </button>
           </div>
         </div>
-
-        {/* Question Navigator */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mt-6">
-          <h3 className="font-semibold text-gray-800 mb-4">Quick Navigation</h3>
-          <div className="grid grid-cols-5 gap-3">
-            {questions.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentQuestionIndex(index)}
-                className={`aspect-square rounded-lg font-semibold text-lg transition-all ${
-                  index === currentQuestionIndex
-                    ? 'bg-blue-600 text-white shadow-lg scale-110'
-                    : selectedAnswers[index] !== undefined
-                    ? 'bg-green-100 text-green-700 border-2 border-green-500'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                {index + 1}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   )
 }
