@@ -42,6 +42,3 @@ beautifulsoup4==4.12.3
 
 # Scheduling
 apscheduler==3.10.4
-
-# CORS
-python-cors==1.0.0
