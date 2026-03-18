@@ -441,6 +441,148 @@ async def delete_user(
     
     return {"message": f"User {user.name} deleted successfully"}
 
+# Delete user
+@router.delete("/users/{user_id}")
+async def delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    """Delete a user and all their data"""
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if user.is_admin:
+        raise HTTPException(status_code=400, detail="Cannot delete admin users")
+    
+    # Delete user (cascade will handle related records)
+    db.delete(user)
+    db.commit()
+    
+    return {"message": f"User {user.name} deleted successfully"}
+
+
+# Get aptitude history for a specific user
+@router.get("/users/{user_id}/aptitude-history")
+async def get_user_aptitude_history(
+    user_id: int,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    """Get aptitude exam history for a specific user"""
+    from sqlalchemy import text
+    from app.core.database import engine
+    
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    try:
+        query = """
+            SELECT 
+                id,
+                company,
+                category,
+                difficulty,
+                score,
+                total_questions,
+                correct,
+                wrong,
+                skipped,
+                score_percent,
+                exam_date
+            FROM aptitude_exam_history
+            WHERE user_id = :user_id
+            ORDER BY exam_date DESC
+        """
+        
+        with engine.connect() as conn:
+            result = conn.execute(text(query), {"user_id": user_id})
+            rows = result.fetchall()
+            
+            history = []
+            for row in rows:
+                history.append({
+                    "id": row.id,
+                    "company": row.company,
+                    "category": row.category,
+                    "difficulty": row.difficulty,
+                    "score": row.score,
+                    "total_questions": row.total_questions,
+                    "correct": row.correct,
+                    "wrong": row.wrong,
+                    "skipped": row.skipped,
+                    "score_percent": float(row.score_percent),
+                    "exam_date": row.exam_date.isoformat() if hasattr(row.exam_date, 'isoformat') else str(row.exam_date)
+                })
+            
+            return {
+                "user": {
+                    "id": user.id,
+                    "name": user.name,
+                    "email": user.email,
+                    "plan": user.plan.value if hasattr(user.plan, 'value') else user.plan
+                },
+                "history": history,
+                "total_exams": len(history)
+            }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Database error: {str(e)}"
+        )
+
+
+# Get all users with aptitude exam counts
+@router.get("/aptitude-users-summary")
+async def get_aptitude_users_summary(
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    """Get all users who have taken aptitude exams, with their exam count"""
+    from sqlalchemy import text
+    from app.core.database import engine
+    
+    try:
+        query = """
+            SELECT 
+                u.id as user_id,
+                u.name as user_name,
+                u.email as user_email,
+                u.plan,
+                COUNT(aeh.id) as exam_count,
+                MAX(aeh.exam_date) as last_exam_date,
+                AVG(aeh.score_percent) as avg_score
+            FROM users u
+            INNER JOIN aptitude_exam_history aeh ON aeh.user_id = u.id
+            GROUP BY u.id, u.name, u.email, u.plan
+            ORDER BY MAX(aeh.exam_date) DESC
+        """
+        
+        with engine.connect() as conn:
+            result = conn.execute(text(query))
+            rows = result.fetchall()
+            
+            return [
+                {
+                    "user_id": row.user_id,
+                    "user_name": row.user_name,
+                    "user_email": row.user_email,
+                    "plan": str(row.plan).replace('PlanType.', '').lower() if 'PlanType' in str(row.plan) else str(row.plan).lower(),
+                    "exam_count": row.exam_count,
+                    "last_exam_date": row.last_exam_date.isoformat() if hasattr(row.last_exam_date, 'isoformat') else str(row.last_exam_date),
+                    "avg_score": round(float(row.avg_score), 2) if row.avg_score else 0
+                }
+                for row in rows
+            ]
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Database error: {str(e)}"
+        )
+
+
 # Get all company questions (SEO Feature)
 @router.get("/company-questions", response_model=List[CompanyQuestionResponse])
 async def get_all_company_questions(

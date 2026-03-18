@@ -184,4 +184,14 @@ export const adminAPI = {
     const response = await api.delete(`/admin/users/${userId}`);
     return response.data;
   },
+
+  getAptitudeUsersSummary: async (): Promise<any[]> => {
+    const response = await api.get('/admin/aptitude-users-summary');
+    return response.data;
+  },
+
+  getUserAptitudeHistory: async (userId: number): Promise<any> => {
+    const response = await api.get(`/admin/users/${userId}/aptitude-history`);
+    return response.data;
+  },
 };
