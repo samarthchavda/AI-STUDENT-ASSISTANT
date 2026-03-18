@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Clock3 } from 'lucide-react'
-import { examAPI } from '../api/client'
 
 type Difficulty = 'Easy' | 'Medium' | 'Hard'
 
@@ -77,13 +76,18 @@ export default function ExamSimulationPage() {
           limit: config.questionCount.toString()
         })
 
+        const token = localStorage.getItem('token')
         const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
         const fullUrl = `${apiBaseUrl}/aptitude/test?${params}`
         
         console.log('Fetching questions from:', fullUrl)
         console.log('Config:', config)
         
-        const response = await fetch(fullUrl)
+        const response = await fetch(fullUrl, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
         
         console.log('Response status:', response.status)
         
@@ -135,11 +139,6 @@ export default function ExamSimulationPage() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
 
-  const answeredCount = useMemo(
-    () => Object.keys(selectedAnswers).length,
-    [selectedAnswers]
-  )
-
   const exitFullscreen = useCallback(async () => {
     if (document.fullscreenElement) {
       try {
@@ -172,12 +171,14 @@ export default function ExamSimulationPage() {
         }
       })
 
-      // Submit to backend for validation
+      // Submit to backend for validation using authenticated API client
+      const token = localStorage.getItem('token')
       const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
       const response = await fetch(`${apiBaseUrl}/aptitude/submit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           session_id: sessionId,
@@ -186,7 +187,9 @@ export default function ExamSimulationPage() {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to submit answers')
+        const errorData = await response.json().catch(() => ({}))
+        console.error('Submit error:', errorData)
+        throw new Error(errorData.detail || 'Failed to submit answers')
       }
 
       const result = await response.json()

@@ -5,6 +5,17 @@ import { careerAPI } from '../api/client';
 import Header from '../components/Header';
 import MultiStepResumeBuilder from '../components/MultiStepResumeBuilder';
 
+interface ResumeAnalysisResult {
+  atsScore?: number
+  overallScore?: number
+  strengths?: string[]
+  missingInResume?: string[]
+  suggestedChanges?: string[]
+  missingKeywords?: string[]
+  companyFit?: Record<string, string>
+  extractedText?: string
+}
+
 export default function CareerPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -18,8 +29,10 @@ export default function CareerPage() {
   const [uploadMethod, setUploadMethod] = useState<'text' | 'pdf'>('pdf');
   const [targetRole, setTargetRole] = useState('');
   const [jobDescription, setJobDescription] = useState('');
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<ResumeAnalysisResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [analysisSourceText, setAnalysisSourceText] = useState('');
   const [resumeTemplate] = useState<'classic' | 'modern' | 'minimal'>('classic');
 
   useEffect(() => {
@@ -62,6 +75,9 @@ export default function CareerPage() {
         response = await careerAPI.analyzeResume(resumeText, targetRole, jobDescription);
       }
       setResult(response.data);
+      const extracted = String(response.data?.extractedText || '').trim();
+      const sourceForDownload = uploadMethod === 'pdf' ? extracted : resumeText.trim();
+      setAnalysisSourceText(sourceForDownload);
       const atsScore = Number(response.data?.atsScore || 0);
       if (atsScore > 0) {
         localStorage.setItem('latest_resume_ats_score', String(atsScore));
@@ -76,17 +92,19 @@ export default function CareerPage() {
 
   const handleDownloadUpdatedResume = async () => {
     try {
+      setDownloading(true);
       let response;
-      if (uploadMethod === 'pdf' && result?.extractedText) {
-        response = await careerAPI.generateResumePDF(result.extractedText, resumeTemplate);
+
+      const sourceText = String(result?.extractedText || analysisSourceText || resumeText || '').trim();
+
+      if (sourceText.length >= 40) {
+        response = await careerAPI.generateResumePDF(sourceText, resumeTemplate);
       } else if (uploadMethod === 'pdf' && uploadedFile) {
         const formData = new FormData();
         formData.append('file', uploadedFile);
         response = await careerAPI.generateResumePDFFromUpload(formData, resumeTemplate);
-      } else if (resumeText.trim()) {
-        response = await careerAPI.generateResumePDF(resumeText, resumeTemplate);
       } else {
-        alert('Analyze resume first.');
+        alert('Analyze resume first, then download updated PDF.');
         return;
       }
 
@@ -101,6 +119,18 @@ export default function CareerPage() {
       window.URL.revokeObjectURL(url);
     } catch (error: any) {
       console.error('Error:', error);
+      try {
+        if (error?.response?.data instanceof Blob) {
+          const blobText = await error.response.data.text();
+          const parsed = JSON.parse(blobText);
+          alert(parsed?.detail || 'Failed to download updated resume PDF.');
+          return;
+        }
+      } catch {
+      }
+      alert(error?.response?.data?.detail || 'Failed to download updated resume PDF.');
+    } finally {
+      setDownloading(false);
     }
   };
 
@@ -184,7 +214,86 @@ export default function CareerPage() {
                       <p className="text-4xl font-black text-emerald-900">{result.overallScore}/100</p>
                     </div>
                   </div>
-                  <button onClick={handleDownloadUpdatedResume} className="w-full bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-slate-800 transition-all">Download Analysis PDF</button>
+
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4">
+                      <p className="font-bold text-emerald-800 mb-2">✅ Strengths</p>
+                      {result.strengths && result.strengths.length > 0 ? (
+                        <ul className="list-disc list-inside space-y-1 text-sm text-emerald-900">
+                          {result.strengths.map((item, index) => (
+                            <li key={`strength-${index}`}>{item}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-emerald-900">No strengths returned from AI.</p>
+                      )}
+                    </div>
+
+                    <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
+                      <p className="font-bold text-amber-800 mb-2">⚠️ Missing In Resume</p>
+                      {result.missingInResume && result.missingInResume.length > 0 ? (
+                        <ul className="list-disc list-inside space-y-1 text-sm text-amber-900">
+                          {result.missingInResume.map((item, index) => (
+                            <li key={`missing-${index}`}>{item}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-amber-900">No major missing sections detected.</p>
+                      )}
+                    </div>
+
+                    <div className="bg-sky-50 border border-sky-100 rounded-xl p-4">
+                      <p className="font-bold text-sky-800 mb-2">🛠️ Real Solutions (What to fix now)</p>
+                      {result.suggestedChanges && result.suggestedChanges.length > 0 ? (
+                        <ul className="list-disc list-inside space-y-1 text-sm text-sky-900">
+                          {result.suggestedChanges.map((item, index) => (
+                            <li key={`change-${index}`}>{item}</li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="text-sm text-sky-900">No suggestions returned from AI.</p>
+                      )}
+                    </div>
+
+                    <div className="bg-violet-50 border border-violet-100 rounded-xl p-4">
+                      <p className="font-bold text-violet-800 mb-2">🔎 Missing Keywords (ATS)</p>
+                      {result.missingKeywords && result.missingKeywords.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {result.missingKeywords.map((keyword, index) => (
+                            <span key={`keyword-${index}`} className="px-2.5 py-1 rounded-full bg-violet-100 text-violet-800 text-xs font-semibold">
+                              {keyword}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-violet-900">No missing keywords identified.</p>
+                      )}
+                    </div>
+
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                      <p className="font-bold text-slate-800 mb-2">🏢 Company Fit Snapshot</p>
+                      {result.companyFit && Object.keys(result.companyFit).length > 0 ? (
+                        <div className="space-y-2">
+                          {Object.entries(result.companyFit).map(([companyType, fit]) => (
+                            <div key={companyType} className="rounded-lg border border-slate-200 bg-white p-3">
+                              <p className="text-sm font-semibold text-slate-700">{companyType}</p>
+                              <p className="text-sm text-slate-600">{fit}</p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-slate-600">Company fit analysis not available.</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleDownloadUpdatedResume}
+                    disabled={downloading}
+                    className="w-full bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-slate-800 transition-all disabled:opacity-60"
+                  >
+                    {downloading ? 'Preparing PDF...' : 'Download Updated Resume PDF'}
+                  </button>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full py-10 text-slate-400">

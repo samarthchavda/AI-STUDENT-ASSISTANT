@@ -6,7 +6,6 @@ from typing import List, Dict, Optional
 from functools import lru_cache
 import json
 import re
-import random
 import tiktoken
 import google.generativeai as genai
 from app.core.config import settings
@@ -1971,6 +1970,9 @@ Rules:
 - atsScore and overallScore must be integers from 0 to 100.
 - strengths, missingInResume, suggestedChanges, missingKeywords must be arrays of concise strings.
 - companyFit must be an object with concise values.
+- suggestedChanges must be highly actionable (what to change + how to change).
+- missingInResume must focus on concrete missing sections/evidence.
+- missingKeywords must prioritize role or JD-relevant ATS terms.
 """
 
         raw_response = self._generate_response(prompt)
@@ -2025,6 +2027,63 @@ Rules:
         if not fallback_suggestions:
             fallback_suggestions.append("Improve weak or repetitive bullets for clarity and impact.")
 
+        def _extract_keywords(text: str, limit: int = 20) -> List[str]:
+            if not text or text.strip().lower() == "not provided":
+                return []
+
+            stop_words = {
+                "the", "and", "for", "with", "from", "this", "that", "will", "your", "you", "our",
+                "are", "have", "has", "had", "was", "were", "not", "but", "can", "all", "any",
+                "job", "role", "description", "required", "requirements", "preferred", "candidate",
+                "years", "year", "experience", "strong", "good", "ability", "skills", "skill", "work"
+            }
+
+            tokens = re.findall(r"[a-zA-Z][a-zA-Z0-9+.#-]{1,}", text.lower())
+            counts: Dict[str, int] = {}
+            for token in tokens:
+                if token in stop_words or len(token) < 3:
+                    continue
+                counts[token] = counts.get(token, 0) + 1
+
+            sorted_tokens = sorted(counts.items(), key=lambda item: (-item[1], item[0]))
+            return [token for token, _ in sorted_tokens[:limit]]
+
+        jd_keywords = _extract_keywords(jd_context, limit=30)
+        role_keywords = _extract_keywords(role_context, limit=8)
+        candidate_keywords = jd_keywords if jd_keywords else role_keywords
+        fallback_missing_keywords = [
+            keyword
+            for keyword in candidate_keywords
+            if keyword not in normalized_resume
+        ][:12]
+
+        action_verbs = re.findall(
+            r"\b(built|developed|implemented|optimized|designed|led|created|improved|automated|engineered|delivered|deployed)\b",
+            normalized_resume,
+        )
+        impact_mentions = re.findall(r"\b\d+(?:\.\d+)?\s*(?:%|\+|x|k|m|million|users|ms|sec|hours?)\b", normalized_resume)
+
+        detected_skills = [
+            "python", "java", "javascript", "typescript", "react", "node", "sql", "mongodb", "postgresql",
+            "aws", "docker", "kubernetes", "git", "django", "flask", "spring", "rest", "api", "redis"
+        ]
+        matched_skills = [skill for skill in detected_skills if skill in normalized_resume]
+
+        section_score = (len(required_sections) - len(fallback_missing_sections)) * 4
+        action_score = min(16, len(action_verbs) * 2)
+        impact_score = min(16, len(impact_mentions) * 4)
+        skills_score = min(16, len(matched_skills) * 2)
+
+        if candidate_keywords:
+            matched_jd_terms = [keyword for keyword in candidate_keywords if keyword in normalized_resume]
+            jd_score = min(16, int((len(matched_jd_terms) / max(1, len(candidate_keywords))) * 20))
+        else:
+            matched_jd_terms = []
+            jd_score = 8
+
+        length_score = 10 if 220 <= len(resume_text.split()) <= 700 else 6
+        deterministic_score = max(35, min(96, 20 + section_score + action_score + impact_score + skills_score + jd_score + length_score))
+
         # Score fallback strategy:
         # 1) Parsed JSON integer
         # 2) Regex from model text for patterns like 82/100 or 82%
@@ -2038,8 +2097,7 @@ Rules:
             except Exception:
                 pass
 
-        random_score = random.randint(60, 85)
-        regex_ats = score_candidates[0] if len(score_candidates) > 0 else random_score
+        regex_ats = score_candidates[0] if len(score_candidates) > 0 else deterministic_score
         regex_overall = score_candidates[1] if len(score_candidates) > 1 else regex_ats
 
         def _as_int_score(value, default_value):
@@ -2057,21 +2115,54 @@ Rules:
 
         # If JSON parsing fails, return dynamic fallback (no static 75, no static missingKeywords)
         if not isinstance(parsed, dict):
+            fallback_strengths = []
+            if len(fallback_missing_sections) <= 2:
+                fallback_strengths.append("Most critical resume sections are present.")
+            if len(matched_skills) >= 5:
+                fallback_strengths.append("Technical stack is clearly visible for ATS scanning.")
+            if len(action_verbs) >= 3:
+                fallback_strengths.append("Experience bullets use action-oriented language.")
+            if len(impact_mentions) >= 2:
+                fallback_strengths.append("Resume includes measurable outcomes, improving credibility.")
+            if target_role:
+                fallback_strengths.append(f"Resume is positioned for target role: {target_role}.")
+            if not fallback_strengths:
+                fallback_strengths = [
+                    "Resume contains core profile information.",
+                    "Technical and project details are identifiable.",
+                    "Actionable improvements can quickly raise shortlist chances.",
+                ]
+
+            actionable_changes = list(fallback_suggestions)
+            if fallback_missing_keywords:
+                actionable_changes.append(f"Add ATS keywords in relevant bullets: {', '.join(fallback_missing_keywords[:6])}.")
+            if jd_context and matched_jd_terms:
+                actionable_changes.append(f"Increase JD alignment by expanding evidence for: {', '.join(matched_jd_terms[:5])}.")
+
+            if deterministic_score >= 78:
+                service_fit = "Good fit - likely shortlist-ready with minor polishing"
+                product_fit = "Moderate-good fit - add deeper impact and DSA/system design evidence"
+                startup_fit = "Good fit - highlight ownership and rapid delivery outcomes"
+            elif deterministic_score >= 62:
+                service_fit = "Moderate fit - improve clarity, keywords, and achievements"
+                product_fit = "Moderate fit - strengthen quantified project impact and technical depth"
+                startup_fit = "Moderate fit - add shipped features and end-to-end ownership examples"
+            else:
+                service_fit = "Low-moderate fit - add core sections and role-specific skills"
+                product_fit = "Low fit - significant improvements needed in impact, skills, and depth"
+                startup_fit = "Low-moderate fit - show practical execution and outcomes"
+
             return {
                 "atsScore": regex_ats,
                 "overallScore": regex_overall,
-                "strengths": [
-                    "Resume has core structure present.",
-                    "Technical profile is visible.",
-                    "Role-focused improvements can increase shortlist chances."
-                ],
+                "strengths": fallback_strengths[:6],
                 "missingInResume": fallback_missing_sections[:8],
-                "suggestedChanges": fallback_suggestions[:8],
-                "missingKeywords": [],
+                "suggestedChanges": actionable_changes[:10],
+                "missingKeywords": fallback_missing_keywords,
                 "companyFit": {
-                    "Service-based (TCS/Infosys)": "Moderate fit - improve aptitude and clarity",
-                    "Product-based (Amazon/Microsoft)": "Moderate fit - add stronger impact and DSA evidence",
-                    "Startups": "Moderate fit - highlight ownership and shipped work"
+                    "Service-based (TCS/Infosys)": service_fit,
+                    "Product-based (Amazon/Microsoft)": product_fit,
+                    "Startups": startup_fit
                 }
             }
 
@@ -2081,12 +2172,12 @@ Rules:
             "Startups": "Moderate fit - review recommendations"
         }
 
-        # missingKeywords must come from Gemini JSON when available; otherwise keep empty
-        gemini_missing_keywords = _as_str_list(parsed.get("missingKeywords"), [])
+        # missingKeywords should come from model output; fallback to JD/role keyword gaps when empty
+        gemini_missing_keywords = _as_str_list(parsed.get("missingKeywords"), fallback_missing_keywords)
 
         return {
-            "atsScore": _as_int_score(parsed.get("atsScore"), regex_ats),
-            "overallScore": _as_int_score(parsed.get("overallScore"), regex_overall),
+            "atsScore": _as_int_score(parsed.get("atsScore"), deterministic_score),
+            "overallScore": _as_int_score(parsed.get("overallScore"), _as_int_score(parsed.get("atsScore"), deterministic_score)),
             "strengths": _as_str_list(parsed.get("strengths"), ["Strength insights not available from model output."]),
             "missingInResume": _as_str_list(parsed.get("missingInResume"), fallback_missing_sections[:8]),
             "suggestedChanges": _as_str_list(parsed.get("suggestedChanges"), fallback_suggestions[:8]),

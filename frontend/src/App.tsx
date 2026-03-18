@@ -6,6 +6,7 @@ import ChatPage from './pages/ChatPage'
 import ExamPrepPage from './pages/ExamPrepPage'
 import ExamSimulationPage from './pages/ExamSimulationPage'
 import ExamResultPage from './pages/ExamResultPage'
+import AptitudeHistoryPage from './pages/AptitudeHistoryPage'
 import CodingHelpPage from './pages/CodingHelpPage'
 import DSAPracticeDashboardPage from './pages/DSAPracticeDashboardPage'
 import DSAEditorDemoPage from './pages/DSAEditorDemoPage'
@@ -47,6 +48,7 @@ function AppRoutes() {
       <Route path="/exam-live" element={<ProtectedRoute><ExamSimulationPage /></ProtectedRoute>} />
       <Route path="/exam-result" element={<ProtectedRoute><ExamResultPage /></ProtectedRoute>} />
       <Route path="/exam-simulation" element={<ProtectedRoute><ExamSimulationPage /></ProtectedRoute>} />
+      <Route path="/aptitude-history" element={<ProtectedRoute><AptitudeHistoryPage /></ProtectedRoute>} />
       <Route path="/coding-help" element={<ProtectedRoute><CodingHelpPage /></ProtectedRoute>} />
       <Route path="/coding" element={<ProtectedRoute><CodingHelpPage /></ProtectedRoute>} />
       <Route path="/dsa" element={<ProtectedRoute><DSAPracticeDashboardPage /></ProtectedRoute>} />

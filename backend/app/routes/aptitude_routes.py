@@ -1,8 +1,9 @@
-from fastapi import APIRouter, HTTPException, Query, Body
+from fastapi import APIRouter, HTTPException, Query, Body, Depends
 from typing import List, Optional, Dict
 from pydantic import BaseModel
 from sqlalchemy import text
 from app.core.database import engine
+from app.core.auth import get_current_user
 import uuid
 
 router = APIRouter(prefix="/api/aptitude", tags=["aptitude"])
@@ -147,7 +148,10 @@ async def get_aptitude_test(
 
 
 @router.post("/submit", response_model=SubmitAnswerResponse)
-async def submit_answers(request: SubmitAnswerRequest = Body(...)):
+async def submit_answers(
+    request: SubmitAnswerRequest = Body(...),
+    current_user = Depends(get_current_user)
+):
     """
     Submit answers and get results with correct answers and explanations.
     This is the ONLY endpoint that reveals correct answers.
@@ -202,6 +206,11 @@ async def submit_answers(request: SubmitAnswerRequest = Body(...)):
             skipped_count = 0
             questions_with_answers = []
             
+            # Store company, category, difficulty from first question
+            company = rows[0].company if rows else "Unknown"
+            category = rows[0].category if rows else "Unknown"
+            difficulty = rows[0].difficulty if rows else "Medium"
+            
             for row in rows:
                 user_answer = request.answers.get(row.id)
                 is_correct = False
@@ -236,6 +245,48 @@ async def submit_answers(request: SubmitAnswerRequest = Body(...)):
             
             total_questions = len(rows)
             score_percent = round((correct_count / total_questions) * 100, 2) if total_questions > 0 else 0
+            
+            # Save exam history to database
+            import json
+            from datetime import datetime
+            
+            questions_json = json.dumps([{
+                "id": q.id,
+                "question": q.question,
+                "options": q.options,
+                "correct_answer": q.correct_answer,
+                "user_answer": q.user_answer,
+                "is_correct": q.is_correct,
+                "explanation": q.explanation
+            } for q in questions_with_answers])
+            
+            insert_query = """
+                INSERT INTO aptitude_exam_history 
+                (user_id, company, category, difficulty, score, total_questions, correct, wrong, skipped, score_percent, exam_date, questions_data)
+                VALUES (:user_id, :company, :category, :difficulty, :score, :total_questions, :correct, :wrong, :skipped, :score_percent, :exam_date, :questions_data)
+            """
+            
+            insert_params = {
+                "user_id": current_user.id,
+                "company": company,
+                "category": category,
+                "difficulty": difficulty,
+                "score": correct_count,
+                "total_questions": total_questions,
+                "correct": correct_count,
+                "wrong": wrong_count,
+                "skipped": skipped_count,
+                "score_percent": score_percent,
+                "exam_date": datetime.now(),
+                "questions_data": questions_json
+            }
+            
+            try:
+                conn.execute(text(insert_query), insert_params)
+                conn.commit()
+            except Exception as e:
+                print(f"Failed to save exam history: {str(e)}")
+                # Continue even if history save fails
             
             return SubmitAnswerResponse(
                 score=correct_count,
@@ -352,3 +403,137 @@ async def get_stats(company: Optional[str] = Query(None)):
             status_code=500,
             detail=f"Database error: {str(e)}"
         )
+
+
+@router.get("/history")
+async def get_exam_history(current_user = Depends(get_current_user)):
+    """Get user's exam history"""
+    try:
+        # First check if table exists
+        check_table_query = """
+            SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_name = 'aptitude_exam_history'
+            )
+        """
+        
+        with engine.connect() as conn:
+            result = conn.execute(text(check_table_query))
+            table_exists = result.scalar()
+            
+            if not table_exists:
+                print("⚠️ aptitude_exam_history table does not exist")
+                return []
+            
+            query = """
+                SELECT 
+                    id,
+                    company,
+                    category,
+                    difficulty,
+                    score,
+                    total_questions,
+                    correct,
+                    wrong,
+                    skipped,
+                    score_percent,
+                    exam_date
+                FROM aptitude_exam_history
+                WHERE user_id = :user_id
+                ORDER BY exam_date DESC
+                LIMIT 50
+            """
+            
+            result = conn.execute(text(query), {"user_id": current_user.id})
+            rows = result.fetchall()
+            
+            history = []
+            for row in rows:
+                history.append({
+                    "id": row.id,
+                    "company": row.company,
+                    "category": row.category,
+                    "difficulty": row.difficulty,
+                    "score": row.score,
+                    "total_questions": row.total_questions,
+                    "correct": row.correct,
+                    "wrong": row.wrong,
+                    "skipped": row.skipped,
+                    "score_percent": float(row.score_percent),
+                    "exam_date": row.exam_date.isoformat() if hasattr(row.exam_date, 'isoformat') else str(row.exam_date)
+                })
+            
+            return history
+            
+    except Exception as e:
+        print(f"Error fetching exam history: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Database error: {str(e)}"
+        )
+
+
+@router.get("/history/{exam_id}")
+async def get_exam_details(exam_id: int, current_user = Depends(get_current_user)):
+    """Get detailed results for a specific exam including all questions and answers"""
+    try:
+        # Get exam details
+        exam_query = """
+            SELECT 
+                id,
+                company,
+                category,
+                difficulty,
+                score,
+                total_questions,
+                correct,
+                wrong,
+                skipped,
+                score_percent,
+                exam_date,
+                questions_data
+            FROM aptitude_exam_history
+            WHERE id = :exam_id AND user_id = :user_id
+        """
+        
+        with engine.connect() as conn:
+            result = conn.execute(text(exam_query), {"exam_id": exam_id, "user_id": current_user.id})
+            exam_row = result.fetchone()
+            
+            if not exam_row:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Exam not found"
+                )
+            
+            # Parse questions data (stored as JSON)
+            import json
+            questions_data = json.loads(exam_row.questions_data) if exam_row.questions_data else []
+            
+            return {
+                "exam": {
+                    "id": exam_row.id,
+                    "company": exam_row.company,
+                    "category": exam_row.category,
+                    "difficulty": exam_row.difficulty,
+                    "score": exam_row.score,
+                    "total_questions": exam_row.total_questions,
+                    "correct": exam_row.correct,
+                    "wrong": exam_row.wrong,
+                    "skipped": exam_row.skipped,
+                    "score_percent": exam_row.score_percent,
+                    "exam_date": exam_row.exam_date.isoformat() if hasattr(exam_row.exam_date, 'isoformat') else str(exam_row.exam_date)
+                },
+                "questions": questions_data
+            }
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Database error: {str(e)}"
+        )
+

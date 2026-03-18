@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Check, Play, Zap } from 'lucide-react'
 import Header from '../components/Header'
 import { EXAM_CONFIG, calculateDuration } from '../config/examConfig'
+import { api } from '../api/client'
 
 type Difficulty = 'Easy' | 'Medium' | 'Hard'
 
@@ -42,24 +43,81 @@ const companies: Array<{ id: string; description: string }> = [
   },
 ]
 
-const categories: Array<{ id: string; label: string; description: string }> = [
-  {
-    id: 'Aptitude',
-    label: 'Aptitude',
-    description: 'General aptitude and reasoning questions',
-  },
-]
+// Category descriptions mapping
+const categoryDescriptions: Record<string, string> = {
+  'Quantitative Aptitude': 'Mathematical and numerical reasoning questions',
+  'Logical Reasoning': 'Pattern recognition and logical thinking problems',
+  'Verbal Ability': 'Language comprehension and verbal reasoning',
+  'Technical Aptitude': 'Technical concepts and problem-solving questions',
+}
 
 export default function ExamPrepPage() {
   const navigate = useNavigate()
 
   const [selectedCompany, setSelectedCompany] = useState(companies[0].id)
-  const [selectedCategory, setSelectedCategory] = useState(categories[0].id)
+  const [categories, setCategories] = useState<Array<{ id: string; label: string; description: string }>>([])
+  const [selectedCategory, setSelectedCategory] = useState('')
   const [difficulty, setDifficulty] = useState<Difficulty>('Medium' as Difficulty)
+  const [loading, setLoading] = useState(true)
 
-  const activeCompany = companies.find((item) => item.id === selectedCompany) || companies[0]
   const questionCount = EXAM_CONFIG.QUESTION_LIMIT
   const durationMinutes = calculateDuration(questionCount)
+
+  // Fetch categories from database
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        setLoading(true)
+        const response = await api.get('/aptitude/categories')
+        const fetchedCategories = response.data || []
+        
+        // Transform categories into the format needed
+        const formattedCategories = fetchedCategories.map((cat: string) => ({
+          id: cat,
+          label: cat,
+          description: categoryDescriptions[cat] || `${cat} questions`,
+        }))
+        
+        setCategories(formattedCategories)
+        
+        // Set first category as default
+        if (formattedCategories.length > 0) {
+          setSelectedCategory(formattedCategories[0].id)
+        }
+      } catch (error) {
+        console.error('Failed to fetch categories:', error)
+        // Fallback to default categories
+        const fallbackCategories = [
+          {
+            id: 'Quantitative Aptitude',
+            label: 'Quantitative Aptitude',
+            description: 'Mathematical and numerical reasoning questions',
+          },
+          {
+            id: 'Logical Reasoning',
+            label: 'Logical Reasoning',
+            description: 'Pattern recognition and logical thinking problems',
+          },
+          {
+            id: 'Verbal Ability',
+            label: 'Verbal Ability',
+            description: 'Language comprehension and verbal reasoning',
+          },
+          {
+            id: 'Technical Aptitude',
+            label: 'Technical Aptitude',
+            description: 'Technical concepts and problem-solving questions',
+          },
+        ]
+        setCategories(fallbackCategories)
+        setSelectedCategory('Quantitative Aptitude')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchCategories()
+  }, [])
 
   const handleStart = () => {
     const config: ExamConfig = {
@@ -121,30 +179,36 @@ export default function ExamPrepPage() {
 
         <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 md:p-8">
           <h2 className="text-lg font-bold text-slate-900">Choose Category</h2>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            {categories.map((category) => {
-              const selected = category.id === selectedCategory
-              return (
-                <button
-                  key={category.id}
-                  onClick={() => setSelectedCategory(category.id)}
-                  className={`relative rounded-2xl border p-5 text-left transition ${
-                    selected
-                      ? 'border-blue-600 bg-blue-50'
-                      : 'border-slate-200 bg-white hover:border-blue-300'
-                  }`}
-                >
-                  <p className="text-sm font-bold text-slate-900">{category.label}</p>
-                  <p className="mt-1 text-sm text-slate-600">{category.description}</p>
-                  {selected && (
-                    <span className="absolute right-4 top-4 inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white">
-                      <Check className="h-4 w-4" />
-                    </span>
-                  )}
-                </button>
-              )
-            })}
-          </div>
+          {loading ? (
+            <div className="mt-4 flex items-center justify-center py-8">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+            </div>
+          ) : (
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              {categories.map((category) => {
+                const selected = category.id === selectedCategory
+                return (
+                  <button
+                    key={category.id}
+                    onClick={() => setSelectedCategory(category.id)}
+                    className={`relative rounded-2xl border p-5 text-left transition ${
+                      selected
+                        ? 'border-blue-600 bg-blue-50'
+                        : 'border-slate-200 bg-white hover:border-blue-300'
+                    }`}
+                  >
+                    <p className="text-sm font-bold text-slate-900">{category.label}</p>
+                    <p className="mt-1 text-sm text-slate-600">{category.description}</p>
+                    {selected && (
+                      <span className="absolute right-4 top-4 inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white">
+                        <Check className="h-4 w-4" />
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          )}
         </section>
 
         <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 md:p-8">
@@ -178,7 +242,8 @@ export default function ExamPrepPage() {
         <div className="mt-10 flex justify-center">
           <button
             onClick={handleStart}
-            className="inline-flex min-w-[320px] items-center justify-center gap-3 rounded-2xl bg-blue-600 px-8 py-4 text-lg font-bold text-white shadow-sm transition hover:bg-blue-700"
+            disabled={loading || !selectedCategory}
+            className="inline-flex min-w-[320px] items-center justify-center gap-3 rounded-2xl bg-blue-600 px-8 py-4 text-lg font-bold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Play className="h-5 w-5" />
             Start Quiz

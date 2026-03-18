@@ -236,6 +236,8 @@ export default function DashboardPage() {
 
     const loadDashboardData = async () => {
       let practiceHistory: PracticeHistoryItem[] = [];
+      let aptitudeHistory: any[] = [];
+      
       try {
         const historyResponse = await companyPrepAPI.getHistory(20);
         practiceHistory = historyResponse.data || [];
@@ -243,9 +245,30 @@ export default function DashboardPage() {
         practiceHistory = [];
       }
 
+      // Fetch aptitude exam history from database
+      try {
+        const aptitudeResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/aptitude/history`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        if (aptitudeResponse.ok) {
+          aptitudeHistory = await aptitudeResponse.json();
+        }
+      } catch (error) {
+        console.error('Failed to fetch aptitude history:', error);
+        aptitudeHistory = [];
+      }
+
       if (!active) {
         return;
       }
+
+      // Calculate aptitude stats from database (user-specific)
+      const aptitudeAttempts = aptitudeHistory.length;
+      const aptitudeAvgFromDB = aptitudeAttempts > 0
+        ? Math.round(aptitudeHistory.reduce((sum: number, item: any) => sum + Number(item.score_percent || 0), 0) / aptitudeAttempts)
+        : aptitudeAverage;
 
       const companyAttempts = practiceHistory.length;
       const companyAverage = companyAttempts > 0
@@ -257,12 +280,14 @@ export default function DashboardPage() {
         const normalized = item.round_name.toLowerCase();
         return normalized.includes('technical') || normalized.includes('coding');
       }).length;
-      const totalAttempts = aptitude.totalQuizzes + companyAttempts;
+      
+      // Use database aptitude data instead of localStorage
+      const totalAttempts = aptitudeAttempts + companyAttempts;
       const weightedScore = (
-        (aptitudeAverage * aptitude.totalQuizzes) +
+        (aptitudeAvgFromDB * aptitudeAttempts) +
         (companyAverage * companyAttempts)
       );
-      const overallReadiness = totalAttempts > 0 ? Math.round(weightedScore / totalAttempts) : aptitudeAverage;
+      const overallReadiness = totalAttempts > 0 ? Math.round(weightedScore / totalAttempts) : aptitudeAvgFromDB;
       const dsaFromHistory = practiceHistory.filter(isDsaLike).length;
 
       setStats({
@@ -270,30 +295,50 @@ export default function DashboardPage() {
         mockTestsTaken: totalAttempts,
         resumeAtsScore,
         dsaSolved: Math.max(dsaFromHistory, dsaFromChallenge),
-        aptitudeAccuracy: aptitudeAverage,
+        aptitudeAccuracy: aptitudeAvgFromDB,
         companyPracticeAverage: companyAverage,
         hrRoundsPracticed,
         technicalRoundsPracticed,
         latestScore
       });
 
-      if (practiceHistory.length > 0) {
-        const latestActivities = practiceHistory.slice(0, 5).map((item) => {
-          const visual = getActivityVisual(item.round_name);
-          return {
-            id: `activity-${item.id}`,
-            title: `Practiced ${item.company_name} - ${item.round_name}`,
-            subtitle: `Scored ${item.score}%`,
-            time: toRelativeTime(item.practice_date),
-            icon: visual.icon,
-            iconClass: visual.iconClass
-          };
+      // Combine aptitude and company practice history for recent activity
+      const allActivities: ActivityItem[] = [];
+      
+      // Add aptitude exam activities
+      aptitudeHistory.slice(0, 10).forEach((exam: any) => {
+        allActivities.push({
+          id: `aptitude-${exam.id}`,
+          title: `Completed ${exam.company} Aptitude Test`,
+          subtitle: `${exam.category} - Scored ${exam.score_percent}%`,
+          time: toRelativeTime(exam.exam_date),
+          icon: BookOpenCheck,
+          iconClass: 'text-blue-600 bg-blue-50 border-blue-100'
         });
-        setActivities(latestActivities);
-      } else {
-        setActivities([]);
-      }
+      });
 
+      // Add company practice activities
+      practiceHistory.slice(0, 10).forEach((item) => {
+        const visual = getActivityVisual(item.round_name);
+        allActivities.push({
+          id: `company-${item.id}`,
+          title: `Practiced ${item.company_name} - ${item.round_name}`,
+          subtitle: `Scored ${item.score}%`,
+          time: toRelativeTime(item.practice_date),
+          icon: visual.icon,
+          iconClass: visual.iconClass
+        });
+      });
+
+      // Sort by most recent and take top 5
+      allActivities.sort((a, b) => {
+        // Simple time comparison based on the time string
+        const timeA = a.time.includes('min') ? 1 : a.time.includes('hour') ? 60 : 1440;
+        const timeB = b.time.includes('min') ? 1 : b.time.includes('hour') ? 60 : 1440;
+        return timeA - timeB;
+      });
+
+      setActivities(allActivities.slice(0, 5));
       setActivitiesLoaded(true);
       setDashboardSyncing(false);
     };
@@ -432,11 +477,20 @@ export default function DashboardPage() {
             <div className="lg:col-span-2 bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
               <div className="mb-5 flex items-center justify-between gap-3">
                 <h2 className="text-xl font-bold text-gray-900">Recent Activity</h2>
-                {dashboardSyncing && (
-                  <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                    Syncing latest data...
-                  </span>
-                )}
+                <div className="flex items-center gap-2">
+                  {dashboardSyncing && (
+                    <span className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+                      Syncing latest data...
+                    </span>
+                  )}
+                  <button
+                    onClick={() => navigate('/aptitude-history')}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
+                  >
+                    <BookOpenCheck className="w-4 h-4" />
+                    Exam History
+                  </button>
+                </div>
               </div>
 
               <div className="space-y-4">

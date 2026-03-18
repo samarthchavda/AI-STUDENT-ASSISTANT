@@ -6,9 +6,10 @@ from google.auth.transport import requests
 from app.core.database import get_db
 from app.models import User as UserModel, RefreshToken, TokenBlacklist, PasswordResetOTP, PlanType
 from app.models.schemas import UserCreate, UserLogin, User, Token, RefreshTokenRequest, ForgotPasswordRequest, ResetPasswordRequest
-from app.core.email import send_otp_email
+from app.core.email import send_otp_email, send_welcome_email
 import hmac
 import hashlib
+import logging
 from app.core.auth import (
     verify_password, 
     get_password_hash, 
@@ -29,6 +30,7 @@ from app.core.middleware import rate_limit
 import secrets
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
+logger = logging.getLogger(__name__)
 
 
 def _user_plan_value(user: UserModel) -> str:
@@ -79,6 +81,13 @@ async def register(request: Request, user: UserCreate, db: Session = Depends(get
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+    
+    # Send welcome email (non-blocking - don't fail registration if email fails)
+    try:
+        send_welcome_email(normalized_email, user.name)
+    except Exception as e:
+        logger.error(f"Failed to send welcome email to {normalized_email}: {e}")
+        # Continue with registration even if email fails
     
     # Generate tokens
     access_token = create_access_token(
@@ -348,6 +357,13 @@ async def google_auth(request: Request, auth_data: GoogleAuthRequest, db: Sessio
             db.add(user)
             db.commit()
             db.refresh(user)
+            
+            # Send welcome email for new Google users (non-blocking)
+            try:
+                send_welcome_email(normalized_email, name)
+            except Exception as e:
+                logger.error(f"Failed to send welcome email to {normalized_email}: {e}")
+                # Continue with registration even if email fails
         
         # Generate tokens
         access_token = create_access_token(
