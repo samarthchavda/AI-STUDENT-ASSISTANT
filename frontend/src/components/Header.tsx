@@ -49,9 +49,24 @@ export default function Header() {
                 >
                   <User className="h-4 w-4 text-teal-700" />
                   <span className="hidden text-sm font-semibold text-stone-700 sm:block">{user.name}</span>
-                  <span className="rounded-full bg-orange-100 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-orange-700">
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      if (user.plan.toLowerCase() !== 'pro') {
+                        navigate('/pricing')
+                      }
+                    }}
+                    className={`rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] transition-colors ${
+                      user.plan.toLowerCase() === 'pro'
+                        ? 'bg-green-100 text-green-700 cursor-default'
+                        : user.plan.toLowerCase() === 'basic'
+                        ? 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                        : 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+                    }`}
+                  >
                     {user.plan.toUpperCase()}
-                  </span>
+                  </button>
                 </Link>
                 
                 {user.isAdmin && (

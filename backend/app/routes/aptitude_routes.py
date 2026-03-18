@@ -43,7 +43,7 @@ class AptitudeTestResponse(BaseModel):
 
 class SubmitAnswerRequest(BaseModel):
     session_id: str
-    answers: Dict[int, str]  # question_id -> selected_answer (the actual answer text)
+    answers: Dict[int, Optional[str]]  # question_id -> selected_answer (the actual answer text or None for skipped)
 
 
 class SubmitAnswerResponse(BaseModel):
@@ -60,11 +60,16 @@ class SubmitAnswerResponse(BaseModel):
 async def get_aptitude_test(
     company: str = Query(..., description="Company name"),
     difficulty: str = Query(..., description="Difficulty level - Easy, Medium, Hard"),
-    limit: int = Query(5, ge=1, le=50, description="Number of questions")
+    limit: int = Query(5, ge=1, le=50, description="Number of questions"),
+    current_user = Depends(get_current_user)
 ):
     """
     Fetch random aptitude questions WITHOUT answers (secure mode).
-    Answers are only revealed after submission via /submit endpoint.
+    
+    Features:
+    - No-repeat logic: Excludes questions user has already answered
+    - Subscription limits: Free users limited to 2 exams per category
+    - Answers are only revealed after submission via /submit endpoint.
     
     - **company**: Company name (e.g., "TCS", "Infosys")
     - **difficulty**: Difficulty level - Easy, Medium, Hard (case-insensitive)
@@ -74,35 +79,165 @@ async def get_aptitude_test(
         # Normalize difficulty to match database format (capitalize first letter)
         difficulty_normalized = difficulty.capitalize()
         
-        # Build query to fetch questions WITHOUT correct_answer and explanation
-        query = """
-            SELECT 
-                id, 
-                company, 
-                category, 
-                difficulty, 
-                question,
-                option_a, 
-                option_b, 
-                option_c, 
-                option_d,
-                year_asked
-            FROM aptitude_questions
-            WHERE LOWER(company) = LOWER(:company)
-            AND difficulty = :difficulty
-            ORDER BY RANDOM() 
-            LIMIT :limit
+        # Check subscription limits for FREE users
+        # Handle both enum and string plan types
+        user_plan = 'free'  # default
+        if hasattr(current_user, 'plan'):
+            plan_attr = current_user.plan
+            if hasattr(plan_attr, 'value'):
+                user_plan = str(plan_attr.value).lower()
+            else:
+                user_plan = str(plan_attr).lower()
+        
+        print(f"🔍 User {current_user.id} plan: {user_plan} (type: {type(current_user.plan)})")
+        
+        if user_plan == 'free':
+            # Count previous exams for this user and category
+            count_query = """
+                SELECT COUNT(*) as exam_count
+                FROM aptitude_exam_history
+                WHERE user_id = :user_id 
+                AND category = (
+                    SELECT DISTINCT category 
+                    FROM aptitude_questions 
+                    WHERE LOWER(company) = LOWER(:company) 
+                    LIMIT 1
+                )
+            """
+            
+            with engine.connect() as conn:
+                result = conn.execute(text(count_query), {
+                    "user_id": current_user.id,
+                    "company": company
+                })
+                row = result.fetchone()
+                exam_count = row.exam_count if row else 0
+                
+                print(f"📊 User {current_user.id} has taken {exam_count} exams for company {company}")
+                
+                # Free users limited to 2 exams per category
+                if exam_count >= 2:
+                    print(f"🚫 BLOCKING: User {current_user.id} reached limit ({exam_count}/2)")
+                    raise HTTPException(
+                        status_code=403,
+                        detail={
+                            "error": "subscription_limit_reached",
+                            "message": "Free users can only take 2 exams per category. Upgrade to Pro for unlimited access!",
+                            "exams_taken": exam_count,
+                            "limit": 2,
+                            "plan": "FREE"
+                        }
+                    )
+                else:
+                    print(f"✅ ALLOWING: User {current_user.id} can take exam ({exam_count}/2)")
+        
+        # Get questions user has already answered (no-repeat logic)
+        answered_query = """
+            SELECT DISTINCT jsonb_array_elements_text(
+                questions_data::jsonb
+            )::jsonb->>'id' as question_id
+            FROM aptitude_exam_history
+            WHERE user_id = :user_id
+            AND LOWER(company) = LOWER(:company)
         """
         
-        params = {
-            "company": company,
-            "difficulty": difficulty_normalized,
-            "limit": limit
-        }
+        answered_ids = []
+        try:
+            with engine.connect() as conn:
+                result = conn.execute(text(answered_query), {
+                    "user_id": current_user.id,
+                    "company": company
+                })
+                answered_ids = [int(row.question_id) for row in result.fetchall() if row.question_id]
+        except Exception as e:
+            print(f"Warning: Could not fetch answered questions: {e}")
+            # Continue without filtering if there's an error
+        
+        # Build query to fetch questions WITHOUT correct_answer and explanation
+        # Exclude questions user has already answered
+        if answered_ids:
+            placeholders = ','.join([f':answered_id{i}' for i in range(len(answered_ids))])
+            query = f"""
+                SELECT 
+                    id, 
+                    company, 
+                    category, 
+                    difficulty, 
+                    question,
+                    option_a, 
+                    option_b, 
+                    option_c, 
+                    option_d,
+                    year_asked
+                FROM aptitude_questions
+                WHERE LOWER(company) = LOWER(:company)
+                AND difficulty = :difficulty
+                AND id NOT IN ({placeholders})
+                ORDER BY RANDOM() 
+                LIMIT :limit
+            """
+            params = {
+                "company": company,
+                "difficulty": difficulty_normalized,
+                "limit": limit,
+                **{f'answered_id{i}': aid for i, aid in enumerate(answered_ids)}
+            }
+        else:
+            query = """
+                SELECT 
+                    id, 
+                    company, 
+                    category, 
+                    difficulty, 
+                    question,
+                    option_a, 
+                    option_b, 
+                    option_c, 
+                    option_d,
+                    year_asked
+                FROM aptitude_questions
+                WHERE LOWER(company) = LOWER(:company)
+                AND difficulty = :difficulty
+                ORDER BY RANDOM() 
+                LIMIT :limit
+            """
+            params = {
+                "company": company,
+                "difficulty": difficulty_normalized,
+                "limit": limit
+            }
         
         with engine.connect() as conn:
             result = conn.execute(text(query), params)
             rows = result.fetchall()
+            
+            # If no questions found (user answered all), reset and fetch from full pool
+            if not rows and answered_ids:
+                print(f"User {current_user.id} has answered all questions for {company}. Resetting pool.")
+                reset_query = """
+                    SELECT 
+                        id, 
+                        company, 
+                        category, 
+                        difficulty, 
+                        question,
+                        option_a, 
+                        option_b, 
+                        option_c, 
+                        option_d,
+                        year_asked
+                    FROM aptitude_questions
+                    WHERE LOWER(company) = LOWER(:company)
+                    AND difficulty = :difficulty
+                    ORDER BY RANDOM() 
+                    LIMIT :limit
+                """
+                result = conn.execute(text(reset_query), {
+                    "company": company,
+                    "difficulty": difficulty_normalized,
+                    "limit": limit
+                })
+                rows = result.fetchall()
             
             if not rows:
                 raise HTTPException(
@@ -157,16 +292,24 @@ async def submit_answers(
     This is the ONLY endpoint that reveals correct answers.
     
     - **session_id**: Session ID from the test fetch
-    - **answers**: Dictionary of question_id -> selected_answer_text
+    - **answers**: Dictionary of question_id -> selected_answer_text (None for skipped questions)
     """
     try:
-        if not request.answers:
+        # Validate answers field exists
+        if request.answers is None:
             raise HTTPException(
                 status_code=400,
-                detail="No answers provided"
+                detail="Answers field is required"
             )
         
+        # Get all question IDs (even if all are skipped)
         question_ids = list(request.answers.keys())
+        
+        if not question_ids:
+            raise HTTPException(
+                status_code=400,
+                detail="No questions provided. Please include all question IDs."
+            )
         
         # Fetch correct answers from database
         placeholders = ','.join([f':id{i}' for i in range(len(question_ids))])
@@ -397,6 +540,53 @@ async def get_stats(company: Optional[str] = Query(None)):
                 stats["categories"] = row.categories
             
             return stats
+            
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Database error: {str(e)}"
+        )
+
+
+@router.get("/usage-stats")
+async def get_usage_stats(current_user = Depends(get_current_user)):
+    """Get user's exam usage statistics for all categories"""
+    try:
+        query = """
+            SELECT 
+                category,
+                COUNT(*) as exam_count
+            FROM aptitude_exam_history
+            WHERE user_id = :user_id
+            GROUP BY category
+        """
+        
+        with engine.connect() as conn:
+            result = conn.execute(text(query), {"user_id": current_user.id})
+            rows = result.fetchall()
+            
+            # Build usage stats per category
+            usage_by_category = {}
+            total_exams = 0
+            for row in rows:
+                usage_by_category[row.category] = row.exam_count
+                total_exams += row.exam_count
+            
+            # Get user plan
+            user_plan = 'free'
+            if hasattr(current_user, 'plan'):
+                plan_attr = current_user.plan
+                if hasattr(plan_attr, 'value'):
+                    user_plan = str(plan_attr.value).lower()
+                else:
+                    user_plan = str(plan_attr).lower()
+            
+            return {
+                "total_exams": total_exams,
+                "usage_by_category": usage_by_category,
+                "plan": user_plan,
+                "limit_per_category": 2 if user_plan == 'free' else None
+            }
             
     except Exception as e:
         raise HTTPException(

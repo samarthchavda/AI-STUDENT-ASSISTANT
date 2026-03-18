@@ -92,6 +92,21 @@ export default function ExamSimulationPage() {
         console.log('Response status:', response.status)
         
         if (!response.ok) {
+          if (response.status === 403) {
+            // Subscription limit reached
+            const errorData = await response.json()
+            if (errorData.detail?.error === 'subscription_limit_reached') {
+              // Redirect to pricing page with message
+              navigate('/pricing', {
+                state: {
+                  message: errorData.detail.message,
+                  from: 'exam-prep'
+                }
+              })
+              return
+            }
+          }
+          
           const errorText = await response.text()
           console.error('API Error:', errorText)
           throw new Error('Failed to fetch questions')
@@ -162,13 +177,12 @@ export default function ExamSimulationPage() {
     }
 
     try {
-      // Prepare answers in the format: { question_id: selected_answer_text }
-      const answersPayload: Record<number, string> = {}
+      // Prepare answers in the format: { question_id: selected_answer_text or null }
+      const answersPayload: Record<number, string | null> = {}
       questions.forEach((question, index) => {
         const selectedOptionText = selectedAnswers[index]
-        if (selectedOptionText !== undefined) {
-          answersPayload[question.id] = selectedOptionText
-        }
+        // Include all questions, use null for skipped
+        answersPayload[question.id] = selectedOptionText !== undefined ? selectedOptionText : null
       })
 
       // Submit to backend for validation using authenticated API client

@@ -18,6 +18,8 @@ import {
   Gauge,
   Layers,
   Sparkles,
+  Crown,
+  X,
   type LucideIcon
 } from 'lucide-react';
 import Header from '../components/Header';
@@ -209,6 +211,8 @@ export default function DashboardPage() {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [activitiesLoaded, setActivitiesLoaded] = useState(false);
   const [dashboardSyncing, setDashboardSyncing] = useState(false);
+  const [usageStats, setUsageStats] = useState<{ total_exams: number; limit: number; plan: string } | null>(null);
+  const [showBanner, setShowBanner] = useState(true);
 
   useEffect(() => {
     const aptitude = readAptitudeProgress();
@@ -258,6 +262,25 @@ export default function DashboardPage() {
       } catch (error) {
         console.error('Failed to fetch aptitude history:', error);
         aptitudeHistory = [];
+      }
+
+      // Fetch usage stats for banner
+      try {
+        const usageResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/aptitude/usage-stats`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        if (usageResponse.ok) {
+          const usageData = await usageResponse.json();
+          setUsageStats({
+            total_exams: usageData.total_exams,
+            limit: usageData.limit_per_category || 2,
+            plan: usageData.plan
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch usage stats:', error);
       }
 
       if (!active) {
@@ -424,6 +447,43 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
       <Header />
+
+      {/* Usage Banner for FREE users */}
+      {showBanner && usageStats && usageStats.plan === 'free' && (
+        <div className="bg-gradient-to-r from-orange-50 via-yellow-50 to-orange-50 border-b border-orange-200">
+          <div className="max-w-6xl mx-auto px-8 py-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-yellow-400 to-orange-500">
+                  <Crown className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-gray-900">
+                    You have used {usageStats.total_exams} free assessments
+                  </p>
+                  <p className="text-xs text-gray-600">
+                    Upgrade to Pro for unlimited tests and advanced features
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => navigate('/pricing')}
+                  className="rounded-lg bg-gradient-to-r from-yellow-500 to-orange-600 px-5 py-2 text-sm font-bold text-white shadow-md hover:from-yellow-600 hover:to-orange-700 transition-all"
+                >
+                  Upgrade Now
+                </button>
+                <button
+                  onClick={() => setShowBanner(false)}
+                  className="rounded-lg p-2 hover:bg-gray-100 transition-colors"
+                >
+                  <X className="h-4 w-4 text-gray-500" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="p-8">
         <div className="max-w-6xl mx-auto">
