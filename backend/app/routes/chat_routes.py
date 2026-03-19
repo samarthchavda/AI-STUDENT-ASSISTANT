@@ -89,6 +89,47 @@ async def chat(request: Request, chat_request: ChatRequest, db: Session = Depend
     # Get AI response
     response = ai_service.chat_completion(messages)
     
+    # Track token usage
+    try:
+        from app.models import UserUsage
+        from datetime import datetime
+        import tiktoken
+        
+        # Estimate tokens (approximate)
+        encoding = tiktoken.get_encoding("cl100k_base")
+        input_text = " ".join([msg["content"] for msg in messages])
+        input_tokens = len(encoding.encode(input_text))
+        output_tokens = len(encoding.encode(response))
+        
+        current_month = datetime.now().strftime("%Y-%m")
+        
+        # Get or create usage record
+        usage = db.query(UserUsage).filter(
+            UserUsage.user_id == current_user.id,
+            UserUsage.month == current_month
+        ).first()
+        
+        if usage:
+            usage.query_count += 1
+            usage.total_input_tokens += input_tokens
+            usage.total_output_tokens += output_tokens
+            usage.last_query_date = datetime.now()
+        else:
+            usage = UserUsage(
+                user_id=current_user.id,
+                query_count=1,
+                total_input_tokens=input_tokens,
+                total_output_tokens=output_tokens,
+                month=current_month,
+                last_query_date=datetime.now()
+            )
+            db.add(usage)
+        
+        db.commit()
+    except Exception as e:
+        print(f"Error tracking token usage: {e}")
+        db.rollback()
+    
     # Save user message to history
     try:
         user_message = ChatHistory(
@@ -173,6 +214,45 @@ async def chat_stream(request: Request, chat_request: ChatRequest, db: Session =
             
             # Send completion signal
             yield f"data: {json.dumps({'done': True})}\n\n"
+            
+            # Track token usage after streaming completes
+            try:
+                from app.models import UserUsage
+                from datetime import datetime
+                import tiktoken
+                
+                encoding = tiktoken.get_encoding("cl100k_base")
+                input_text = " ".join([msg["content"] for msg in messages])
+                input_tokens = len(encoding.encode(input_text))
+                output_tokens = len(encoding.encode(full_response))
+                
+                current_month = datetime.now().strftime("%Y-%m")
+                
+                usage = db.query(UserUsage).filter(
+                    UserUsage.user_id == current_user.id,
+                    UserUsage.month == current_month
+                ).first()
+                
+                if usage:
+                    usage.query_count += 1
+                    usage.total_input_tokens += input_tokens
+                    usage.total_output_tokens += output_tokens
+                    usage.last_query_date = datetime.now()
+                else:
+                    usage = UserUsage(
+                        user_id=current_user.id,
+                        query_count=1,
+                        total_input_tokens=input_tokens,
+                        total_output_tokens=output_tokens,
+                        month=current_month,
+                        last_query_date=datetime.now()
+                    )
+                    db.add(usage)
+                
+                db.commit()
+            except Exception as e:
+                print(f"Error tracking token usage: {e}")
+                db.rollback()
             
             # Save complete response to history
             try:
