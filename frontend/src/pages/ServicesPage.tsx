@@ -30,19 +30,19 @@ export default function ServicesPage() {
       color: 'from-purple-500 to-purple-600',
       link: '/exam-prep'
     },
-    {
-      icon: Code,
-      title: 'Coding Help',
-      description: 'Debug code, learn algorithms, and master data structures with AI assistance.',
-      features: [
-        'Code debugging and optimization',
-        'DSA problem solving',
-        'Multiple programming languages',
-        'Step-by-step explanations'
-      ],
-      color: 'from-green-500 to-green-600',
-      link: '/coding-help'
-    },
+    // {
+    //   icon: Code,
+    //   title: 'Coding Help',
+    //   description: 'Debug code, learn algorithms, and master data structures with AI assistance.',
+    //   features: [
+    //     'Code debugging and optimization',
+    //     'DSA problem solving',
+    //     'Multiple programming languages',
+    //     'Step-by-step explanations'
+    //   ],
+    //   color: 'from-green-500 to-green-600',
+    //   link: '/coding-help'
+    // },
     {
       icon: Briefcase,
       title: 'Career Guidance',

@@ -77,7 +77,7 @@ const placementPrep = [
   { label: 'Company Questions', to: '/company-prep' },
   { label: 'Aptitude Tests', to: '/exam-prep' },
   { label: 'HR Preparation', to: '/chat' },
-  { label: 'DSA & Coding', to: '/coding-help' },
+  // { label: 'DSA & Coding', to: '/coding-help' },
   { label: 'Career Guidance', to: '/services' },
   { label: 'Full Practice Catalog', to: '/services' },
 ]
@@ -217,7 +217,7 @@ export default function Footer() {
                 {languages.map((lang) => (
                   <li key={lang}>
                     <Link
-                      to="/coding-help"
+                      to="/chat"
                       className="text-sm text-slate-400 transition-colors hover:text-white"
                     >
                       {lang}
