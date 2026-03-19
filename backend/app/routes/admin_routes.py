@@ -950,3 +950,235 @@ Infosys,Fresher,Explain ACID properties,technical,medium,Databases,2024
         }
     }
 
+
+
+# ==================== AI MONITOR ENDPOINTS ====================
+
+@router.get("/ai-monitor/top-users")
+async def get_top_ai_users(
+    limit: int = 10,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    """Get top users by AI query count"""
+    from app.models import UserUsage
+    from datetime import datetime
+    
+    current_month = datetime.now().strftime("%Y-%m")
+    
+    rows = (
+        db.query(
+            User.id,
+            User.name,
+            User.email,
+            User.plan,
+            func.sum(UserUsage.query_count).label("total_queries"),
+            func.sum(UserUsage.total_input_tokens).label("total_input_tokens"),
+            func.sum(UserUsage.total_output_tokens).label("total_output_tokens")
+        )
+        .join(UserUsage, UserUsage.user_id == User.id)
+        .filter(UserUsage.month == current_month)
+        .group_by(User.id, User.name, User.email, User.plan)
+        .order_by(func.sum(UserUsage.query_count).desc())
+        .limit(limit)
+        .all()
+    )
+    
+    return [
+        {
+            "user_id": row.id,
+            "name": row.name,
+            "email": row.email,
+            "plan": row.plan.value if hasattr(row.plan, 'value') else row.plan,
+            "total_queries": row.total_queries or 0,
+            "total_input_tokens": row.total_input_tokens or 0,
+            "total_output_tokens": row.total_output_tokens or 0
+        }
+        for row in rows
+    ]
+
+
+@router.get("/ai-monitor/cost-summary")
+async def get_cost_summary(
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    """Calculate estimated API costs"""
+    from app.models import UserUsage
+    from datetime import datetime
+    
+    current_month = datetime.now().strftime("%Y-%m")
+    
+    # Get total tokens for current month
+    result = db.query(
+        func.sum(UserUsage.total_input_tokens).label("total_input"),
+        func.sum(UserUsage.total_output_tokens).label("total_output"),
+        func.sum(UserUsage.query_count).label("total_queries")
+    ).filter(UserUsage.month == current_month).first()
+    
+    total_input_tokens = result.total_input or 0
+    total_output_tokens = result.total_output or 0
+    total_queries = result.total_queries or 0
+    
+    # Gemini API pricing (approximate)
+    # Input: $0.25 per 1M tokens
+    # Output: $0.50 per 1M tokens
+    input_cost = (total_input_tokens / 1_000_000) * 0.25
+    output_cost = (total_output_tokens / 1_000_000) * 0.50
+    total_cost = input_cost + output_cost
+    
+    return {
+        "total_queries": total_queries,
+        "total_input_tokens": total_input_tokens,
+        "total_output_tokens": total_output_tokens,
+        "input_cost_usd": round(input_cost, 2),
+        "output_cost_usd": round(output_cost, 2),
+        "total_cost_usd": round(total_cost, 2),
+        "month": current_month
+    }
+
+
+@router.get("/ai-monitor/daily-usage")
+async def get_daily_usage(
+    days: int = 30,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    """Get daily AI query trends"""
+    from app.models import UserUsage
+    from datetime import datetime, timedelta
+    from sqlalchemy import cast, Date
+    
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=days)
+    
+    rows = (
+        db.query(
+            cast(UserUsage.last_query_date, Date).label("date"),
+            func.sum(UserUsage.query_count).label("queries")
+        )
+        .filter(UserUsage.last_query_date >= start_date)
+        .group_by(cast(UserUsage.last_query_date, Date))
+        .order_by(cast(UserUsage.last_query_date, Date))
+        .all()
+    )
+    
+    return [
+        {
+            "date": row.date.isoformat() if row.date else None,
+            "queries": row.queries or 0
+        }
+        for row in rows
+    ]
+
+
+# ==================== BROADCAST ENDPOINTS ====================
+
+class BroadcastCreate(BaseModel):
+    title: str
+    message: str
+    target_audience: str  # 'all', 'pro', 'basic', 'free'
+
+
+@router.post("/broadcast/send")
+async def send_broadcast(
+    broadcast: BroadcastCreate,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    """Send broadcast notification to targeted users"""
+    from app.models import Notification, Broadcast
+    
+    # Get target users based on audience
+    query = db.query(User)
+    
+    if broadcast.target_audience == "pro":
+        query = query.filter(User.plan == PlanType.PRO)
+    elif broadcast.target_audience == "basic":
+        query = query.filter(User.plan == PlanType.BASIC)
+    elif broadcast.target_audience == "free":
+        query = query.filter(User.plan == PlanType.FREE)
+    # else: all users
+    
+    target_users = query.all()
+    
+    # Create notifications for all target users
+    notifications = []
+    for user in target_users:
+        notification = Notification(
+            user_id=user.id,
+            title=broadcast.title,
+            message=broadcast.message
+        )
+        notifications.append(notification)
+    
+    db.add_all(notifications)
+    
+    # Save broadcast history
+    broadcast_record = Broadcast(
+        admin_id=admin.id,
+        title=broadcast.title,
+        message=broadcast.message,
+        target_audience=broadcast.target_audience,
+        users_count=len(target_users)
+    )
+    db.add(broadcast_record)
+    
+    db.commit()
+    
+    return {
+        "success": True,
+        "message": f"Broadcast sent to {len(target_users)} users",
+        "users_count": len(target_users),
+        "broadcast_id": broadcast_record.id
+    }
+
+
+@router.get("/broadcast/history")
+async def get_broadcast_history(
+    skip: int = 0,
+    limit: int = 50,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    """Get broadcast history"""
+    from app.models import Broadcast
+    
+    broadcasts = (
+        db.query(Broadcast)
+        .order_by(Broadcast.created_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
+    
+    return [
+        {
+            "id": b.id,
+            "title": b.title,
+            "message": b.message,
+            "target_audience": b.target_audience,
+            "users_count": b.users_count,
+            "created_at": b.created_at.isoformat()
+        }
+        for b in broadcasts
+    ]
+
+
+@router.get("/broadcast/stats")
+async def get_broadcast_stats(
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    """Get broadcast statistics"""
+    from app.models import Broadcast, Notification
+    
+    total_broadcasts = db.query(Broadcast).count()
+    total_notifications = db.query(Notification).count()
+    unread_notifications = db.query(Notification).filter(Notification.is_read == False).count()
+    
+    return {
+        "total_broadcasts": total_broadcasts,
+        "total_notifications_sent": total_notifications,
+        "unread_notifications": unread_notifications
+    }

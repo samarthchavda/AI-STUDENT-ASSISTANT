@@ -20,7 +20,11 @@ import {
   Calendar,
   Award,
   Target,
-  XCircle
+  XCircle,
+  Activity,
+  Send,
+  Bell,
+  TrendingDown
 } from 'lucide-react';
 
 interface AptitudeUserSummary {
@@ -50,7 +54,7 @@ interface AptitudeExamHistory {
 const AdminPage = () => {
   const navigate = useNavigate();
   const { user, logout } = useAppStore();
-  const [activeTab, setActiveTab] = useState<'stats' | 'users' | 'chats' | 'payments' | 'progress' | 'company-questions' | 'aptitude-history'>('stats');
+  const [activeTab, setActiveTab] = useState<'stats' | 'users' | 'chats' | 'payments' | 'progress' | 'company-questions' | 'aptitude-history' | 'ai-monitor' | 'broadcast'>('stats');
   
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -70,12 +74,25 @@ const AdminPage = () => {
   const [selectedAptitudeUser, setSelectedAptitudeUser] = useState<AptitudeUserSummary | null>(null);
   const [userAptitudeHistory, setUserAptitudeHistory] = useState<AptitudeExamHistory[]>([]);
   
+  // AI Monitor states
+  const [topAIUsers, setTopAIUsers] = useState<any[]>([]);
+  const [costSummary, setCostSummary] = useState<any>(null);
+  const [dailyUsage, setDailyUsage] = useState<any[]>([]);
+  
+  // Broadcast states
+  const [broadcastTitle, setBroadcastTitle] = useState('');
+  const [broadcastMessage, setBroadcastMessage] = useState('');
+  const [targetAudience, setTargetAudience] = useState('all');
+  const [broadcastHistory, setBroadcastHistory] = useState<any[]>([]);
+  const [broadcastStats, setBroadcastStats] = useState<any>(null);
+  
   const [loading, setLoading] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
   const [aptitudeLoading, setAptitudeLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [openMenuUserId, setOpenMenuUserId] = useState<number | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -259,9 +276,73 @@ const AdminPage = () => {
     }
   };
 
+  const loadAIMonitor = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [topUsers, cost, usage] = await Promise.all([
+        adminAPI.getTopAIUsers(10),
+        adminAPI.getCostSummary(),
+        adminAPI.getDailyUsage(30)
+      ]);
+      setTopAIUsers(topUsers);
+      setCostSummary(cost);
+      setDailyUsage(usage);
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Failed to load AI monitor data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadBroadcast = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [history, stats] = await Promise.all([
+        adminAPI.getBroadcastHistory(),
+        adminAPI.getBroadcastStats()
+      ]);
+      setBroadcastHistory(history);
+      setBroadcastStats(stats);
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Failed to load broadcast data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSendBroadcast = async () => {
+    if (!broadcastTitle || !broadcastMessage) {
+      setError('Please fill in all fields');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await adminAPI.sendBroadcast({
+        title: broadcastTitle,
+        message: broadcastMessage,
+        target_audience: targetAudience
+      });
+      setSuccessMessage(`Broadcast sent to ${result.users_count} users!`);
+      setBroadcastTitle('');
+      setBroadcastMessage('');
+      setTargetAudience('all');
+      loadBroadcast(); // Reload history
+      setTimeout(() => setSuccessMessage(null), 5000);
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Failed to send broadcast');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleTabChange = (tab: typeof activeTab) => {
     setActiveTab(tab);
     setError(null);
+    setSuccessMessage(null);
     
     switch (tab) {
       case 'stats':
@@ -284,6 +365,12 @@ const AdminPage = () => {
         break;
       case 'aptitude-history':
         loadAptitudeHistory();
+        break;
+      case 'ai-monitor':
+        loadAIMonitor();
+        break;
+      case 'broadcast':
+        loadBroadcast();
         break;
     }
   };
@@ -338,6 +425,8 @@ const AdminPage = () => {
   const sidebarItems = [
     { id: 'stats', label: 'Statistics', icon: BarChart3 },
     { id: 'users', label: 'Users', icon: Users },
+    { id: 'ai-monitor', label: 'AI Monitor', icon: Activity },
+    { id: 'broadcast', label: 'Broadcast', icon: Send },
     { id: 'chats', label: 'Chats', icon: MessageSquare },
     { id: 'payments', label: 'Payments', icon: CreditCard },
     { id: 'progress', label: 'Progress', icon: TrendingUp },
@@ -386,6 +475,14 @@ const AdminPage = () => {
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 flex items-center gap-2">
               <XCircle className="w-5 h-5" />
               {error}
+            </div>
+          )}
+
+          {/* Success Message */}
+          {successMessage && (
+            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6 flex items-center gap-2">
+              <Award className="w-5 h-5" />
+              {successMessage}
             </div>
           )}
 
@@ -1277,6 +1374,268 @@ const AdminPage = () => {
               )}
             </div>
 
+          </div>
+        )}
+
+        {/* AI Monitor Tab */}
+        {activeTab === 'ai-monitor' && !loading && (
+          <div>
+            <div className="mb-6">
+              <h1 className="text-2xl font-bold text-gray-900">AI Usage Monitor</h1>
+              <p className="text-gray-500 mt-1">Track AI queries and cost analysis</p>
+            </div>
+
+            {/* Cost Summary Card */}
+            {costSummary && (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                      <DollarSign className="w-6 h-6 text-green-600" />
+                    </div>
+                  </div>
+                  <h3 className="text-3xl font-bold text-gray-900 mb-1">${costSummary.total_cost_usd}</h3>
+                  <p className="text-sm text-gray-500">Total API Cost (Month)</p>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <Activity className="w-6 h-6 text-blue-600" />
+                    </div>
+                  </div>
+                  <h3 className="text-3xl font-bold text-gray-900 mb-1">{costSummary.total_queries}</h3>
+                  <p className="text-sm text-gray-500">Total Queries</p>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                      <TrendingUp className="w-6 h-6 text-purple-600" />
+                    </div>
+                  </div>
+                  <h3 className="text-3xl font-bold text-gray-900 mb-1">{(costSummary.total_input_tokens / 1000).toFixed(0)}K</h3>
+                  <p className="text-sm text-gray-500">Input Tokens</p>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                      <TrendingDown className="w-6 h-6 text-orange-600" />
+                    </div>
+                  </div>
+                  <h3 className="text-3xl font-bold text-gray-900 mb-1">{(costSummary.total_output_tokens / 1000).toFixed(0)}K</h3>
+                  <p className="text-sm text-gray-500">Output Tokens</p>
+                </div>
+              </div>
+            )}
+
+            {/* Top Users Table */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-8">
+              <div className="px-6 py-4 border-b border-gray-100">
+                <h3 className="font-semibold text-gray-900">Top AI Users</h3>
+                <p className="text-sm text-gray-500 mt-1">Users with highest query counts this month</p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full">
+                  <thead>
+                    <tr className="border-b border-gray-100">
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Rank</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">User</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Plan</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Queries</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Tokens Used</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {topAIUsers.map((user, index) => (
+                      <tr key={user.user_id} className="hover:bg-gray-50 transition">
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold text-sm ${
+                            index === 0 ? 'bg-yellow-100 text-yellow-700' :
+                            index === 1 ? 'bg-gray-100 text-gray-700' :
+                            index === 2 ? 'bg-orange-100 text-orange-700' :
+                            'bg-gray-50 text-gray-600'
+                          }`}>
+                            {index + 1}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div>
+                            <div className="font-medium text-gray-900">{user.name}</div>
+                            <div className="text-sm text-gray-500">{user.email}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                            user.plan === 'pro' ? 'bg-purple-100 text-purple-700' :
+                            user.plan === 'basic' ? 'bg-blue-100 text-blue-700' :
+                            'bg-gray-100 text-gray-700'
+                          }`}>
+                            {user.plan.toUpperCase()}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-lg font-bold text-gray-900">{user.total_queries}</span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm text-gray-600">
+                            <div>In: {(user.total_input_tokens / 1000).toFixed(1)}K</div>
+                            <div>Out: {(user.total_output_tokens / 1000).toFixed(1)}K</div>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {topAIUsers.length === 0 && (
+                <div className="text-center py-12 text-gray-500">No usage data available</div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Broadcast Tab */}
+        {activeTab === 'broadcast' && !loading && (
+          <div>
+            <div className="mb-6">
+              <h1 className="text-2xl font-bold text-gray-900">Broadcast Notifications</h1>
+              <p className="text-gray-500 mt-1">Send platform-wide announcements to users</p>
+            </div>
+
+            {/* Stats Cards */}
+            {broadcastStats && (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <Send className="w-6 h-6 text-blue-600" />
+                    </div>
+                  </div>
+                  <h3 className="text-3xl font-bold text-gray-900 mb-1">{broadcastStats.total_broadcasts}</h3>
+                  <p className="text-sm text-gray-500">Total Broadcasts</p>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                      <Bell className="w-6 h-6 text-green-600" />
+                    </div>
+                  </div>
+                  <h3 className="text-3xl font-bold text-gray-900 mb-1">{broadcastStats.total_notifications_sent}</h3>
+                  <p className="text-sm text-gray-500">Notifications Sent</p>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                      <Mail className="w-6 h-6 text-orange-600" />
+                    </div>
+                  </div>
+                  <h3 className="text-3xl font-bold text-gray-900 mb-1">{broadcastStats.unread_notifications}</h3>
+                  <p className="text-sm text-gray-500">Unread Notifications</p>
+                </div>
+              </div>
+            )}
+
+            {/* Compose Broadcast Form */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
+              <h3 className="font-semibold text-gray-900 mb-4">Compose New Broadcast</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Notification Title
+                  </label>
+                  <input
+                    type="text"
+                    value={broadcastTitle}
+                    onChange={(e) => setBroadcastTitle(e.target.value)}
+                    placeholder="e.g., TCS NQT is live!"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Message Body
+                  </label>
+                  <textarea
+                    value={broadcastMessage}
+                    onChange={(e) => setBroadcastMessage(e.target.value)}
+                    placeholder="e.g., Practice now on our new aptitude sets."
+                    rows={4}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Target Audience
+                  </label>
+                  <select
+                    value={targetAudience}
+                    onChange={(e) => setTargetAudience(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="all">All Users</option>
+                    <option value="pro">Pro Users Only</option>
+                    <option value="basic">Basic Users Only</option>
+                    <option value="free">Free Users Only</option>
+                  </select>
+                </div>
+
+                <button
+                  onClick={handleSendBroadcast}
+                  disabled={loading || !broadcastTitle || !broadcastMessage}
+                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-6 py-3 rounded-lg font-medium transition flex items-center justify-center gap-2"
+                >
+                  <Send className="w-5 h-5" />
+                  Send Broadcast
+                </button>
+              </div>
+            </div>
+
+            {/* Broadcast History */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+              <div className="px-6 py-4 border-b border-gray-100">
+                <h3 className="font-semibold text-gray-900">Broadcast History</h3>
+                <p className="text-sm text-gray-500 mt-1">Past announcements and notifications</p>
+              </div>
+              <div className="divide-y divide-gray-100">
+                {broadcastHistory.map((broadcast) => (
+                  <div key={broadcast.id} className="px-6 py-4 hover:bg-gray-50 transition">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <h4 className="font-medium text-gray-900">{broadcast.title}</h4>
+                        <p className="text-sm text-gray-600 mt-1">{broadcast.message}</p>
+                        <div className="flex items-center gap-4 mt-2">
+                          <span className="text-xs text-gray-500 flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {formatDate(broadcast.created_at)}
+                          </span>
+                          <span className={`text-xs px-2 py-1 rounded-full ${
+                            broadcast.target_audience === 'all' ? 'bg-blue-100 text-blue-700' :
+                            broadcast.target_audience === 'pro' ? 'bg-purple-100 text-purple-700' :
+                            broadcast.target_audience === 'basic' ? 'bg-green-100 text-green-700' :
+                            'bg-gray-100 text-gray-700'
+                          }`}>
+                            {broadcast.target_audience.toUpperCase()}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            {broadcast.users_count} users
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {broadcastHistory.length === 0 && (
+                <div className="text-center py-12 text-gray-500">No broadcasts sent yet</div>
+              )}
+            </div>
           </div>
         )}
         </main>

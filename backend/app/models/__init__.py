@@ -179,3 +179,44 @@ class UserPractice(Base):
     practice_date = Column(DateTime, default=datetime.utcnow, index=True)
 
     user = relationship("User", back_populates="practice_history")
+
+
+class UserUsage(Base):
+    """Track AI usage and token consumption per user"""
+    __tablename__ = "user_usage"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    query_count = Column(Integer, default=0)
+    total_input_tokens = Column(Integer, default=0)
+    total_output_tokens = Column(Integer, default=0)
+    last_query_date = Column(DateTime, default=datetime.utcnow)
+    month = Column(String, index=True)  # Format: "2024-03"
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class Notification(Base):
+    """Store platform-wide notifications and broadcasts"""
+    __tablename__ = "notifications"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    title = Column(String, nullable=False)
+    message = Column(Text, nullable=False)
+    is_read = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+
+class Broadcast(Base):
+    """Store broadcast history for admin tracking"""
+    __tablename__ = "broadcasts"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    admin_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    title = Column(String, nullable=False)
+    message = Column(Text, nullable=False)
+    target_audience = Column(String, nullable=False)  # 'all', 'pro', 'basic', 'free'
+    users_count = Column(Integer, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+

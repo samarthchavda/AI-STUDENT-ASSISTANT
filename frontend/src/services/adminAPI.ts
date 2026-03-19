@@ -194,4 +194,36 @@ export const adminAPI = {
     const response = await api.get(`/admin/users/${userId}/aptitude-history`);
     return response.data;
   },
+
+  // AI Monitor APIs
+  getTopAIUsers: async (limit: number = 10): Promise<any[]> => {
+    const response = await api.get(`/admin/ai-monitor/top-users?limit=${limit}`);
+    return response.data;
+  },
+
+  getCostSummary: async (): Promise<any> => {
+    const response = await api.get('/admin/ai-monitor/cost-summary');
+    return response.data;
+  },
+
+  getDailyUsage: async (days: number = 30): Promise<any[]> => {
+    const response = await api.get(`/admin/ai-monitor/daily-usage?days=${days}`);
+    return response.data;
+  },
+
+  // Broadcast APIs
+  sendBroadcast: async (data: { title: string; message: string; target_audience: string }): Promise<any> => {
+    const response = await api.post('/admin/broadcast/send', data);
+    return response.data;
+  },
+
+  getBroadcastHistory: async (skip: number = 0, limit: number = 50): Promise<any[]> => {
+    const response = await api.get(`/admin/broadcast/history?skip=${skip}&limit=${limit}`);
+    return response.data;
+  },
+
+  getBroadcastStats: async (): Promise<any> => {
+    const response = await api.get('/admin/broadcast/stats');
+    return response.data;
+  },
 };
