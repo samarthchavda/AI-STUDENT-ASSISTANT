@@ -77,7 +77,7 @@ const AdminPage = () => {
   // AI Monitor states
   const [topAIUsers, setTopAIUsers] = useState<any[]>([]);
   const [costSummary, setCostSummary] = useState<any>(null);
-  const [dailyUsage, setDailyUsage] = useState<any[]>([]);
+  // const [dailyUsage, setDailyUsage] = useState<any[]>([]); // TODO: Implement daily usage chart
   
   // Broadcast states
   const [broadcastTitle, setBroadcastTitle] = useState('');
@@ -280,14 +280,14 @@ const AdminPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const [topUsers, cost, usage] = await Promise.all([
+      const [topUsers, cost] = await Promise.all([
         adminAPI.getTopAIUsers(10),
         adminAPI.getCostSummary(),
-        adminAPI.getDailyUsage(30)
+        // adminAPI.getDailyUsage(30) // TODO: Implement daily usage chart
       ]);
       setTopAIUsers(topUsers);
       setCostSummary(cost);
-      setDailyUsage(usage);
+      // setDailyUsage(usage); // TODO: Implement daily usage chart
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to load AI monitor data');
     } finally {
