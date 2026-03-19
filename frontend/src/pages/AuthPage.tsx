@@ -590,10 +590,13 @@ export default function AuthPage() {
                       logo_alignment="left"
                     />
                   ) : (
-                    <div className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
-                      {!googleClientId
-                        ? 'Google Sign-In is not configured for this app.'
-                        : `Google Sign-In is disabled for this origin: ${currentOrigin}`}
+                    <div className="flex items-center justify-center gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+                      <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                      <span>
+                        {!googleClientId
+                          ? 'Google Sign-In is not configured for this app.'
+                          : `Google Sign-In is disabled for this origin: ${currentOrigin}`}
+                      </span>
                     </div>
                   )}
                 </div>

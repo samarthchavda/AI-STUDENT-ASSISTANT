@@ -7,7 +7,7 @@ import ExamPrepPage from './pages/ExamPrepPage'
 import ExamSimulationPage from './pages/ExamSimulationPage'
 import ExamResultPage from './pages/ExamResultPage'
 import AptitudeHistoryPage from './pages/AptitudeHistoryPage'
-import CodingHelpPage from './pages/CodingHelpPage'
+import AptitudePracticePage from './pages/AptitudePracticePage'
 import DSAPracticeDashboardPage from './pages/DSAPracticeDashboardPage'
 import DSAEditorDemoPage from './pages/DSAEditorDemoPage'
 import CareerPage from './pages/CareerPage'
@@ -49,8 +49,7 @@ function AppRoutes() {
       <Route path="/exam-result" element={<ProtectedRoute><ExamResultPage /></ProtectedRoute>} />
       <Route path="/exam-simulation" element={<ProtectedRoute><ExamSimulationPage /></ProtectedRoute>} />
       <Route path="/aptitude-history" element={<ProtectedRoute><AptitudeHistoryPage /></ProtectedRoute>} />
-      <Route path="/coding-help" element={<ProtectedRoute><CodingHelpPage /></ProtectedRoute>} />
-      <Route path="/coding" element={<ProtectedRoute><CodingHelpPage /></ProtectedRoute>} />
+      <Route path="/practice-aptitude" element={<ProtectedRoute><AptitudePracticePage /></ProtectedRoute>} />
       <Route path="/dsa" element={<ProtectedRoute><DSAPracticeDashboardPage /></ProtectedRoute>} />
       <Route path="/dsa/dashboard" element={<ProtectedRoute><DSAPracticeDashboardPage /></ProtectedRoute>} />
       <Route path="/dsa/editor/:id" element={<ProtectedRoute><DSAEditorDemoPage /></ProtectedRoute>} />

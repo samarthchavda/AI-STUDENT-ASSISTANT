@@ -138,8 +138,8 @@ export default function DSAPracticeDashboardPage() {
         </div>
 
         <div className="mt-6 flex justify-end">
-          <Link to="/coding-help" className="text-sm text-slate-600 hover:text-slate-900 underline">
-            Back to Coding Help
+          <Link to="/chat" className="text-sm text-slate-600 hover:text-slate-900 underline">
+            Back to AI Chat
           </Link>
         </div>
       </section>

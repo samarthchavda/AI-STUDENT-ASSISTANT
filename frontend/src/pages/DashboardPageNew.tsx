@@ -1,6 +1,5 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import {
   Home,
   BookOpen,
@@ -17,8 +16,6 @@ import {
   Sparkles,
   ChevronRight,
   X,
-  BookOpenCheck,
-  Activity,
   type LucideIcon
 } from 'lucide-react'
 import Header from '../components/Header'
@@ -64,92 +61,12 @@ interface MockTestCard {
   totalAttempts?: number
 }
 
-interface ActivityItem {
-  id: string
-  title: string
-  subtitle: string
-  icon: LucideIcon
-  iconClass: string
-}
-
-// Animation variants
-const fadeInUp = {
-  initial: { opacity: 0, y: 20 },
-  animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.5 }
-}
-
-const staggerContainer = {
-  animate: {
-    transition: {
-      staggerChildren: 0.1
-    }
-  }
-}
-
-// Mini Sparkline Component
-const Sparkline = ({ color }: { color: string }) => {
-  const points = [40, 45, 42, 50, 48, 55, 52, 60]
-  const max = Math.max(...points)
-  const normalized = points.map(p => (p / max) * 20)
-  
-  return (
-    <svg width="60" height="24" className="absolute bottom-2 right-2 opacity-40">
-      <polyline
-        points={normalized.map((y, i) => `${i * 8.5},${24 - y}`).join(' ')}
-        fill="none"
-        stroke={color}
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  )
-}
-
 export default function DashboardPageNew() {
   const navigate = useNavigate()
   const { user } = useAppStore()
   const [activeSidebar, setActiveSidebar] = useState('dashboard')
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [showCopilot, setShowCopilot] = useState(false)
-  const [activities, setActivities] = useState<ActivityItem[]>([])
-  const [loadingActivities, setLoadingActivities] = useState(true)
-
-  // Load exam history on mount
-  useEffect(() => {
-    loadExamHistory()
-  }, [])
-
-  const loadExamHistory = async () => {
-    setLoadingActivities(true)
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/aptitude/history`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
-      
-      if (response.ok) {
-        const aptitudeHistory = await response.json()
-        
-        // Convert to activity items
-        const activityItems: ActivityItem[] = aptitudeHistory.slice(0, 10).map((exam: any) => ({
-          id: `aptitude-${exam.id}`,
-          title: `${exam.category} Test`,
-          subtitle: `Score: ${exam.score_percent}% • ${exam.correct_answers}/${exam.total_questions} correct • ${new Date(exam.completed_at).toLocaleDateString()}`,
-          icon: BookOpen,
-          iconClass: 'bg-blue-50 border-blue-200 text-blue-600'
-        }))
-        
-        setActivities(activityItems)
-      }
-    } catch (error) {
-      console.error('Failed to load exam history:', error)
-    } finally {
-      setLoadingActivities(false)
-    }
-  }
 
   // Sidebar navigation items
   const sidebarItems: SidebarItem[] = [
@@ -378,35 +295,32 @@ export default function DashboardPageNew() {
       <Header />
 
       <div className="flex pt-16">
-        {/* Left Sidebar - Enhanced */}
-        <aside className="w-64 bg-gray-50 border-r border-gray-100 min-h-screen sticky top-16 hidden lg:block">
+        {/* Left Sidebar */}
+        <aside className="w-64 bg-white border-r border-gray-200 min-h-screen sticky top-16 hidden lg:block">
           <div className="p-4">
             <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">
               Navigation
             </h2>
             <nav className="space-y-1">
-              {sidebarItems.map((item, index) => {
+              {sidebarItems.map((item) => {
                 const Icon = item.icon
                 const isActive = activeSidebar === item.id
                 return (
-                  <motion.button
+                  <button
                     key={item.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
                     onClick={() => {
                       setActiveSidebar(item.id)
                       if (item.route) navigate(item.route)
                     }}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                       isActive
-                        ? 'bg-blue-600 text-white font-semibold shadow-lg shadow-blue-500/30'
-                        : 'text-gray-700 hover:bg-gray-100'
+                        ? 'bg-blue-50 text-blue-600 font-semibold'
+                        : 'text-gray-700 hover:bg-gray-50'
                     }`}
                   >
                     <Icon className="w-5 h-5" />
                     <span>{item.label}</span>
-                  </motion.button>
+                  </button>
                 )
               })}
             </nav>
@@ -425,46 +339,27 @@ export default function DashboardPageNew() {
             </p>
           </div>
 
-          {/* Stats Grid - Enhanced with Sparklines */}
-          <motion.div 
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
-            variants={staggerContainer}
-            initial="initial"
-            animate="animate"
-          >
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {stats.map((stat) => {
               const Icon = stat.icon
-              const iconColors = {
-                'text-green-600': { bg: 'bg-green-600/10', stroke: '#16a34a' },
-                'text-blue-600': { bg: 'bg-blue-600/10', stroke: '#2563eb' },
-                'text-purple-600': { bg: 'bg-purple-600/10', stroke: '#9333ea' },
-                'text-orange-600': { bg: 'bg-orange-600/10', stroke: '#ea580c' }
-              }
-              const colorConfig = iconColors[stat.color as keyof typeof iconColors]
-              
               return (
-                <motion.div
+                <div
                   key={stat.label}
-                  variants={fadeInUp}
-                  className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-xl transition-all relative overflow-hidden group"
+                  className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-lg transition-shadow"
                 >
                   <div className="flex items-center justify-between mb-4">
-                    <div className={`w-12 h-12 rounded-xl ${colorConfig.bg} flex items-center justify-center`}>
-                      <Icon className={`w-6 h-6 ${stat.color}`} />
-                    </div>
+                    <Icon className={`w-8 h-8 ${stat.color}`} />
                     <TrendingUp className="w-5 h-5 text-green-500" />
                   </div>
                   <div className="text-3xl font-bold text-gray-900 mb-1">
                     {stat.value}
                   </div>
                   <div className="text-sm text-gray-600">{stat.label}</div>
-                  
-                  {/* Sparkline */}
-                  <Sparkline color={colorConfig.stroke} />
-                </motion.div>
+                </div>
               )
             })}
-          </motion.div>
+          </div>
 
           {/* Practice & Exam Arena */}
           <div className="mb-8">
@@ -482,17 +377,13 @@ export default function DashboardPageNew() {
                 {practiceCards.map((card) => {
                   const Icon = card.icon
                   return (
-                    <motion.div
+                    <div
                       key={card.id}
-                      variants={fadeInUp}
-                      className="relative bg-gradient-to-br from-green-100 via-emerald-50 to-blue-100 rounded-2xl border-2 border-green-300 p-6 hover:shadow-2xl transition-all overflow-hidden"
-                      style={{
-                        backgroundImage: 'radial-gradient(at 20% 30%, rgba(16, 185, 129, 0.15) 0px, transparent 50%), radial-gradient(at 80% 70%, rgba(59, 130, 246, 0.15) 0px, transparent 50%)'
-                      }}
+                      className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl border-2 border-green-200 p-6 hover:shadow-lg transition-all"
                     >
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center shadow-lg">
+                          <div className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center">
                             <Icon className="w-6 h-6 text-white" />
                           </div>
                           <div>
@@ -512,15 +403,13 @@ export default function DashboardPageNew() {
                         </span>
                         <button
                           onClick={() => navigate(card.route)}
-                          className="relative px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-xl font-semibold transition-all flex items-center gap-2 overflow-hidden group"
+                          className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold transition-colors flex items-center gap-2"
                         >
-                          {/* Shimmer effect */}
-                          <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
-                          <span className="relative">Start Free Practice</span>
-                          <ChevronRight className="w-4 h-4 relative" />
+                          Start Free Practice
+                          <ChevronRight className="w-4 h-4" />
                         </button>
                       </div>
-                    </motion.div>
+                    </div>
                   )
                 })}
               </div>
@@ -533,18 +422,15 @@ export default function DashboardPageNew() {
                 Premium Exam Mock Tests
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {mockTests.map((test, index) => {
+                {mockTests.map((test) => {
                   const Icon = test.icon
                   const isLocked = test.isPremium && test.usedAttempts! >= test.totalAttempts!
                   const remainingAttempts = test.totalAttempts! - test.usedAttempts!
-                  const isPro = user?.plan?.toLowerCase() === 'pro'
 
                   return (
-                    <motion.div
+                    <div
                       key={test.id}
-                      variants={fadeInUp}
-                      transition={{ delay: index * 0.1 }}
-                      className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-xl transition-all relative"
+                      className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-lg transition-all relative"
                     >
                       {isLocked && (
                         <div className="absolute top-4 right-4">
@@ -553,19 +439,11 @@ export default function DashboardPageNew() {
                       )}
 
                       <div className="flex items-center gap-3 mb-4">
-                        <div className="relative">
-                          <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex items-center justify-center">
-                            <Icon className="w-5 h-5 text-white" />
-                          </div>
-                          {/* Lock icon on company logo for non-PRO users */}
-                          {!isPro && (
-                            <div className="absolute -top-1 -right-1 w-4 h-4 bg-gray-800 rounded-full flex items-center justify-center">
-                              <Lock className="w-2.5 h-2.5 text-white" />
-                            </div>
-                          )}
+                        <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex items-center justify-center">
+                          <Icon className="w-5 h-5 text-white" />
                         </div>
                         <div>
-                          <div className="text-xs font-semibold text-purple-600 uppercase flex items-center gap-1">
+                          <div className="text-xs font-semibold text-purple-600 uppercase">
                             {test.company}
                           </div>
                           <h4 className="font-bold text-gray-900">{test.title}</h4>
@@ -594,12 +472,10 @@ export default function DashboardPageNew() {
                             </span>
                           </div>
                           <div className="w-full bg-gray-200 rounded-full h-2">
-                            <motion.div
-                              initial={{ width: 0 }}
-                              animate={{ width: `${(test.usedAttempts! / test.totalAttempts!) * 100}%` }}
-                              transition={{ duration: 1, delay: index * 0.1 + 0.5 }}
+                            <div
                               className={`h-2 rounded-full ${isLocked ? 'bg-red-500' : 'bg-blue-600'}`}
-                            ></motion.div>
+                              style={{ width: `${(test.usedAttempts! / test.totalAttempts!) * 100}%` }}
+                            ></div>
                           </div>
                         </div>
                       )}
@@ -609,7 +485,7 @@ export default function DashboardPageNew() {
                         className={`w-full px-4 py-3 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 ${
                           isLocked
                             ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                            : 'bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:shadow-lg hover:scale-105'
+                            : 'bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:shadow-lg'
                         }`}
                         disabled={isLocked}
                       >
@@ -627,80 +503,10 @@ export default function DashboardPageNew() {
                           </>
                         )}
                       </button>
-                    </motion.div>
+                    </div>
                   )
                 })}
               </div>
-            </div>
-          </div>
-
-          {/* Recent Activity Section */}
-          <div className="mt-8">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <Activity className="w-6 h-6 text-blue-600" />
-                Recent Activity
-              </h2>
-              <button
-                onClick={() => navigate('/aptitude-history')}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-colors"
-              >
-                <BookOpenCheck className="w-4 h-4" />
-                View All History
-              </button>
-            </div>
-
-            <div className="bg-white rounded-2xl border border-gray-100 p-6">
-              {loadingActivities ? (
-                <div className="space-y-4">
-                  {Array.from({ length: 3 }).map((_, index) => (
-                    <div
-                      key={`skeleton-${index}`}
-                      className="flex items-start gap-4 p-4 rounded-xl bg-gray-50 animate-pulse"
-                    >
-                      <div className="w-10 h-10 bg-gray-200 rounded-xl"></div>
-                      <div className="flex-1 space-y-2">
-                        <div className="h-4 bg-gray-200 rounded w-1/3"></div>
-                        <div className="h-3 bg-gray-200 rounded w-2/3"></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : activities.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Activity className="w-8 h-8 text-gray-400" />
-                  </div>
-                  <p className="text-gray-600 font-medium mb-2">No activity yet</p>
-                  <p className="text-sm text-gray-500">Start practicing to see your progress here</p>
-                  <button
-                    onClick={() => navigate('/practice-aptitude')}
-                    className="mt-4 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
-                  >
-                    Start Practice
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {activities.map((activity) => {
-                    const ActivityIcon = activity.icon
-                    return (
-                      <div
-                        key={activity.id}
-                        className="flex items-start gap-4 p-4 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-gray-50 transition-colors"
-                      >
-                        <div className={`w-10 h-10 rounded-xl border flex items-center justify-center ${activity.iconClass}`}>
-                          <ActivityIcon className="w-5 h-5" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-gray-900">{activity.title}</p>
-                          <p className="text-sm text-gray-600">{activity.subtitle}</p>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
             </div>
           </div>
         </main>

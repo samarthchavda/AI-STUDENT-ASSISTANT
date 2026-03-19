@@ -2,8 +2,11 @@ import { Link, useNavigate } from 'react-router-dom'
 import { 
   Brain, ArrowRight, MessageSquare, FileText, BarChart3, 
   Zap, Trophy, ShieldCheck, Globe2, Sparkles, 
-  Rocket, Bot, Clock
+  Rocket, Bot, Clock, Target, CheckCircle, Code2, Briefcase, GraduationCap
 } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { useInView } from 'framer-motion'
+import { useRef } from 'react'
 import Footer from '../components/Footer'
 
 const features = [
@@ -35,6 +38,69 @@ const features = [
     icon: Bot,
     color: 'text-blue-600',
     bg: 'bg-blue-50'
+  }
+]
+
+const techStack = [
+  {
+    name: 'React',
+    description: 'Lightning-fast UI with modern component architecture',
+    logo: '⚛️',
+    color: 'from-cyan-500 to-blue-500'
+  },
+  {
+    name: 'FastAPI',
+    description: 'High-performance Python backend for AI processing',
+    logo: '⚡',
+    color: 'from-green-500 to-emerald-500'
+  },
+  {
+    name: 'Supabase',
+    description: 'Scalable PostgreSQL database with real-time features',
+    logo: '🗄️',
+    color: 'from-emerald-500 to-teal-500'
+  },
+  {
+    name: 'Gemini AI',
+    description: 'Google\'s most advanced AI for intelligent responses',
+    logo: '🤖',
+    color: 'from-purple-500 to-pink-500'
+  }
+]
+
+const useCases = [
+  {
+    title: 'The Student',
+    icon: GraduationCap,
+    color: 'from-blue-500 to-cyan-500',
+    benefits: [
+      'Get personalized study roadmaps',
+      'Practice with company-specific tests',
+      'Track your preparation progress',
+      'Access 24/7 AI doubt solving'
+    ]
+  },
+  {
+    title: 'The Coder',
+    icon: Code2,
+    color: 'from-purple-500 to-pink-500',
+    benefits: [
+      'Master DSA with AI explanations',
+      'Debug code with instant feedback',
+      'Learn optimal solutions',
+      'Practice coding interview patterns'
+    ]
+  },
+  {
+    title: 'The Job Seeker',
+    icon: Briefcase,
+    color: 'from-orange-500 to-red-500',
+    benefits: [
+      'Optimize resume for ATS systems',
+      'Practice mock interviews',
+      'Get company-specific prep',
+      'Build confidence before D-day'
+    ]
   }
 ]
 
@@ -142,6 +208,15 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* NEW: How It Works - Detailed */}
+        <HowItWorksSection />
+
+        {/* NEW: Tech Stack Section */}
+        <TechStackSection />
+
+        {/* NEW: Use Cases Section */}
+        <UseCasesSection />
+
         <section className="py-32 bg-[#F8FAFC]">
             <div className="max-w-7xl mx-auto px-6 text-center">
                 <h2 className="text-4xl font-black mb-20 text-slate-900">Why Students Love CodeCampus</h2>
@@ -222,5 +297,165 @@ function FAQ({q, a}: {q: string, a: string}) {
       <h3 className="font-bold text-slate-900 text-lg">{q}</h3>
       <p className="text-slate-500 mt-3 text-sm leading-relaxed">{a}</p>
     </div>
+  )
+}
+
+// NEW SECTIONS
+
+function HowItWorksSection() {
+  const ref = useRef(null)
+  const isInView = useInView(ref, { once: true, margin: "-100px" })
+
+  const steps = [
+    {
+      icon: Target,
+      title: 'Pick a Company',
+      description: 'Choose from TCS, Infosys, Amazon, Microsoft, Google, and more. We have patterns for all top recruiters.'
+    },
+    {
+      icon: Brain,
+      title: 'Take AI Test',
+      description: 'Practice with company-specific mock tests. Get instant feedback and detailed explanations for every question.'
+    },
+    {
+      icon: Trophy,
+      title: 'Get Interview Ready',
+      description: 'Master aptitude, coding, and HR rounds. Track your progress and identify weak areas with AI analytics.'
+    }
+  ]
+
+  return (
+    <section ref={ref} className="py-20 bg-gradient-to-b from-white to-slate-50">
+      <div className="max-w-7xl mx-auto px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-16"
+        >
+          <h2 className="text-4xl font-black text-slate-900 mb-4">How It Works</h2>
+          <p className="text-xl text-slate-600 max-w-2xl mx-auto">
+            Three simple steps to placement success
+          </p>
+        </motion.div>
+
+        <div className="grid md:grid-cols-3 gap-8">
+          {steps.map((step, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 30 }}
+              animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+              transition={{ duration: 0.6, delay: index * 0.2 }}
+              className="relative group"
+            >
+              <div className="bg-white rounded-3xl p-8 border border-slate-200 hover:border-blue-300 transition-all hover:shadow-xl h-full">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                  <step.icon className="w-8 h-8 text-white" />
+                </div>
+                <div className="text-6xl font-black text-slate-100 absolute top-4 right-4">
+                  {String(index + 1).padStart(2, '0')}
+                </div>
+                <h3 className="text-2xl font-bold text-slate-900 mb-4">{step.title}</h3>
+                <p className="text-slate-600 leading-relaxed">{step.description}</p>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function TechStackSection() {
+  const ref = useRef(null)
+  const isInView = useInView(ref, { once: true, margin: "-100px" })
+
+  return (
+    <section ref={ref} className="py-20 bg-slate-100">
+      <div className="max-w-7xl mx-auto px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-16"
+        >
+          <h2 className="text-4xl font-black text-slate-900 mb-4">Built with Modern Tech</h2>
+          <p className="text-xl text-slate-600 max-w-2xl mx-auto">
+            Powered by industry-leading technologies for speed, reliability, and intelligence
+          </p>
+        </motion.div>
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {techStack.map((tech, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.5, delay: index * 0.1 }}
+              className="bg-white rounded-2xl p-6 border border-slate-200 hover:border-slate-300 transition-all hover:shadow-lg group"
+            >
+              <div className={`w-16 h-16 bg-gradient-to-br ${tech.color} rounded-xl flex items-center justify-center mb-4 text-4xl group-hover:scale-110 transition-transform`}>
+                {tech.logo}
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">{tech.name}</h3>
+              <p className="text-sm text-slate-600 leading-relaxed">{tech.description}</p>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function UseCasesSection() {
+  const ref = useRef(null)
+  const isInView = useInView(ref, { once: true, margin: "-100px" })
+
+  return (
+    <section ref={ref} className="py-20 bg-white">
+      <div className="max-w-7xl mx-auto px-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-16"
+        >
+          <h2 className="text-4xl font-black text-slate-900 mb-4">Perfect For Everyone</h2>
+          <p className="text-xl text-slate-600 max-w-2xl mx-auto">
+            Whether you're a student, coder, or job seeker - we've got you covered
+          </p>
+        </motion.div>
+
+        <div className="grid md:grid-cols-3 gap-8">
+          {useCases.map((useCase, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 30 }}
+              animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+              transition={{ duration: 0.6, delay: index * 0.2 }}
+              className="group"
+            >
+              <div className="bg-white rounded-3xl p-8 border-2 border-slate-200 hover:border-transparent hover:shadow-2xl transition-all h-full relative overflow-hidden">
+                <div className={`absolute inset-0 bg-gradient-to-br ${useCase.color} opacity-0 group-hover:opacity-5 transition-opacity`} />
+                <div className="relative">
+                  <div className={`w-16 h-16 bg-gradient-to-br ${useCase.color} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform`}>
+                    <useCase.icon className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-slate-900 mb-6">{useCase.title}</h3>
+                  <ul className="space-y-3">
+                    {useCase.benefits.map((benefit, idx) => (
+                      <li key={idx} className="flex items-start gap-3">
+                        <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                        <span className="text-slate-700">{benefit}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
   )
 }
