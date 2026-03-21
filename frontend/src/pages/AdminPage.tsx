@@ -62,6 +62,7 @@ interface TCSAptitudeQuestion {
   explanation: string;
   category: string;
   difficulty: string;
+  year_asked?: number;
 }
 
 const AdminPage = () => {
