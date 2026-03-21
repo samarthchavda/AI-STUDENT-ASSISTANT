@@ -1,5 +1,5 @@
 """Admin routes for managing application data"""
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import List, Dict, Any, Optional
@@ -404,10 +404,13 @@ async def get_all_payments(
     return result
 
 # Update user plan
+class UpdatePlanRequest(BaseModel):
+    plan: str
+
 @router.put("/users/{user_id}/plan")
 async def update_user_plan(
     user_id: int,
-    plan: PlanType,
+    request: UpdatePlanRequest,
     db: Session = Depends(get_db),
     admin: User = Depends(get_admin_user)
 ):
@@ -416,10 +419,21 @@ async def update_user_plan(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    user.plan = plan
+    # Convert string to PlanType enum
+    plan_str = request.plan.lower()
+    if plan_str == 'free':
+        user.plan = PlanType.FREE
+    elif plan_str == 'basic':
+        user.plan = PlanType.BASIC
+    elif plan_str == 'pro':
+        user.plan = PlanType.PRO
+    else:
+        raise HTTPException(status_code=400, detail=f"Invalid plan: {request.plan}. Must be 'free', 'basic', or 'pro'")
+    
     db.commit()
     
-    return {"message": f"User {user.name} plan updated to {plan.value}"}
+    return {"message": f"User {user.name} plan updated to {plan_str}"}
+
 
 # Delete user
 @router.delete("/users/{user_id}")
@@ -1182,3 +1196,80 @@ async def get_broadcast_stats(
         "total_notifications_sent": total_notifications,
         "unread_notifications": unread_notifications
     }
+
+
+# Get TCS Aptitude Questions with options and explanations
+@router.get("/tcs-aptitude-questions")
+async def get_tcs_aptitude_questions(
+    category: str = Query(None, description="Filter by category"),
+    difficulty: str = Query(None, description="Filter by difficulty"),
+    limit: int = Query(100, ge=1, le=500),
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    """Get TCS aptitude questions with all options and explanations for admin review"""
+    from sqlalchemy import text
+    from app.core.database import engine
+    
+    try:
+        # Build query with optional filters
+        query = """
+            SELECT 
+                id,
+                company,
+                category,
+                difficulty,
+                question,
+                option_a,
+                option_b,
+                option_c,
+                option_d,
+                correct_answer,
+                explanation,
+                year_asked
+            FROM aptitude_questions
+            WHERE LOWER(company) = 'tcs'
+        """
+        
+        params = {"limit": limit}
+        
+        if category and category != 'all':
+            query += " AND LOWER(category) = LOWER(:category)"
+            params["category"] = category
+        
+        if difficulty and difficulty != 'all':
+            query += " AND LOWER(difficulty) = LOWER(:difficulty)"
+            params["difficulty"] = difficulty
+        
+        query += " ORDER BY id DESC LIMIT :limit"
+        
+        with engine.connect() as conn:
+            result = conn.execute(text(query), params)
+            rows = result.fetchall()
+            
+            questions = []
+            for row in rows:
+                questions.append({
+                    "id": row.id,
+                    "question": row.question,
+                    "option_a": row.option_a,
+                    "option_b": row.option_b,
+                    "option_c": row.option_c,
+                    "option_d": row.option_d,
+                    "correct_answer": row.correct_answer,
+                    "explanation": row.explanation or "No explanation available",
+                    "category": row.category,
+                    "difficulty": row.difficulty,
+                    "year_asked": row.year_asked
+                })
+            
+            return {
+                "total": len(questions),
+                "questions": questions
+            }
+            
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Database error: {str(e)}"
+        )

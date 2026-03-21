@@ -324,29 +324,6 @@ export default function ChatPage() {
     inputRef.current?.focus()
   }
 
-  const renderFollowUpSuggestions = (suggestions: string[]) => {
-    if (suggestions.length === 0) return null
-
-    return (
-      <div className="mt-4 space-y-2 border-t border-gray-200 pt-4">
-        <div className="text-xs font-semibold text-gray-600">
-          ✅ Follow-up suggestions:
-        </div>
-        <div className="space-y-2">
-          {suggestions.map((suggestion, idx) => (
-            <button
-              key={idx}
-              onClick={() => handleQuickPrompt(suggestion)}
-              className="w-full rounded-xl border border-orange-200 bg-orange-50/80 px-3 py-2 text-left text-sm text-orange-700 transition hover:border-orange-300 hover:bg-orange-100/60"
-            >
-              • {suggestion}
-            </button>
-          ))}
-        </div>
-      </div>
-    )
-  }
-
   return (
     <>
       <Header />
@@ -382,9 +359,9 @@ export default function ChatPage() {
           </div>
         </div>
 
-        {/* Chat Messages - Full Width with Animations */}
-        <div className="px-4 py-6 pb-48 sm:px-6 lg:px-8">
-          <div className="mx-auto w-full max-w-5xl space-y-6">
+        {/* Chat Messages - Gemini/ChatGPT Style */}
+        <div className="px-4 py-6 pb-48 sm:px-6 lg:px-8 bg-white">
+          <div className="mx-auto w-full max-w-4xl space-y-6">
             <AnimatePresence>
               {messages.map((message, index) => {
                 const isUser = message.role === 'user'
@@ -393,256 +370,240 @@ export default function ChatPage() {
                 return (
                   <motion.div
                     key={index}
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.4, ease: 'easeOut' }}
-                    className={`w-full rounded-2xl p-6 transition-all ${
-                      isUser
-                        ? 'bg-gray-50 border border-gray-100'
-                        : 'bg-white border border-gray-100 shadow-sm hover:shadow-md'
-                    }`}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.3, ease: 'easeOut' }}
+                    className={`flex gap-3 ${isUser ? 'justify-end' : 'justify-start'} group`}
                   >
-                    {/* Header */}
-                    <div className="mb-4 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`flex h-9 w-9 items-center justify-center rounded-lg ${
-                            isUser
-                              ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white'
-                              : 'bg-gradient-to-br from-teal-500 to-cyan-600 text-white'
-                          }`}
-                        >
-                          {isUser ? (
-                            <span className="text-xs font-bold">YOU</span>
-                          ) : (
-                            <Brain className="h-4 w-4" />
-                          )}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-semibold text-gray-900">
-                              {isUser ? 'You' : 'CodeCampus AI'}
-                            </span>
-                            {!isUser && (
-                              <span className="rounded-full bg-teal-100 px-2 py-0.5 text-xs font-medium text-teal-700">
-                                AI Assistant
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {new Date(message.timestamp || Date.now()).toLocaleTimeString([], {
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </div>
+                    {/* AI Avatar - Left Side */}
+                    {!isUser && (
+                      <div className="flex-shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center">
+                          <Brain className="w-4 h-4 text-white" />
                         </div>
                       </div>
+                    )}
 
-                      {/* Copy Button */}
-                      {!isUser && message.content && (
-                        <button
-                          onClick={() => {
-                            navigator.clipboard.writeText(message.content)
-                            setCopiedIndex(index)
-                            setTimeout(() => setCopiedIndex(null), 2000)
-                          }}
-                          className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-xs font-medium text-gray-600 transition hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700"
-                        >
-                          {copiedIndex === index ? (
-                            <>
-                              <Check className="h-3 w-3 text-teal-600" />
-                              Copied
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="h-3 w-3" />
-                              Copy
-                            </>
-                          )}
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Message Content with Better Typography */}
-                    <div className="prose prose-sm max-w-none prose-headings:font-semibold prose-headings:text-gray-900 prose-p:text-gray-700 prose-p:leading-8 prose-p:text-[15px] prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-gray-900 prose-strong:font-semibold prose-code:text-pink-600 prose-code:bg-pink-50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:before:content-[''] prose-code:after:content-[''] prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-pre:rounded-2xl prose-ul:leading-8 prose-li:text-gray-700 prose-li:leading-8">
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        rehypePlugins={[rehypeHighlight]}
-                      components={{
-                        code({ node, className, children, ...props }: any) {
-                          const match = /language-(\w+)/.exec(className || '')
-                          const language = match ? match[1] : ''
-                          const codeString = String(children).replace(/\n$/, '')
-                          const inline = !className
-                          
-                          if (!inline && language) {
-                            return (
-                              <div className="relative group my-4">
-                                <div className="flex items-center justify-between bg-gray-800 px-4 py-2 rounded-t-2xl border-b border-gray-700">
-                                  <span className="text-xs font-semibold text-gray-300 uppercase tracking-wider">
-                                    {language}
-                                  </span>
-                                  <button
-                                    onClick={() => {
-                                      navigator.clipboard.writeText(codeString)
-                                      setCopiedCodeBlockKey(codeString)
-                                      setTimeout(() => setCopiedCodeBlockKey(null), 2000)
-                                    }}
-                                    className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-200 text-xs font-medium transition"
-                                  >
-                                    {copiedCodeBlockKey === codeString ? (
-                                      <>
-                                        <Check className="h-3.5 w-3.5" />
-                                        Copied
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Copy className="h-3.5 w-3.5" />
-                                        Copy
-                                      </>
-                                    )}
-                                  </button>
-                                </div>
-                                <pre className="!mt-0 !rounded-t-none rounded-b-2xl overflow-x-auto">
+                    {/* Message Content */}
+                    <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} w-full max-w-full`}>
+                      {/* Message Bubble */}
+                      <div
+                        className={`rounded-2xl px-4 py-2.5 w-full max-w-full ${
+                          isUser
+                            ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white max-w-[80%]'
+                            : 'bg-transparent max-w-[85%]'
+                        }`}
+                      >
+                        {/* Message Text */}
+                        <div className={`prose prose-sm max-w-none ${
+                          isUser 
+                            ? 'prose-invert prose-p:text-white prose-p:leading-relaxed prose-p:mb-3' 
+                            : 'prose-headings:font-bold prose-headings:text-gray-900 prose-headings:mb-3 prose-headings:mt-4 prose-p:text-gray-800 prose-p:leading-relaxed prose-p:mb-4 prose-p:text-[15px] prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-gray-900 prose-strong:font-bold prose-code:text-pink-600 prose-code:bg-pink-50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:before:content-[\'\'] prose-code:after:content-[\'\'] prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-pre:rounded-2xl prose-ul:leading-relaxed prose-ul:mb-4 prose-ul:space-y-2 prose-li:text-gray-800 prose-li:leading-relaxed prose-ol:leading-relaxed prose-ol:mb-4 prose-ol:space-y-2'
+                        }`}>
+                          <ReactMarkdown
+                            remarkPlugins={[remarkGfm]}
+                            rehypePlugins={[rehypeHighlight]}
+                            components={{
+                              code({ node, className, children, ...props }: any) {
+                                const match = /language-(\w+)/.exec(className || '')
+                                const language = match ? match[1] : ''
+                                const codeString = String(children).replace(/\n$/, '')
+                                const inline = !className
+                                
+                                if (!inline && language) {
+                                  return (
+                                    <div className="relative group/code my-3">
+                                      <div className="flex items-center justify-between bg-gray-800 px-4 py-2 rounded-t-xl border-b border-gray-700">
+                                        <span className="text-xs font-semibold text-gray-300 uppercase tracking-wider">
+                                          {language}
+                                        </span>
+                                        <button
+                                          onClick={() => {
+                                            navigator.clipboard.writeText(codeString)
+                                            setCopiedCodeBlockKey(codeString)
+                                            setTimeout(() => setCopiedCodeBlockKey(null), 2000)
+                                          }}
+                                          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-200 text-xs font-medium transition"
+                                        >
+                                          {copiedCodeBlockKey === codeString ? (
+                                            <>
+                                              <Check className="h-3 w-3" />
+                                              Copied
+                                            </>
+                                          ) : (
+                                            <>
+                                              <Copy className="h-3 w-3" />
+                                              Copy
+                                            </>
+                                          )}
+                                        </button>
+                                      </div>
+                                      <pre className="!mt-0 !rounded-t-none rounded-b-xl overflow-x-auto max-w-full">
+                                        <code className={className} {...props}>
+                                          {children}
+                                        </code>
+                                      </pre>
+                                      
+                                      {/* Logic Breakdown after code */}
+                                      {!isUser && (
+                                        <div className="mt-3 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 p-3">
+                                          <div className="flex items-center gap-2 mb-2">
+                                            <Sparkles className="h-3.5 w-3.5 text-blue-600" />
+                                            <span className="text-xs font-semibold text-blue-900">Logic Breakdown</span>
+                                          </div>
+                                          <ul className="text-xs text-blue-800 space-y-1 list-none">
+                                            <li className="flex items-start gap-2">
+                                              <span className="text-blue-600 mt-0.5">💻</span>
+                                              <span>Code structure follows best practices with proper error handling</span>
+                                            </li>
+                                            <li className="flex items-start gap-2">
+                                              <span className="text-blue-600 mt-0.5">🧠</span>
+                                              <span>All variables are defined and imports are included at the top</span>
+                                            </li>
+                                            <li className="flex items-start gap-2">
+                                              <span className="text-blue-600 mt-0.5">⚡</span>
+                                              <span>Solution is optimized for readability and performance</span>
+                                            </li>
+                                          </ul>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )
+                                }
+                                
+                                return (
                                   <code className={className} {...props}>
                                     {children}
                                   </code>
-                                </pre>
-                                
-                                {/* Logic Breakdown after code */}
-                                {!isUser && (
-                                  <div className="mt-4 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 p-4">
-                                    <div className="flex items-center gap-2 mb-2">
-                                      <Sparkles className="h-4 w-4 text-blue-600" />
-                                      <span className="text-sm font-semibold text-blue-900">Logic Breakdown</span>
-                                    </div>
-                                    <ul className="text-sm text-blue-800 space-y-1.5 list-none">
-                                      <li className="flex items-start gap-2">
-                                        <span className="text-blue-600 mt-0.5">💻</span>
-                                        <span>Code structure follows best practices with proper error handling</span>
-                                      </li>
-                                      <li className="flex items-start gap-2">
-                                        <span className="text-blue-600 mt-0.5">🧠</span>
-                                        <span>All variables are defined and imports are included at the top</span>
-                                      </li>
-                                      <li className="flex items-start gap-2">
-                                        <span className="text-blue-600 mt-0.5">⚡</span>
-                                        <span>Solution is optimized for readability and performance</span>
-                                      </li>
-                                    </ul>
+                                )
+                              }
+                            }}
+                          >
+                            {mainText}
+                          </ReactMarkdown>
+
+                          {/* Follow-up Suggestions */}
+                          {!isUser && suggestions.length > 0 && (
+                            <div className="mt-3 space-y-2">
+                              {suggestions.map((suggestion, idx) => (
+                                <button
+                                  key={idx}
+                                  onClick={() => handleQuickPrompt(suggestion)}
+                                  className="w-full rounded-lg border border-orange-200 bg-orange-50/80 px-3 py-2 text-left text-xs text-orange-700 transition hover:border-orange-300 hover:bg-orange-100/60"
+                                >
+                                  • {suggestion}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Exam Redirect Card */}
+                          {!isUser && hasExamRedirect && (
+                            <div className="mt-4">
+                              <div className="rounded-xl bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border-2 border-blue-200 p-4 shadow-sm">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 text-white">
+                                    <BookOpen className="h-5 w-5" />
                                   </div>
-                                )}
+                                  <div className="rounded-full bg-green-100 border border-green-300 px-2 py-0.5 text-xs font-bold text-green-700">
+                                    100% Free
+                                  </div>
+                                </div>
+                                <h3 className="text-base font-bold text-gray-900 mb-1">
+                                  Ready to Ace Your Placements?
+                                </h3>
+                                <p className="text-xs text-gray-600 mb-3">
+                                  Practice 100% Free Company-Specific Mock Tests
+                                </p>
+                                <button
+                                  onClick={() => navigate('/exam-prep')}
+                                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white font-semibold text-sm shadow-md hover:shadow-lg transition-all"
+                                >
+                                  <span>🚀</span>
+                                  Go to Aptitude Center
+                                </button>
                               </div>
-                            )
-                          }
-                          
-                          return (
-                            <code className={className} {...props}>
-                              {children}
-                            </code>
-                          )
-                        }
-                      }}
-                    >
-                      {mainText}
-                    </ReactMarkdown>
-                  </div>
-
-                  {/* Follow-up Suggestions */}
-                  {!isUser && suggestions.length > 0 && renderFollowUpSuggestions(suggestions)}
-
-                  {/* Exam Redirect Card */}
-                  {!isUser && hasExamRedirect && (
-                    <div className="mt-5 pt-4 border-t border-gray-200">
-                      <div className="rounded-2xl bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 border-2 border-blue-200 p-6 shadow-lg">
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-purple-600 text-white shadow-md">
-                            <BookOpen className="h-6 w-6" />
-                          </div>
-                          <div className="rounded-full bg-green-100 border border-green-300 px-3 py-1 text-xs font-bold text-green-700 uppercase tracking-wide">
-                            100% Free
-                          </div>
+                            </div>
+                          )}
                         </div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">
-                          Ready to Ace Your Placements?
-                        </h3>
-                        <p className="text-sm text-gray-600 mb-4 leading-relaxed">
-                          Practice 100% Free Company-Specific Mock Tests designed for TCS, Infosys, Wipro, Amazon & more.
-                        </p>
-                        <button
-                          onClick={() => navigate('/exam-prep')}
-                          className="w-full flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white font-bold text-base shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all"
-                        >
-                          <span className="text-xl">🚀</span>
-                          Go to Aptitude Center
-                        </button>
+                      </div>
+
+                      {/* Actions Row - Visible on Hover */}
+                      <div className="flex items-center gap-3 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="text-xs text-gray-400">
+                          {new Date(message.timestamp || Date.now()).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
+                        {!isUser && message.content && (
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(message.content)
+                              setCopiedIndex(index)
+                              setTimeout(() => setCopiedIndex(null), 2000)
+                            }}
+                            className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition"
+                          >
+                            {copiedIndex === index ? (
+                              <>
+                                <Check className="h-3 w-3" />
+                                Copied
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="h-3 w-3" />
+                                Copy
+                              </>
+                            )}
+                          </button>
+                        )}
                       </div>
                     </div>
-                  )}
 
-                  {/* Copy Button */}
-                  {!isUser && message.content && (
-                    <div className="mt-4 flex justify-end">
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText(message.content)
-                          setCopiedIndex(index)
-                          setTimeout(() => setCopiedIndex(null), 2000)
-                        }}
-                        className="flex items-center gap-1.5 rounded-xl border border-gray-300 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:border-teal-400 hover:bg-teal-50 hover:text-teal-700"
-                      >
-                        {copiedIndex === index ? (
-                          <>
-                            <Check className="h-3.5 w-3.5 text-teal-600" />
-                            Copied!
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="h-3.5 w-3.5" />
-                            Copy answer
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  )}
-                </motion.div>
-              )
-            })}
+                    {/* User Avatar - Right Side */}
+                    {isUser && (
+                      <div className="flex-shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
+                          U
+                        </div>
+                      </div>
+                    )}
+                  </motion.div>
+                )
+              })}
             </AnimatePresence>
 
             {/* Loading State with Animation */}
             {isLoading && (
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
-                className="w-full rounded-2xl border border-gray-100 bg-white p-6 shadow-sm"
+                transition={{ duration: 0.3 }}
+                className="flex gap-3 justify-start"
               >
-                <div className="mb-4 flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-teal-500 to-cyan-600 text-white">
-                    <Brain className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-gray-900">CodeCampus AI</span>
-                      <span className="rounded-full bg-teal-100 px-2 py-0.5 text-xs font-medium text-teal-700">
-                        AI Assistant
-                      </span>
-                    </div>
-                    <div className="text-xs text-gray-500">Thinking...</div>
+                <div className="flex-shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center">
+                    <Brain className="w-4 h-4 text-white" />
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-500">Generating your response</span>
-                  <span className="flex items-center gap-1">
-                    <span className="h-2 w-2 rounded-full bg-teal-600 animate-bounce [animation-delay:0ms]" />
-                    <span className="h-2 w-2 rounded-full bg-teal-600 animate-bounce [animation-delay:150ms]" />
-                    <span className="h-2 w-2 rounded-full bg-teal-600 animate-bounce [animation-delay:300ms]" />
-                  </span>
+                <div className="flex flex-col items-start">
+                  <div className="rounded-2xl bg-gray-100 px-4 py-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600">Thinking</span>
+                      <span className="flex items-center gap-1">
+                        <span className="h-1.5 w-1.5 rounded-full bg-teal-600 animate-bounce [animation-delay:0ms]" />
+                        <span className="h-1.5 w-1.5 rounded-full bg-teal-600 animate-bounce [animation-delay:150ms]" />
+                        <span className="h-1.5 w-1.5 rounded-full bg-teal-600 animate-bounce [animation-delay:300ms]" />
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </motion.div>
             )}
+
+            <div ref={messagesEndRef} />
 
             <div ref={messagesEndRef} />
           </div>

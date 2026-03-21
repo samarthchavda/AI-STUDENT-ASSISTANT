@@ -51,10 +51,23 @@ interface AptitudeExamHistory {
   exam_date: string;
 }
 
+interface TCSAptitudeQuestion {
+  id: number;
+  question: string;
+  option_a: string;
+  option_b: string;
+  option_c: string;
+  option_d: string;
+  correct_answer: string;
+  explanation: string;
+  category: string;
+  difficulty: string;
+}
+
 const AdminPage = () => {
   const navigate = useNavigate();
   const { user, logout } = useAppStore();
-  const [activeTab, setActiveTab] = useState<'stats' | 'users' | 'chats' | 'payments' | 'progress' | 'company-questions' | 'aptitude-history' | 'ai-monitor' | 'broadcast'>('stats');
+  const [activeTab, setActiveTab] = useState<'stats' | 'users' | 'chats' | 'payments' | 'progress' | 'company-questions' | 'aptitude-history' | 'ai-monitor' | 'broadcast' | 'tcs-aptitude'>('stats');
   
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -85,6 +98,11 @@ const AdminPage = () => {
   const [targetAudience, setTargetAudience] = useState('all');
   const [broadcastHistory, setBroadcastHistory] = useState<any[]>([]);
   const [broadcastStats, setBroadcastStats] = useState<any>(null);
+  
+  // TCS Aptitude states
+  const [tcsQuestions, setTcsQuestions] = useState<TCSAptitudeQuestion[]>([]);
+  const [tcsLoading, setTcsLoading] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   
   const [loading, setLoading] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
@@ -271,8 +289,21 @@ const AdminPage = () => {
       await adminAPI.updateUserPlan(userId, newPlan);
       setUsers(users.map(u => u.id === userId ? { ...u, plan: newPlan } : u));
       setError(null);
+      setSuccessMessage(`User plan updated to ${newPlan.toUpperCase()} successfully!`);
+      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to update user plan');
+      // Handle validation errors (422) which return an array of error objects
+      if (err.response?.data?.detail) {
+        if (Array.isArray(err.response.data.detail)) {
+          // Extract messages from validation error array
+          const errorMessages = err.response.data.detail.map((e: any) => e.msg || JSON.stringify(e)).join(', ');
+          setError(`Validation error: ${errorMessages}`);
+        } else {
+          setError(err.response.data.detail);
+        }
+      } else {
+        setError('Failed to update user plan');
+      }
     }
   };
 
@@ -339,6 +370,19 @@ const AdminPage = () => {
     }
   };
 
+  const loadTCSQuestions = async () => {
+    setTcsLoading(true);
+    setError(null);
+    try {
+      const data = await adminAPI.getTCSAptitudeQuestions(selectedCategory);
+      setTcsQuestions(data.questions || []);
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Failed to load TCS aptitude questions');
+    } finally {
+      setTcsLoading(false);
+    }
+  };
+
   const handleTabChange = (tab: typeof activeTab) => {
     setActiveTab(tab);
     setError(null);
@@ -371,6 +415,9 @@ const AdminPage = () => {
         break;
       case 'broadcast':
         loadBroadcast();
+        break;
+      case 'tcs-aptitude':
+        loadTCSQuestions();
         break;
     }
   };
@@ -425,6 +472,7 @@ const AdminPage = () => {
   const sidebarItems = [
     { id: 'stats', label: 'Statistics', icon: BarChart3 },
     { id: 'users', label: 'Users', icon: Users },
+    { id: 'tcs-aptitude', label: 'TCS Aptitude', icon: Target },
     { id: 'ai-monitor', label: 'AI Monitor', icon: Activity },
     { id: 'broadcast', label: 'Broadcast', icon: Send },
     { id: 'chats', label: 'Chats', icon: MessageSquare },
@@ -1636,6 +1684,139 @@ const AdminPage = () => {
                 <div className="text-center py-12 text-gray-500">No broadcasts sent yet</div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* TCS Aptitude Tab */}
+        {activeTab === 'tcs-aptitude' && (
+          <div>
+            <div className="mb-6">
+              <h1 className="text-2xl font-bold text-gray-900">TCS Aptitude Questions</h1>
+              <p className="text-gray-500 mt-1">Review TCS aptitude questions with options and explanations</p>
+            </div>
+
+            {/* Category Filter */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
+              <div className="flex items-center gap-4">
+                <label className="text-sm font-medium text-gray-700">Filter by Category:</label>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => {
+                    setSelectedCategory(e.target.value);
+                    loadTCSQuestions();
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="all">All Categories</option>
+                  <option value="Numerical Ability">Numerical Ability</option>
+                  <option value="Verbal Ability">Verbal Ability</option>
+                  <option value="Reasoning">Reasoning</option>
+                  <option value="Programming Logic">Programming Logic</option>
+                </select>
+                <span className="text-sm text-gray-500">
+                  {tcsQuestions.length} questions
+                </span>
+              </div>
+            </div>
+
+            {/* Loading State */}
+            {tcsLoading && (
+              <div className="text-center py-20">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <p className="mt-4 text-gray-600">Loading TCS questions...</p>
+              </div>
+            )}
+
+            {/* Questions List */}
+            {!tcsLoading && tcsQuestions.length > 0 && (
+              <div className="space-y-6">
+                {tcsQuestions.map((q, index) => (
+                  <div key={q.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                    {/* Question Header */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold text-sm">
+                            {index + 1}
+                          </span>
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                            q.difficulty === 'Easy' ? 'bg-green-100 text-green-700' :
+                            q.difficulty === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-red-100 text-red-700'
+                          }`}>
+                            {q.difficulty}
+                          </span>
+                          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">
+                            {q.category}
+                          </span>
+                          {q.year_asked && (
+                            <span className="text-xs text-gray-500">Year: {q.year_asked}</span>
+                          )}
+                        </div>
+                        <h3 className="text-lg font-medium text-gray-900">{q.question}</h3>
+                      </div>
+                    </div>
+
+                    {/* Options */}
+                    <div className="space-y-3 mb-4">
+                      {[
+                        { label: 'A', value: q.option_a },
+                        { label: 'B', value: q.option_b },
+                        { label: 'C', value: q.option_c },
+                        { label: 'D', value: q.option_d }
+                      ].map((option) => (
+                        <div
+                          key={option.label}
+                          className={`flex items-start gap-3 p-3 rounded-lg border-2 ${
+                            q.correct_answer === option.value
+                              ? 'border-green-500 bg-green-50'
+                              : 'border-gray-200 bg-gray-50'
+                          }`}
+                        >
+                          <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full font-semibold text-sm ${
+                            q.correct_answer === option.value
+                              ? 'bg-green-500 text-white'
+                              : 'bg-gray-300 text-gray-700'
+                          }`}>
+                            {option.label}
+                          </span>
+                          <span className={`flex-1 ${
+                            q.correct_answer === option.value
+                              ? 'text-green-900 font-medium'
+                              : 'text-gray-700'
+                          }`}>
+                            {option.value}
+                          </span>
+                          {q.correct_answer === option.value && (
+                            <span className="text-green-600 font-semibold text-sm">✓ Correct</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Explanation */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <h4 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Explanation
+                      </h4>
+                      <p className="text-blue-800 text-sm leading-relaxed">{q.explanation}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Empty State */}
+            {!tcsLoading && tcsQuestions.length === 0 && (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
+                <div className="text-6xl mb-4">📝</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No TCS Questions Found</h3>
+                <p className="text-gray-500">No questions available for the selected category.</p>
+              </div>
+            )}
           </div>
         )}
         </main>

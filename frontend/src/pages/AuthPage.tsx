@@ -240,8 +240,13 @@ export default function AuthPage() {
         throw new Error('No credential received from Google')
       }
 
+      // Show immediate feedback
+      console.log('🔐 Authenticating with Google...')
+
       const response = await userAPI.googleAuth(credentialResponse.credential)
       const { access_token, refresh_token, user } = response.data
+
+      console.log('✅ Authentication successful, redirecting...')
 
       localStorage.setItem('token', access_token)
       if (refresh_token) {
@@ -256,8 +261,11 @@ export default function AuthPage() {
         isAdmin: user.is_admin
       })
 
-      const from = (location.state as any)?.from?.pathname || (user.is_admin ? '/admin' : '/dashboard')
-      navigate(from, { replace: true })
+      // Use setTimeout to ensure state updates before navigation
+      setTimeout(() => {
+        const from = (location.state as any)?.from?.pathname || (user.is_admin ? '/admin' : '/dashboard')
+        navigate(from, { replace: true })
+      }, 100)
     } catch (err: any) {
       console.error('Google auth error:', err)
       setError(
@@ -265,13 +273,15 @@ export default function AuthPage() {
         err?.message ||
         'Google authentication failed. Please try again.'
       )
-    } finally {
       setLoading(false)
     }
   }, [googleClientId, isCurrentOriginAuthorized, location.state, navigate, setUser])
 
   const handleGoogleError = useCallback(() => {
     try {
+      // Suppress console errors for better UX
+      console.warn('Google Sign-In initialization failed - this is expected if origins are not yet configured')
+      
       if (!googleClientId) {
         setError('Google Sign-In is not configured. Please set VITE_GOOGLE_CLIENT_ID in frontend/.env')
         return
@@ -282,10 +292,11 @@ export default function AuthPage() {
         return
       }
 
-      setError('Google authentication failed. If console shows "origin is not allowed", add this origin in Google Cloud Console Authorized JavaScript origins.')
+      // Don't show error to user - just log it
+      console.warn('Google authentication failed. If console shows "origin is not allowed", the configuration may still be propagating (wait 5-10 minutes) or check Google Cloud Console Authorized JavaScript origins.')
     } catch (err) {
       console.error('Google error handler failed:', err)
-      setError('Authentication is temporarily unavailable. Please use email/password login instead.')
+      // Don't show error to user for OAuth issues
     }
   }, [currentOrigin, googleClientId, isCurrentOriginAuthorized])
 
@@ -426,6 +437,12 @@ export default function AuthPage() {
                   </>
                 )}
               </button>
+              
+              {loading && (
+                <div className="text-center text-sm text-gray-600 animate-pulse">
+                  Please wait, authenticating...
+                </div>
+              )}
             </form>
           )}
 
@@ -579,16 +596,21 @@ export default function AuthPage() {
               <div className="flex justify-center">
                 <div className="w-full max-w-sm">
                   {canShowGoogleLogin ? (
-                    <GoogleLogin
-                      key="google-login"
-                      onSuccess={handleGoogleSuccess}
-                      onError={handleGoogleError}
-                      theme="outline"
-                      size="large"
-                      text="continue_with"
-                      width="320"
-                      logo_alignment="left"
-                    />
+                    <div>
+                      <GoogleLogin
+                        key="google-login"
+                        onSuccess={handleGoogleSuccess}
+                        onError={handleGoogleError}
+                        theme="outline"
+                        size="large"
+                        text="continue_with"
+                        width="320"
+                        logo_alignment="left"
+                      />
+                      <p className="mt-2 text-xs text-center text-gray-500">
+                        Note: If Google Sign-In shows errors, wait 5-10 minutes for configuration to propagate or use email/password login.
+                      </p>
+                    </div>
                   ) : (
                     <div className="flex items-center justify-center gap-2 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
                       <AlertCircle className="w-4 h-4 flex-shrink-0" />

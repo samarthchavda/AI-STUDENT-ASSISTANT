@@ -29,6 +29,10 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         
+        # Cross-Origin headers for Google OAuth popup communication
+        response.headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups"
+        response.headers["Cross-Origin-Embedder-Policy"] = "unsafe-none"
+        
         # Remove server header
         if "server" in response.headers:
             del response.headers["server"]

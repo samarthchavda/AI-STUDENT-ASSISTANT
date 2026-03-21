@@ -226,4 +226,13 @@ export const adminAPI = {
     const response = await api.get('/admin/broadcast/stats');
     return response.data;
   },
+
+  // TCS Aptitude APIs
+  getTCSAptitudeQuestions: async (category?: string, difficulty?: string): Promise<any> => {
+    const params = new URLSearchParams();
+    if (category && category !== 'all') params.append('category', category);
+    if (difficulty && difficulty !== 'all') params.append('difficulty', difficulty);
+    const response = await api.get(`/admin/tcs-aptitude-questions?${params.toString()}`);
+    return response.data;
+  },
 };
