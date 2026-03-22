@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useReactToPrint } from 'react-to-print'
 import {
   Sparkles,
@@ -12,6 +13,7 @@ import {
   Plus,
   Trash2,
   AlertTriangle,
+  Layout,
 } from 'lucide-react'
 import { careerAPI } from '../api/client'
 import { useResumeBuilderStore } from '../store/useResumeBuilderStore'
@@ -53,6 +55,9 @@ const templateMeta: Array<{ id: TemplateType; name: string; caption: string }> =
 ]
 
 export default function MultiStepResumeBuilder() {
+  const location = useLocation()
+  const navigate = useNavigate()
+  
   const {
     step,
     setStep,
@@ -89,7 +94,9 @@ export default function MultiStepResumeBuilder() {
     resetBuilder,
   } = useResumeBuilderStore()
 
-  const [selectedTemplate, setSelectedTemplate] = useState<TemplateType>('modern')
+  // Get template from location state or default to 'modern'
+  const initialTemplate = (location.state as any)?.selectedTemplate || 'modern'
+  const [selectedTemplate, setSelectedTemplate] = useState<TemplateType>(initialTemplate)
   const [enhancingSection, setEnhancingSection] = useState<'experience' | 'projects' | 'skills' | null>(null)
   const [smartAction, setSmartAction] = useState<'summary' | 'skills' | null>(null)
   const [demoLoading, setDemoLoading] = useState(false)
@@ -879,6 +886,13 @@ export default function MultiStepResumeBuilder() {
               <p className="text-xs text-gray-500 mt-1">Build a clean, ATS-ready resume in minutes</p>
             </div>
             <div className="flex items-center gap-2">
+              <button
+                onClick={() => navigate('/career/resume-templates')}
+                className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs md:text-sm font-semibold text-blue-700 shadow-sm hover:bg-blue-100"
+              >
+                <Layout className="h-4 w-4" />
+                Choose Template
+              </button>
               <button
                 onClick={fillWithAIDemoData}
                 disabled={demoLoading}
