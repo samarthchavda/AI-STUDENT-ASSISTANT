@@ -42,10 +42,10 @@ class User(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
-    chat_history = relationship("ChatHistory", back_populates="user")
-    user_progress = relationship("UserProgress", back_populates="user")
-    payments = relationship("Payment", back_populates="user")
-    practice_history = relationship("UserPractice", back_populates="user")
+    chat_history = relationship("ChatHistory", back_populates="user", cascade="all, delete-orphan")
+    user_progress = relationship("UserProgress", back_populates="user", cascade="all, delete-orphan")
+    payments = relationship("Payment", back_populates="user", cascade="all, delete-orphan")
+    practice_history = relationship("UserPractice", back_populates="user", cascade="all, delete-orphan")
     refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")
 
 

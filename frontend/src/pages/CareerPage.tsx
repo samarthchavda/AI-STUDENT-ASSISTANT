@@ -30,19 +30,6 @@ export default function CareerPage() {
   const [analysisSourceText, setAnalysisSourceText] = useState('');
   const [resumeTemplate] = useState<'classic' | 'modern' | 'minimal'>('classic');
 
-  useEffect(() => {
-    if (location.pathname.includes('/resume-builder')) {
-      setSelectedTab('builder');
-    } else {
-      setSelectedTab('resume');
-    }
-  }, [location.pathname]);
-
-  const handleTabChange = (tab: 'resume' | 'builder') => {
-    setSelectedTab(tab);
-    navigate(tab === 'builder' ? '/career/resume-builder' : '/career/resume-analysis');
-  };
-
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -293,7 +280,6 @@ export default function CareerPage() {
               )}
             </div>
           </div>
-        </div>
       </div>
     </div>
   );
