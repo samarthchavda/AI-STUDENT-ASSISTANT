@@ -385,6 +385,32 @@ export const companyPrepAPI = {
     }),
 }
 
+export const aptitudeAPI = {
+  getTest: (company: string, difficulty: string, limit: number = 5) =>
+    api.get('/aptitude/test', { params: { company, difficulty, limit } }),
+
+  submitAnswers: (sessionId: string, answers: Record<number, string | null>) =>
+    api.post('/aptitude/submit', { session_id: sessionId, answers }),
+
+  getHistory: () =>
+    api.get('/aptitude/history'),
+
+  getExamDetails: (examId: number) =>
+    api.get(`/aptitude/history/${examId}`),
+
+  getCompanies: () =>
+    api.get<string[]>('/aptitude/companies'),
+
+  getCategories: (company?: string) =>
+    api.get<string[]>('/aptitude/categories', { params: company ? { company } : {} }),
+
+  getStats: (company?: string) =>
+    api.get('/aptitude/stats', { params: company ? { company } : {} }),
+
+  getUsageStats: () =>
+    api.get('/aptitude/usage-stats'),
+}
+
 export const userAPI = {
   register: (email: string, password: string, name: string) =>
     api.post('/auth/register', { email, password, name }),

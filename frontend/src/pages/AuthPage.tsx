@@ -261,11 +261,14 @@ export default function AuthPage() {
         isAdmin: user.is_admin
       })
 
-      // Use setTimeout to ensure state updates before navigation
-      setTimeout(() => {
-        const from = (location.state as any)?.from?.pathname || (user.is_admin ? '/admin' : '/dashboard')
-        navigate(from, { replace: true })
-      }, 100)
+      // Use requestAnimationFrame to ensure DOM updates complete before navigation
+      // This prevents InvalidNodeTypeError by allowing Google popup to close properly
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          const from = (location.state as any)?.from?.pathname || (user.is_admin ? '/admin' : '/dashboard')
+          navigate(from, { replace: true })
+        }, 150)
+      })
     } catch (err: any) {
       console.error('Google auth error:', err)
       setError(
