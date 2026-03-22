@@ -51,24 +51,10 @@ interface AptitudeExamHistory {
   exam_date: string;
 }
 
-interface TCSAptitudeQuestion {
-  id: number;
-  question: string;
-  option_a: string;
-  option_b: string;
-  option_c: string;
-  option_d: string;
-  correct_answer: string;
-  explanation: string;
-  category: string;
-  difficulty: string;
-  year_asked?: number;
-}
-
 const AdminPage = () => {
   const navigate = useNavigate();
   const { user, logout } = useAppStore();
-  const [activeTab, setActiveTab] = useState<'stats' | 'users' | 'chats' | 'payments' | 'progress' | 'company-questions' | 'aptitude-history' | 'ai-monitor' | 'broadcast' | 'tcs-aptitude'>('stats');
+  const [activeTab, setActiveTab] = useState<'stats' | 'users' | 'chats' | 'payments' | 'progress' | 'company-questions' | 'aptitude-history' | 'ai-monitor' | 'broadcast' | 'aptitude-questions'>('stats');
   
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -100,10 +86,14 @@ const AdminPage = () => {
   const [broadcastHistory, setBroadcastHistory] = useState<any[]>([]);
   const [broadcastStats, setBroadcastStats] = useState<any>(null);
   
-  // TCS Aptitude states
-  const [tcsQuestions, setTcsQuestions] = useState<TCSAptitudeQuestion[]>([]);
-  const [tcsLoading, setTcsLoading] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  // Aptitude Questions Management states
+  const [aptitudeQuestionsFile, setAptitudeQuestionsFile] = useState<File | null>(null)
+  const [aptitudeUploadProgress, setAptitudeUploadProgress] = useState<string | null>(null)
+  const [aptitudeUploadResult, setAptitudeUploadResult] = useState<any | null>(null)
+  const [aptitudeQuestions, setAptitudeQuestions] = useState<any[]>([])
+  const [aptitudeFilterCategory, setAptitudeFilterCategory] = useState<string>('all')
+  const [aptitudeFilterSubcategory, setAptitudeFilterSubcategory] = useState<string>('all')
+  const [aptitudeStats, setAptitudeStats] = useState<any>(null)
   
   const [loading, setLoading] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
@@ -269,19 +259,37 @@ const AdminPage = () => {
   };
 
   const handleDeleteUser = async (userId: number) => {
+    // First click: show confirmation
     if (deleteConfirm !== userId) {
       setDeleteConfirm(userId);
       setTimeout(() => setDeleteConfirm(null), 3000);
       return;
     }
 
+    // Second click: delete user
+    setLoading(true);
     try {
       await adminAPI.deleteUser(userId);
+      // Update state immediately
       setUsers(users.filter(u => u.id !== userId));
       setDeleteConfirm(null);
+      setOpenMenuUserId(null);
       setError(null);
+      setSuccessMessage('User deleted successfully!');
+      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to delete user');
+      // Check if user was already deleted (404 error)
+      if (err.response?.status === 404) {
+        // User already deleted, just update UI
+        setUsers(users.filter(u => u.id !== userId));
+        setDeleteConfirm(null);
+        setOpenMenuUserId(null);
+        setError(null);
+      } else {
+        setError(err.response?.data?.detail || 'Failed to delete user');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -371,16 +379,71 @@ const AdminPage = () => {
     }
   };
 
-  const loadTCSQuestions = async () => {
-    setTcsLoading(true);
+  const loadAptitudeQuestions = async () => {
+    setLoading(true);
     setError(null);
     try {
-      const data = await adminAPI.getTCSAptitudeQuestions(selectedCategory);
-      setTcsQuestions(data.questions || []);
+      const [questions, stats] = await Promise.all([
+        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/admin/aptitude-practice-questions?category=${aptitudeFilterCategory}&subcategory=${aptitudeFilterSubcategory}`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        }).then(r => r.json()),
+        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/admin/aptitude-practice-stats`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        }).then(r => r.json())
+      ]);
+      setAptitudeQuestions(questions.questions || []);
+      setAptitudeStats(stats);
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to load TCS aptitude questions');
+      setError(err.message || 'Failed to load aptitude questions');
     } finally {
-      setTcsLoading(false);
+      setLoading(false);
+    }
+  };
+
+  const handleAptitudeFileUpload = async () => {
+    if (!aptitudeQuestionsFile) {
+      setError('Please select a JSON file first');
+      return;
+    }
+
+    setLoading(true);
+    setAptitudeUploadProgress('Uploading...');
+    setAptitudeUploadResult(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', aptitudeQuestionsFile);
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/admin/aptitude-practice-questions/bulk-upload`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        body: formData
+      });
+
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.detail || 'Upload failed');
+      }
+      
+      setAptitudeUploadResult(result);
+      setAptitudeUploadProgress(null);
+      setAptitudeQuestionsFile(null);
+      
+      if (result.inserted > 0) {
+        setSuccessMessage(`Successfully uploaded ${result.inserted} questions!`);
+        setTimeout(() => {
+          loadAptitudeQuestions();
+          setSuccessMessage(null);
+        }, 2000);
+      } else {
+        setError(`No new questions added. ${result.skipped} duplicates skipped.`);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to upload file');
+      setAptitudeUploadProgress(null);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -417,8 +480,8 @@ const AdminPage = () => {
       case 'broadcast':
         loadBroadcast();
         break;
-      case 'tcs-aptitude':
-        loadTCSQuestions();
+      case 'aptitude-questions':
+        loadAptitudeQuestions();
         break;
     }
   };
@@ -473,7 +536,7 @@ const AdminPage = () => {
   const sidebarItems = [
     { id: 'stats', label: 'Statistics', icon: BarChart3 },
     { id: 'users', label: 'Users', icon: Users },
-    { id: 'tcs-aptitude', label: 'TCS Aptitude', icon: Target },
+    { id: 'aptitude-questions', label: 'Aptitude Questions', icon: Target },
     { id: 'ai-monitor', label: 'AI Monitor', icon: Activity },
     { id: 'broadcast', label: 'Broadcast', icon: Send },
     { id: 'chats', label: 'Chats', icon: MessageSquare },
@@ -807,18 +870,22 @@ const AdminPage = () => {
                                     )}
                                     <div className="border-t border-gray-100 mt-1 pt-1">
                                       <button
-                                        onClick={() => {
-                                          handleDeleteUser(user.id);
-                                          setOpenMenuUserId(null);
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          if (!loading) {
+                                            handleDeleteUser(user.id);
+                                          }
                                         }}
+                                        disabled={loading}
                                         className={`w-full text-left px-4 py-2 text-sm transition flex items-center gap-2 ${
+                                          loading ? 'opacity-50 cursor-not-allowed' :
                                           deleteConfirm === user.id
                                             ? 'bg-red-50 text-red-700 font-medium'
                                             : 'text-red-600 hover:bg-red-50'
                                         }`}
                                       >
                                         <Trash2 className="w-4 h-4" />
-                                        {deleteConfirm === user.id ? 'Click to Confirm' : 'Delete User'}
+                                        {loading ? 'Deleting...' : deleteConfirm === user.id ? 'Click to Confirm' : 'Delete User'}
                                       </button>
                                     </div>
                                   </div>
@@ -1688,134 +1755,211 @@ const AdminPage = () => {
           </div>
         )}
 
-        {/* TCS Aptitude Tab */}
-        {activeTab === 'tcs-aptitude' && (
+        {/* Aptitude Questions Management Tab */}
+        {activeTab === 'aptitude-questions' && (
           <div>
             <div className="mb-6">
-              <h1 className="text-2xl font-bold text-gray-900">TCS Aptitude Questions</h1>
-              <p className="text-gray-500 mt-1">Review TCS aptitude questions with options and explanations</p>
+              <h1 className="text-2xl font-bold text-gray-900">Aptitude Questions Management</h1>
+              <p className="text-gray-500 mt-1">Upload and manage aptitude practice questions from JSON files</p>
             </div>
 
-            {/* Category Filter */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
+            {/* Stats Cards */}
+            {aptitudeStats && (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+                  <div className="text-sm text-gray-500">Total Questions</div>
+                  <div className="text-2xl font-bold text-gray-900">{aptitudeStats.total_questions}</div>
+                </div>
+                <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+                  <div className="text-sm text-gray-500">Categories</div>
+                  <div className="text-2xl font-bold text-blue-600">{aptitudeStats.total_categories}</div>
+                </div>
+                <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+                  <div className="text-sm text-gray-500">Subcategories</div>
+                  <div className="text-2xl font-bold text-purple-600">{aptitudeStats.total_subcategories}</div>
+                </div>
+                <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
+                  <div className="text-sm text-gray-500">Sources</div>
+                  <div className="text-2xl font-bold text-green-600">{aptitudeStats.total_sources}</div>
+                </div>
+              </div>
+            )}
+
+            {/* Upload Section */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Bulk Upload Questions</h2>
+              <p className="text-sm text-gray-600 mb-4">
+                Upload a JSON file with questions in the format: <code className="bg-gray-100 px-2 py-1 rounded text-xs">{'[{id, question, options: [{key, text}], answer, explanation, category, subcategory, difficulty, tags, source}]'}</code>
+              </p>
+              
               <div className="flex items-center gap-4">
-                <label className="text-sm font-medium text-gray-700">Filter by Category:</label>
+                <input
+                  type="file"
+                  accept=".json"
+                  onChange={(e) => setAptitudeQuestionsFile(e.target.files?.[0] || null)}
+                  className="flex-1 text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                />
+                <button
+                  onClick={handleAptitudeFileUpload}
+                  disabled={!aptitudeQuestionsFile || loading}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                >
+                  {aptitudeUploadProgress || 'Upload'}
+                </button>
+              </div>
+
+              {aptitudeUploadResult && (
+                <div className={`mt-4 p-4 rounded-lg border ${
+                  aptitudeUploadResult.inserted > 0 
+                    ? 'bg-green-50 border-green-200' 
+                    : 'bg-yellow-50 border-yellow-200'
+                }`}>
+                  <div className="flex items-start gap-2">
+                    <span className="text-lg">
+                      {aptitudeUploadResult.inserted > 0 ? '✅' : '⚠️'}
+                    </span>
+                    <div className="flex-1">
+                      <p className={`text-sm font-medium ${
+                        aptitudeUploadResult.inserted > 0 ? 'text-green-800' : 'text-yellow-800'
+                      }`}>
+                        {aptitudeUploadResult.message}
+                      </p>
+                      <div className="mt-2 text-xs space-y-1">
+                        <div className="text-gray-600">
+                          <span className="font-semibold">Total:</span> {aptitudeUploadResult.total} questions in file
+                        </div>
+                        <div className="text-green-600">
+                          <span className="font-semibold">Inserted:</span> {aptitudeUploadResult.inserted} new questions
+                        </div>
+                        {aptitudeUploadResult.skipped > 0 && (
+                          <div className="text-yellow-600">
+                            <span className="font-semibold">Skipped:</span> {aptitudeUploadResult.skipped} duplicates/errors
+                          </div>
+                        )}
+                        {aptitudeUploadResult.errors && aptitudeUploadResult.errors.length > 0 && (
+                          <div className="mt-2">
+                            <div className="font-semibold text-red-600 mb-1">
+                              Errors ({aptitudeUploadResult.total_errors}):
+                            </div>
+                            <ul className="list-disc list-inside text-red-600 space-y-0.5">
+                              {aptitudeUploadResult.errors.map((err: string, idx: number) => (
+                                <li key={idx}>{err}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Filters */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6">
+              <div className="flex items-center gap-4 flex-wrap">
+                <label className="text-sm font-medium text-gray-700">Filters:</label>
                 <select
-                  value={selectedCategory}
+                  value={aptitudeFilterCategory}
                   onChange={(e) => {
-                    setSelectedCategory(e.target.value);
-                    loadTCSQuestions();
+                    setAptitudeFilterCategory(e.target.value);
+                    loadAptitudeQuestions();
                   }}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="all">All Categories</option>
-                  <option value="Numerical Ability">Numerical Ability</option>
+                  <option value="Aptitude">Aptitude</option>
+                  <option value="Logical Reasoning">Logical Reasoning</option>
                   <option value="Verbal Ability">Verbal Ability</option>
-                  <option value="Reasoning">Reasoning</option>
-                  <option value="Programming Logic">Programming Logic</option>
                 </select>
-                <span className="text-sm text-gray-500">
-                  {tcsQuestions.length} questions
+                <select
+                  value={aptitudeFilterSubcategory}
+                  onChange={(e) => {
+                    setAptitudeFilterSubcategory(e.target.value);
+                    loadAptitudeQuestions();
+                  }}
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">All Subcategories</option>
+                  <optgroup label="Aptitude">
+                    <option value="Average">Average</option>
+                    <option value="Percentage">Percentage</option>
+                    <option value="Profit and Loss">Profit and Loss</option>
+                    <option value="Time and Distance">Time and Distance</option>
+                    <option value="Time and Work">Time and Work</option>
+                  </optgroup>
+                  <optgroup label="Logical Reasoning">
+                    <option value="Puzzles">Puzzles</option>
+                    <option value="Verbal Reasoning">Verbal Reasoning</option>
+                  </optgroup>
+                  <optgroup label="Verbal Ability">
+                    <option value="Synonyms">Synonyms</option>
+                  </optgroup>
+                </select>
+                <span className="text-sm text-gray-500 ml-auto">
+                  {aptitudeQuestions.length} questions
                 </span>
               </div>
             </div>
 
-            {/* Loading State */}
-            {tcsLoading && (
+            {/* Questions List */}
+            {loading && (
               <div className="text-center py-20">
                 <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                <p className="mt-4 text-gray-600">Loading TCS questions...</p>
+                <p className="mt-4 text-gray-600">Loading questions...</p>
               </div>
             )}
 
-            {/* Questions List */}
-            {!tcsLoading && tcsQuestions.length > 0 && (
-              <div className="space-y-6">
-                {tcsQuestions.map((q, index) => (
+            {!loading && aptitudeQuestions.length > 0 && (
+              <div className="space-y-4">
+                {aptitudeQuestions.map((q, index) => (
                   <div key={q.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                    {/* Question Header */}
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold text-sm">
-                            {index + 1}
-                          </span>
-                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                            q.difficulty === 'Easy' ? 'bg-green-100 text-green-700' :
-                            q.difficulty === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-red-100 text-red-700'
-                          }`}>
-                            {q.difficulty}
-                          </span>
-                          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">
-                            {q.category}
-                          </span>
-                          {q.year_asked && (
-                            <span className="text-xs text-gray-500">Year: {q.year_asked}</span>
-                          )}
-                        </div>
-                        <h3 className="text-lg font-medium text-gray-900">{q.question}</h3>
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold text-sm">
+                          {index + 1}
+                        </span>
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          q.difficulty === 'easy' ? 'bg-green-100 text-green-700' :
+                          q.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-red-100 text-red-700'
+                        }`}>
+                          {q.difficulty}
+                        </span>
+                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">
+                          {q.subcategory}
+                        </span>
                       </div>
+                      <span className="text-xs text-gray-500">{q.source}</span>
                     </div>
-
-                    {/* Options */}
-                    <div className="space-y-3 mb-4">
-                      {[
-                        { label: 'A', value: q.option_a },
-                        { label: 'B', value: q.option_b },
-                        { label: 'C', value: q.option_c },
-                        { label: 'D', value: q.option_d }
-                      ].map((option) => (
+                    <p className="text-gray-800 mb-3">{q.question}</p>
+                    <div className="grid grid-cols-2 gap-2 mb-3">
+                      {q.options.map((opt: any) => (
                         <div
-                          key={option.label}
-                          className={`flex items-start gap-3 p-3 rounded-lg border-2 ${
-                            q.correct_answer === option.value
-                              ? 'border-green-500 bg-green-50'
-                              : 'border-gray-200 bg-gray-50'
+                          key={opt.key}
+                          className={`p-2 rounded-lg border text-sm ${
+                            opt.key === q.answer
+                              ? 'border-green-500 bg-green-50 text-green-900 font-medium'
+                              : 'border-gray-200 bg-gray-50 text-gray-700'
                           }`}
                         >
-                          <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full font-semibold text-sm ${
-                            q.correct_answer === option.value
-                              ? 'bg-green-500 text-white'
-                              : 'bg-gray-300 text-gray-700'
-                          }`}>
-                            {option.label}
-                          </span>
-                          <span className={`flex-1 ${
-                            q.correct_answer === option.value
-                              ? 'text-green-900 font-medium'
-                              : 'text-gray-700'
-                          }`}>
-                            {option.value}
-                          </span>
-                          {q.correct_answer === option.value && (
-                            <span className="text-green-600 font-semibold text-sm">✓ Correct</span>
-                          )}
+                          <span className="font-semibold">{opt.key})</span> {opt.text}
                         </div>
                       ))}
                     </div>
-
-                    {/* Explanation */}
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                      <h4 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        Explanation
-                      </h4>
-                      <p className="text-blue-800 text-sm leading-relaxed">{q.explanation}</p>
+                    <div className="text-xs text-gray-500">
+                      Answer: <span className="font-semibold text-green-600">{q.answer}</span>
                     </div>
                   </div>
                 ))}
               </div>
             )}
 
-            {/* Empty State */}
-            {!tcsLoading && tcsQuestions.length === 0 && (
+            {!loading && aptitudeQuestions.length === 0 && (
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
                 <div className="text-6xl mb-4">📝</div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No TCS Questions Found</h3>
-                <p className="text-gray-500">No questions available for the selected category.</p>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No Questions Found</h3>
+                <p className="text-gray-500">Upload a JSON file to add questions to the database.</p>
               </div>
             )}
           </div>
