@@ -442,7 +442,7 @@ async def delete_user(
     db: Session = Depends(get_db),
     admin: User = Depends(get_admin_user)
 ):
-    """Delete a user"""
+    """Delete a user and all their data (cascade delete handles related records)"""
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -450,31 +450,17 @@ async def delete_user(
     if user.is_admin:
         raise HTTPException(status_code=400, detail="Cannot delete admin users")
     
-    db.delete(user)
-    db.commit()
+    user_name = user.name
     
-    return {"message": f"User {user.name} deleted successfully"}
-
-# Delete user
-@router.delete("/users/{user_id}")
-async def delete_user(
-    user_id: int,
-    db: Session = Depends(get_db),
-    admin: User = Depends(get_admin_user)
-):
-    """Delete a user and all their data"""
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    if user.is_admin:
-        raise HTTPException(status_code=400, detail="Cannot delete admin users")
-    
-    # Delete user (cascade will handle related records)
-    db.delete(user)
-    db.commit()
-    
-    return {"message": f"User {user.name} deleted successfully"}
+    try:
+        # Delete user - cascade will handle all related records automatically
+        db.delete(user)
+        db.commit()
+        
+        return {"message": f"User {user_name} deleted successfully"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to delete user: {str(e)}")
 
 
 # Get aptitude history for a specific user
@@ -1273,3 +1259,223 @@ async def get_tcs_aptitude_questions(
             status_code=500,
             detail=f"Database error: {str(e)}"
         )
+
+
+# ============================================================================
+# APTITUDE PRACTICE QUESTIONS MANAGEMENT (Admin)
+# ============================================================================
+
+@router.get("/aptitude-practice-questions")
+async def get_aptitude_practice_questions_admin(
+    category: str = Query("all"),
+    subcategory: str = Query("all"),
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Get aptitude practice questions with filters for admin panel"""
+    from sqlalchemy import text
+    from app.core.database import engine
+    
+    try:
+        query = """
+            SELECT 
+                id::text, question, image, has_image, options, answer, 
+                explanation, category, subcategory, difficulty, tags, source
+            FROM aptitude_practice_questions
+            WHERE 1=1
+        """
+        params = {}
+        
+        if category != "all":
+            query += " AND LOWER(category) = LOWER(:category)"
+            params["category"] = category
+        
+        if subcategory != "all":
+            query += " AND LOWER(subcategory) = LOWER(:subcategory)"
+            params["subcategory"] = subcategory
+        
+        query += " ORDER BY created_at DESC LIMIT 100"
+        
+        with engine.begin() as connection:
+            result = connection.execute(text(query), params)
+            rows = result.fetchall()
+            
+            questions = []
+            for row in rows:
+                questions.append({
+                    "id": row[0],
+                    "question": row[1],
+                    "image": row[2],
+                    "has_image": row[3],
+                    "options": row[4],
+                    "answer": row[5],
+                    "explanation": row[6],
+                    "category": row[7],
+                    "subcategory": row[8],
+                    "difficulty": row[9],
+                    "tags": row[10] if row[10] else [],
+                    "source": row[11]
+                })
+            
+            return {"questions": questions}
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch questions: {str(e)}")
+
+
+@router.get("/aptitude-practice-stats")
+async def get_aptitude_practice_stats(
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Get statistics about aptitude practice questions"""
+    from sqlalchemy import text
+    from app.core.database import engine
+    
+    try:
+        with engine.begin() as connection:
+            # Total questions
+            total_result = connection.execute(text("SELECT COUNT(*) FROM aptitude_practice_questions"))
+            total_questions = total_result.scalar()
+            
+            # Total categories
+            cat_result = connection.execute(text("SELECT COUNT(DISTINCT category) FROM aptitude_practice_questions"))
+            total_categories = cat_result.scalar()
+            
+            # Total subcategories
+            subcat_result = connection.execute(text("SELECT COUNT(DISTINCT subcategory) FROM aptitude_practice_questions"))
+            total_subcategories = subcat_result.scalar()
+            
+            # Total sources
+            source_result = connection.execute(text("SELECT COUNT(DISTINCT source) FROM aptitude_practice_questions WHERE source IS NOT NULL"))
+            total_sources = source_result.scalar()
+            
+            return {
+                "total_questions": total_questions,
+                "total_categories": total_categories,
+                "total_subcategories": total_subcategories,
+                "total_sources": total_sources
+            }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch stats: {str(e)}")
+
+
+@router.post("/aptitude-practice-questions/bulk-upload")
+async def bulk_upload_aptitude_questions(
+    file: UploadFile = File(...),
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Bulk upload aptitude questions from JSON file with duplicate detection"""
+    from sqlalchemy import text
+    from app.core.database import engine
+    import json
+    import hashlib
+    
+    if not file.filename.endswith('.json'):
+        raise HTTPException(status_code=400, detail="Only JSON files are allowed")
+    
+    try:
+        # Read and parse JSON
+        content = await file.read()
+        questions = json.loads(content)
+        
+        if not isinstance(questions, list):
+            raise HTTPException(status_code=400, detail="JSON must be an array of questions")
+        
+        inserted = 0
+        skipped = 0
+        errors = []
+        
+        with engine.begin() as connection:
+            for idx, q in enumerate(questions, 1):
+                try:
+                    # Validate required fields
+                    required_fields = ['question', 'options', 'answer', 'explanation', 'category', 'subcategory']
+                    missing_fields = [field for field in required_fields if field not in q or not q[field]]
+                    
+                    if missing_fields:
+                        errors.append(f"Question {idx}: Missing required fields: {', '.join(missing_fields)}")
+                        skipped += 1
+                        continue
+                    
+                    # Generate hash for deduplication (using question text)
+                    question_text = q['question'].strip().lower()
+                    hash_str = hashlib.md5(question_text.encode()).hexdigest()
+                    
+                    # Check if question already exists by hash OR by exact question text
+                    check_result = connection.execute(
+                        text("""
+                            SELECT COUNT(*) FROM aptitude_practice_questions 
+                            WHERE hash = :hash OR LOWER(TRIM(question)) = LOWER(TRIM(:question))
+                        """),
+                        {"hash": hash_str, "question": q['question']}
+                    )
+                    
+                    if check_result.scalar() > 0:
+                        skipped += 1
+                        continue
+                    
+                    # Validate options format
+                    if not isinstance(q['options'], list) or len(q['options']) < 2:
+                        errors.append(f"Question {idx}: Options must be an array with at least 2 items")
+                        skipped += 1
+                        continue
+                    
+                    # Validate answer is one of the option keys
+                    option_keys = [opt.get('key') for opt in q['options'] if isinstance(opt, dict)]
+                    if q['answer'] not in option_keys:
+                        errors.append(f"Question {idx}: Answer '{q['answer']}' not found in option keys")
+                        skipped += 1
+                        continue
+                    
+                    # Insert question
+                    insert_query = text("""
+                        INSERT INTO aptitude_practice_questions 
+                        (question, image, has_image, options, answer, explanation, 
+                         category, subcategory, difficulty, tags, source, hash)
+                        VALUES 
+                        (:question, :image, :has_image, CAST(:options AS jsonb), :answer, :explanation,
+                         :category, :subcategory, :difficulty, CAST(:tags AS jsonb), :source, :hash)
+                    """)
+                    
+                    connection.execute(insert_query, {
+                        "question": q.get('question'),
+                        "image": q.get('image'),
+                        "has_image": q.get('has_image', False),
+                        "options": json.dumps(q.get('options', [])),
+                        "answer": q.get('answer'),
+                        "explanation": q.get('explanation'),
+                        "category": q.get('category'),
+                        "subcategory": q.get('subcategory'),
+                        "difficulty": q.get('difficulty', 'medium'),
+                        "tags": json.dumps(q.get('tags', [])),
+                        "source": q.get('source'),
+                        "hash": hash_str
+                    })
+                    inserted += 1
+                    
+                except Exception as e:
+                    errors.append(f"Question {idx}: {str(e)}")
+                    skipped += 1
+                    continue
+        
+        response_data = {
+            "message": f"Upload complete: {inserted} inserted, {skipped} skipped",
+            "inserted": inserted,
+            "skipped": skipped,
+            "total": len(questions),
+            "success": True
+        }
+        
+        if errors:
+            response_data["errors"] = errors[:10]  # Limit to first 10 errors
+            response_data["total_errors"] = len(errors)
+        
+        return response_data
+    
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=400, detail="Invalid JSON format")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")

@@ -1,14 +1,20 @@
 import { useState, useEffect } from 'react'
 import { Search, ChevronDown, ChevronUp, ChevronRight, Menu, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { chatAPI } from '../api/client'
 
 interface Question {
-  id: number
+  id: string
   question: string
-  options: string[]
-  correctAnswer: string
+  image: string | null
+  has_image: boolean
+  options: Array<{ key: string; text: string }>
+  answer: string
   explanation: string
+  category: string
+  subcategory: string
+  difficulty: string
+  tags: string[]
+  source: string
   showAnswer: boolean
 }
 
@@ -24,229 +30,189 @@ interface ParentCategory {
   subCategories: SubCategory[]
 }
 
-const categoryStructure: ParentCategory[] = [
+// Initial structure - will be populated dynamically from API
+const getInitialCategoryStructure = (): ParentCategory[] => [
   {
-    name: 'Quantitative Aptitude',
+    name: 'Aptitude',
     icon: '🔢',
-    subCategories: [
-      { name: 'Arithmetic Aptitude', solved: 12, total: 50 },
-      { name: 'Percentage', solved: 8, total: 40 },
-      { name: 'Profit and Loss', solved: 15, total: 45 },
-      { name: 'Ratio and Proportion', solved: 10, total: 35 },
-      { name: 'Time and Work', solved: 20, total: 50 },
-      { name: 'Time and Distance', solved: 5, total: 40 },
-      { name: 'Problems on Ages', solved: 7, total: 30 },
-      { name: 'Simple Interest', solved: 12, total: 35 },
-      { name: 'Compound Interest', solved: 9, total: 30 },
-      { name: 'Data Interpretation', solved: 3, total: 45 }
-    ]
+    subCategories: []
   },
   {
     name: 'Logical Reasoning',
     icon: '🧠',
-    subCategories: [
-      { name: 'Logical Reasoning', solved: 18, total: 60 },
-      { name: 'Blood Relations', solved: 14, total: 40 },
-      { name: 'Coding-Decoding', solved: 11, total: 35 },
-      { name: 'Syllogism', solved: 6, total: 30 },
-      { name: 'Puzzles', solved: 22, total: 55 },
-      { name: 'Series', solved: 16, total: 45 },
-      { name: 'Odd Man Out', solved: 9, total: 25 }
-    ]
+    subCategories: []
   },
   {
     name: 'Verbal Ability',
     icon: '📝',
-    subCategories: [
-      { name: 'Synonyms', solved: 25, total: 50 },
-      { name: 'Antonyms', solved: 20, total: 50 },
-      { name: 'Sentence Correction', solved: 10, total: 40 },
-      { name: 'Reading Comprehension', solved: 5, total: 30 },
-      { name: 'Spotting Errors', solved: 12, total: 35 }
-    ]
-  },
-  {
-    name: 'Company Specific',
-    icon: '🏢',
-    subCategories: [
-      { name: 'TCS Questions', solved: 30, total: 100 },
-      { name: 'Infosys Questions', solved: 25, total: 80 },
-      { name: 'Wipro Questions', solved: 15, total: 70 },
-      { name: 'Amazon Questions', solved: 8, total: 60 },
-      { name: 'Microsoft Questions', solved: 5, total: 50 }
-    ]
+    subCategories: []
   }
 ]
 
+// Map subcategories to parent categories
+const subcategoryToParent: { [key: string]: string } = {
+  'Average': 'Aptitude',
+  'Percentage': 'Aptitude',
+  'Profit and Loss': 'Aptitude',
+  'Time and Distance': 'Aptitude',
+  'Time and Work': 'Aptitude',
+  'Ratio and Proportion': 'Aptitude',
+  'Simple Interest': 'Aptitude',
+  'Compound Interest': 'Aptitude',
+  'Pipes and Cisterns': 'Aptitude',
+  'Problems on Trains': 'Aptitude',
+  'Boats and Streams': 'Aptitude',
+  'Alligation or Mixture': 'Aptitude',
+  'Problems on Ages': 'Aptitude',
+  'Calendar': 'Aptitude',
+  'Clock': 'Aptitude',
+  'Height and Distance': 'Aptitude',
+  'Area': 'Aptitude',
+  'Volume and Surface Area': 'Aptitude',
+  'Permutation and Combination': 'Aptitude',
+  'Probability': 'Aptitude',
+  'True Discount': 'Aptitude',
+  "Banker's Discount": 'Aptitude',
+  'Stocks and Shares': 'Aptitude',
+  'Puzzles': 'Logical Reasoning',
+  'Verbal Reasoning': 'Logical Reasoning',
+  'Odd Man Out': 'Logical Reasoning',
+  'Series': 'Logical Reasoning',
+  'Coding Decoding': 'Logical Reasoning',
+  'Blood Relations': 'Logical Reasoning',
+  'Synonyms': 'Verbal Ability',
+  'Antonyms': 'Verbal Ability',
+  'Sentence Correction': 'Verbal Ability',
+  'Spotting Errors': 'Verbal Ability'
+}
+
 export default function AptitudePracticePage() {
-  const [selectedCategory, setSelectedCategory] = useState('Arithmetic Aptitude')
+  const [selectedCategory, setSelectedCategory] = useState('Average')
   const [questions, setQuestions] = useState<Question[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedOption, setSelectedOption] = useState<{ [key: number]: string }>({})
-  const [expandedParents, setExpandedParents] = useState<string[]>(['Quantitative Aptitude'])
+  const [selectedOption, setSelectedOption] = useState<{ [key: string]: string }>({})
+  const [expandedParents, setExpandedParents] = useState<string[]>(['Aptitude'])
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [categoryCounts, setCategoryCounts] = useState<{ [key: string]: number }>({})
+  const [categoryStructure, setCategoryStructure] = useState<ParentCategory[]>(getInitialCategoryStructure())
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalQuestions, setTotalQuestions] = useState(0)
+  const questionsPerPage = 10
+
+  // Fetch category counts on mount and build dynamic structure
+  useEffect(() => {
+    fetchCategoryCounts()
+  }, [])
+
+  const fetchCategoryCounts = async () => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/aptitude/practice-categories`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        const counts: { [key: string]: number } = {}
+        
+        // Build dynamic category structure
+        const newStructure = getInitialCategoryStructure()
+        
+        data.categories.forEach((cat: any) => {
+          counts[cat.subcategory] = cat.total_questions
+          
+          // Find parent category
+          const parentName = subcategoryToParent[cat.subcategory] || 'Aptitude'
+          const parent = newStructure.find(p => p.name === parentName)
+          
+          if (parent) {
+            parent.subCategories.push({
+              name: cat.subcategory,
+              solved: 0,
+              total: cat.total_questions
+            })
+          }
+        })
+        
+        // Sort subcategories alphabetically within each parent
+        newStructure.forEach(parent => {
+          parent.subCategories.sort((a, b) => a.name.localeCompare(b.name))
+        })
+        
+        setCategoryCounts(counts)
+        setCategoryStructure(newStructure)
+        
+        // Set first available subcategory as selected
+        if (newStructure[0]?.subCategories[0]) {
+          setSelectedCategory(newStructure[0].subCategories[0].name)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching category counts:', error)
+    }
+  }
 
   useEffect(() => {
-    loadQuestions()
+    setCurrentPage(1) // Reset to page 1 when category changes
+    loadQuestions(1)
   }, [selectedCategory])
 
-  const loadQuestions = async () => {
+  useEffect(() => {
+    if (currentPage > 1) {
+      loadQuestions(currentPage)
+    }
+  }, [currentPage])
+
+  const loadQuestions = async (page: number = 1) => {
     setLoading(true)
     setSelectedOption({})
 
     try {
-      const prompt = `Generate 15 ${selectedCategory} practice questions.
-
-Each question should have:
-- question text
-- 4 options (A, B, C, D)
-- correct answer (A, B, C, or D)
-- detailed step-by-step explanation
-
-Format as JSON array:
-[
-  {
-    "question": "question text",
-    "options": ["A) option1", "B) option2", "C) option3", "D) option4"],
-    "correctAnswer": "A",
-    "explanation": "detailed explanation"
-  }
-]
-
-Return ONLY valid JSON array, no markdown.`
-
-      const response = await chatAPI.sendMessage([
-        { role: 'user', content: prompt, timestamp: new Date().toISOString() }
-      ], 'english')
-
-      let questionsData: any[]
-      try {
-        const jsonMatch = String(response).match(/\[[\s\S]*\]/)
-        if (jsonMatch) {
-          questionsData = JSON.parse(jsonMatch[0])
-        } else {
-          throw new Error('No JSON found')
+      const offset = (page - 1) * questionsPerPage
+      // Fetch questions from database with pagination
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/aptitude/practice-questions?subcategory=${encodeURIComponent(selectedCategory)}&limit=${questionsPerPage}&offset=${offset}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
         }
-      } catch (parseError) {
-        questionsData = generateFallbackQuestions()
+      )
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch questions')
       }
 
-      const formattedQuestions: Question[] = questionsData.slice(0, 15).map((q, index) => ({
-        id: index + 1,
-        question: q.question,
-        options: q.options,
-        correctAnswer: q.correctAnswer,
-        explanation: q.explanation,
+      const data = await response.json()
+      
+      const formattedQuestions: Question[] = data.questions.map((q: any) => ({
+        ...q,
         showAnswer: false
       }))
 
       setQuestions(formattedQuestions)
+      setTotalQuestions(data.total || formattedQuestions.length)
     } catch (error) {
       console.error('Error loading questions:', error)
-      setQuestions(generateFallbackQuestions().map((q, index) => ({
-        id: index + 1,
-        ...q,
-        showAnswer: false
-      })))
+      setQuestions([])
+      setTotalQuestions(0)
     } finally {
       setLoading(false)
     }
   }
 
-  const generateFallbackQuestions = () => {
-    return [
-      {
-        question: 'If 20% of a number is 50, what is the number?',
-        options: ['A) 200', 'B) 250', 'C) 300', 'D) 350'],
-        correctAnswer: 'B',
-        explanation: 'Let the number be x. Then 20% of x = 50, so (20/100) × x = 50, which gives x = 250.'
-      },
-      {
-        question: 'A train travels 120 km in 2 hours. What is its speed in m/s?',
-        options: ['A) 16.67 m/s', 'B) 33.33 m/s', 'C) 60 m/s', 'D) 120 m/s'],
-        correctAnswer: 'A',
-        explanation: 'Speed = 120 km / 2 hours = 60 km/h. Converting to m/s: 60 × (1000/3600) = 16.67 m/s.'
-      },
-      {
-        question: 'What is the next number in the series: 2, 6, 12, 20, 30, ?',
-        options: ['A) 40', 'B) 42', 'C) 44', 'D) 46'],
-        correctAnswer: 'B',
-        explanation: 'The differences are 4, 6, 8, 10, so the next difference is 12. Therefore, 30 + 12 = 42.'
-      },
-      {
-        question: 'If A:B = 2:3 and B:C = 4:5, what is A:C?',
-        options: ['A) 8:15', 'B) 2:5', 'C) 3:5', 'D) 4:5'],
-        correctAnswer: 'A',
-        explanation: 'A:B = 2:3 and B:C = 4:5. To find A:C, multiply: A:B:C = 8:12:15, so A:C = 8:15.'
-      },
-      {
-        question: 'The average of 5 numbers is 30. If one number is excluded, the average becomes 28. What is the excluded number?',
-        options: ['A) 35', 'B) 38', 'C) 40', 'D) 42'],
-        correctAnswer: 'B',
-        explanation: 'Sum of 5 numbers = 5 × 30 = 150. Sum of 4 numbers = 4 × 28 = 112. Excluded number = 150 - 112 = 38.'
-      },
-      {
-        question: 'A shopkeeper marks his goods 40% above cost price and gives a discount of 20%. What is his profit percentage?',
-        options: ['A) 10%', 'B) 12%', 'C) 15%', 'D) 20%'],
-        correctAnswer: 'B',
-        explanation: 'Let CP = 100. MP = 140. SP = 140 - (20% of 140) = 140 - 28 = 112. Profit = 112 - 100 = 12%.'
-      },
-      {
-        question: 'How many times do the hands of a clock coincide in a day?',
-        options: ['A) 20', 'B) 21', 'C) 22', 'D) 24'],
-        correctAnswer: 'C',
-        explanation: 'The hands coincide 11 times in 12 hours (not at 11 o\'clock). So in 24 hours, they coincide 22 times.'
-      },
-      {
-        question: 'If log₁₀ 2 = 0.3010, what is log₁₀ 8?',
-        options: ['A) 0.6020', 'B) 0.9030', 'C) 1.2040', 'D) 2.4080'],
-        correctAnswer: 'B',
-        explanation: 'log₁₀ 8 = log₁₀ 2³ = 3 × log₁₀ 2 = 3 × 0.3010 = 0.9030.'
-      },
-      {
-        question: 'A can complete a work in 12 days and B in 18 days. How many days will they take together?',
-        options: ['A) 6 days', 'B) 7.2 days', 'C) 8 days', 'D) 9 days'],
-        correctAnswer: 'B',
-        explanation: 'A\'s rate = 1/12, B\'s rate = 1/18. Combined rate = 1/12 + 1/18 = 5/36. Time = 36/5 = 7.2 days.'
-      },
-      {
-        question: 'In how many ways can the letters of the word "LEADER" be arranged?',
-        options: ['A) 120', 'B) 180', 'C) 360', 'D) 720'],
-        correctAnswer: 'C',
-        explanation: 'LEADER has 6 letters with E repeated twice. Arrangements = 6! / 2! = 720 / 2 = 360.'
-      },
-      {
-        question: 'Find the compound interest on Rs. 10,000 at 10% per annum for 2 years compounded annually.',
-        options: ['A) Rs. 2,000', 'B) Rs. 2,100', 'C) Rs. 2,200', 'D) Rs. 2,500'],
-        correctAnswer: 'B',
-        explanation: 'CI = P(1 + r/100)^n - P = 10000(1.1)² - 10000 = 12100 - 10000 = Rs. 2,100.'
-      },
-      {
-        question: 'A man buys an article for Rs. 80 and sells it for Rs. 100. What is his profit percentage?',
-        options: ['A) 20%', 'B) 25%', 'C) 30%', 'D) 35%'],
-        correctAnswer: 'B',
-        explanation: 'Profit = 100 - 80 = 20. Profit% = (20/80) × 100 = 25%.'
-      },
-      {
-        question: 'If the ratio of boys to girls in a class is 3:2 and there are 15 boys, how many girls are there?',
-        options: ['A) 8', 'B) 10', 'C) 12', 'D) 15'],
-        correctAnswer: 'B',
-        explanation: 'Boys:Girls = 3:2. If boys = 15, then 3x = 15, so x = 5. Girls = 2x = 2 × 5 = 10.'
-      },
-      {
-        question: 'A car covers a distance of 300 km in 5 hours. What is its average speed?',
-        options: ['A) 50 km/h', 'B) 60 km/h', 'C) 70 km/h', 'D) 80 km/h'],
-        correctAnswer: 'B',
-        explanation: 'Average speed = Total distance / Total time = 300 / 5 = 60 km/h.'
-      },
-      {
-        question: 'The sum of three consecutive odd numbers is 63. What is the largest number?',
-        options: ['A) 19', 'B) 21', 'C) 23', 'D) 25'],
-        correctAnswer: 'C',
-        explanation: 'Let the numbers be x, x+2, x+4. Then x + (x+2) + (x+4) = 63, so 3x + 6 = 63, x = 19. Largest = 19 + 4 = 23.'
-      }
-    ]
+  const toggleAnswer = (questionId: string) => {
+    setQuestions(prev => prev.map(q => 
+      q.id === questionId ? { ...q, showAnswer: !q.showAnswer } : q
+    ))
+  }
+
+  const handleOptionSelect = (questionId: string, option: string) => {
+    setSelectedOption(prev => ({ ...prev, [questionId]: option }))
   }
 
   const toggleParent = (parentName: string) => {
@@ -260,16 +226,12 @@ Return ONLY valid JSON array, no markdown.`
   const handleSubCategoryClick = (subCategoryName: string) => {
     setSelectedCategory(subCategoryName)
     setSidebarOpen(false) // Close sidebar on mobile after selection
+    window.scrollTo({ top: 0, behavior: 'smooth' }) // Scroll to top
   }
 
-  const toggleAnswer = (questionId: number) => {
-    setQuestions(prev => prev.map(q => 
-      q.id === questionId ? { ...q, showAnswer: !q.showAnswer } : q
-    ))
-  }
-
-  const handleOptionSelect = (questionId: number, option: string) => {
-    setSelectedOption(prev => ({ ...prev, [questionId]: option }))
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    window.scrollTo({ top: 0, behavior: 'smooth' }) // Scroll to top when changing pages
   }
 
   const filteredQuestions = questions.filter(q =>
@@ -307,7 +269,7 @@ Return ONLY valid JSON array, no markdown.`
             </div>
 
             <div className="text-sm text-gray-600 hidden sm:block">
-              {filteredQuestions.length} Questions
+              {filteredQuestions.length > 0 ? `${filteredQuestions.length} Questions` : 'No Questions'}
             </div>
           </div>
         </div>
@@ -371,39 +333,40 @@ Return ONLY valid JSON array, no markdown.`
                           <div className="ml-4 mt-1 space-y-1 border-l-2 border-gray-100 pl-2">
                             {parent.subCategories.map((sub) => {
                               const isActive = selectedCategory === sub.name
-                              const progressPercent = Math.round((sub.solved / sub.total) * 100)
+                              const totalQuestions = categoryCounts[sub.name] || 0
+                              const isComingSoon = totalQuestions === 0
                               
                               return (
                                 <button
                                   key={sub.name}
-                                  onClick={() => handleSubCategoryClick(sub.name)}
+                                  onClick={() => !isComingSoon && handleSubCategoryClick(sub.name)}
+                                  disabled={isComingSoon}
                                   className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
                                     isActive
                                       ? 'bg-blue-50 text-blue-700 font-medium'
+                                      : isComingSoon
+                                      ? 'text-gray-400 cursor-not-allowed'
                                       : 'text-gray-700 hover:bg-gray-50'
                                   }`}
                                 >
                                   <div className="flex items-center justify-between">
                                     <span className="flex-1">{sub.name}</span>
-                                    {/* Progress Badge */}
-                                    <span
-                                      className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                                        isActive
-                                          ? 'bg-blue-100 text-blue-700'
-                                          : 'bg-gray-100 text-gray-600'
-                                      }`}
-                                    >
-                                      {sub.solved}/{sub.total}
-                                    </span>
-                                  </div>
-                                  {/* Progress Bar */}
-                                  <div className="mt-1.5 h-1 bg-gray-200 rounded-full overflow-hidden">
-                                    <div
-                                      className={`h-full rounded-full transition-all ${
-                                        isActive ? 'bg-blue-600' : 'bg-gray-400'
-                                      }`}
-                                      style={{ width: `${progressPercent}%` }}
-                                    />
+                                    {/* Count Badge */}
+                                    {isComingSoon ? (
+                                      <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-gray-100 text-gray-500">
+                                        Coming Soon
+                                      </span>
+                                    ) : (
+                                      <span
+                                        className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                                          isActive
+                                            ? 'bg-blue-100 text-blue-700'
+                                            : 'bg-gray-100 text-gray-600'
+                                        }`}
+                                      >
+                                        {totalQuestions}
+                                      </span>
+                                    )}
                                   </div>
                                 </button>
                               )
@@ -430,29 +393,44 @@ Return ONLY valid JSON array, no markdown.`
             </div>
           ) : (
             <div className="divide-y divide-gray-100">
-              {filteredQuestions.map((question) => (
+              {filteredQuestions.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 px-4">
+                  <div className="text-6xl mb-4">🚀</div>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Coming Soon!</h3>
+                  <p className="text-gray-500 text-center max-w-md">
+                    Questions for <span className="font-semibold text-blue-600">{selectedCategory}</span> are being prepared. 
+                    Check back soon or try another category!
+                  </p>
+                </div>
+              ) : (
+                filteredQuestions.map((question, index) => (
                 <div key={question.id} className="p-6 hover:bg-gray-50 transition-colors">
                   {/* Question Number & Text */}
                   <div className="mb-4">
-                    <span className="inline-block px-2 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded mb-2">
-                      Question {question.id}
-                    </span>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="inline-block px-2 py-1 bg-gray-100 text-gray-700 text-xs font-semibold rounded">
+                        Question {index + 1}
+                      </span>
+                    </div>
                     <p className="text-base text-gray-800 leading-relaxed font-normal">
                       {question.question}
                     </p>
+                    {question.has_image && question.image && (
+                      <img src={question.image} alt="Question" className="mt-3 max-w-md rounded-lg border border-gray-200" />
+                    )}
                   </div>
 
                   {/* Options as Radio Buttons */}
                   <div className="space-y-2 mb-4">
                     {question.options.map((option) => {
-                      const optionLetter = option.charAt(0)
+                      const optionLetter = option.key
                       const isSelected = selectedOption[question.id] === optionLetter
-                      const isCorrect = question.showAnswer && optionLetter === question.correctAnswer
-                      const isWrong = question.showAnswer && isSelected && optionLetter !== question.correctAnswer
+                      const isCorrect = question.showAnswer && optionLetter === question.answer
+                      const isWrong = question.showAnswer && isSelected && optionLetter !== question.answer
 
                       return (
                         <label
-                          key={option}
+                          key={option.key}
                           className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
                             isCorrect
                               ? 'bg-green-50 border border-green-300'
@@ -475,7 +453,7 @@ Return ONLY valid JSON array, no markdown.`
                             isWrong ? 'text-red-800' : 
                             'text-gray-700'
                           }`}>
-                            {option}
+                            {option.key}) {option.text}
                           </span>
                           {isCorrect && (
                             <span className="ml-auto text-green-600 text-xs font-semibold">✓ Correct</span>
@@ -517,16 +495,19 @@ Return ONLY valid JSON array, no markdown.`
                           <div className="flex items-start gap-3">
                             <div className="flex-shrink-0">
                               <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold text-sm">
-                                {question.correctAnswer}
+                                {question.answer}
                               </div>
                             </div>
                             <div className="flex-1">
                               <h4 className="text-sm font-semibold text-blue-900 mb-2">
-                                Correct Answer: Option {question.correctAnswer}
+                                Correct Answer: Option {question.answer}
                               </h4>
-                              <p className="text-sm text-blue-800 leading-relaxed">
+                              <p className="text-sm text-blue-800 leading-relaxed whitespace-pre-line">
                                 <span className="font-semibold">Explanation:</span> {question.explanation}
                               </p>
+                              {question.source && (
+                                <p className="text-xs text-blue-600 mt-2">Source: {question.source}</p>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -534,19 +515,114 @@ Return ONLY valid JSON array, no markdown.`
                     )}
                   </AnimatePresence>
                 </div>
-              ))}
+              )))}
             </div>
           )}
 
-          {/* Load More */}
-          {!loading && filteredQuestions.length > 0 && (
-            <div className="p-6 text-center border-t border-gray-100">
-              <button
-                onClick={loadQuestions}
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
-              >
-                Load More Questions
-              </button>
+          {/* Pagination */}
+          {!loading && filteredQuestions.length > 0 && totalQuestions > questionsPerPage && (
+            <div className="p-6 border-t border-gray-100">
+              <div className="flex items-center justify-center gap-2">
+                {/* Previous Button */}
+                <button
+                  onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    currentPage === 1
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  Previous
+                </button>
+
+                {/* Page Numbers */}
+                {(() => {
+                  const totalPages = Math.ceil(totalQuestions / questionsPerPage)
+                  const pages = []
+                  const maxVisible = 5
+                  
+                  let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2))
+                  let endPage = Math.min(totalPages, startPage + maxVisible - 1)
+                  
+                  if (endPage - startPage < maxVisible - 1) {
+                    startPage = Math.max(1, endPage - maxVisible + 1)
+                  }
+
+                  // First page
+                  if (startPage > 1) {
+                    pages.push(
+                      <button
+                        key={1}
+                        onClick={() => handlePageChange(1)}
+                        className="px-4 py-2 rounded-lg font-medium bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        1
+                      </button>
+                    )
+                    if (startPage > 2) {
+                      pages.push(
+                        <span key="dots1" className="px-2 text-gray-400">...</span>
+                      )
+                    }
+                  }
+
+                  // Visible pages
+                  for (let i = startPage; i <= endPage; i++) {
+                    pages.push(
+                      <button
+                        key={i}
+                        onClick={() => handlePageChange(i)}
+                        className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                          currentPage === i
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        {i}
+                      </button>
+                    )
+                  }
+
+                  // Last page
+                  if (endPage < totalPages) {
+                    if (endPage < totalPages - 1) {
+                      pages.push(
+                        <span key="dots2" className="px-2 text-gray-400">...</span>
+                      )
+                    }
+                    pages.push(
+                      <button
+                        key={totalPages}
+                        onClick={() => handlePageChange(totalPages)}
+                        className="px-4 py-2 rounded-lg font-medium bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        {totalPages}
+                      </button>
+                    )
+                  }
+
+                  return pages
+                })()}
+
+                {/* Next Button */}
+                <button
+                  onClick={() => handlePageChange(Math.min(Math.ceil(totalQuestions / questionsPerPage), currentPage + 1))}
+                  disabled={currentPage >= Math.ceil(totalQuestions / questionsPerPage)}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    currentPage >= Math.ceil(totalQuestions / questionsPerPage)
+                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  Next
+                </button>
+              </div>
+
+              {/* Page Info */}
+              <div className="text-center mt-4 text-sm text-gray-600">
+                Showing {((currentPage - 1) * questionsPerPage) + 1} - {Math.min(currentPage * questionsPerPage, totalQuestions)} of {totalQuestions} questions
+              </div>
             </div>
           )}
         </main>

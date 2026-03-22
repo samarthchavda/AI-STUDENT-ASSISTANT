@@ -727,3 +727,157 @@ async def get_exam_details(exam_id: int, current_user = Depends(get_current_user
             detail=f"Database error: {str(e)}"
         )
 
+
+
+# ============================================================================
+# FREE UNLIMITED APTITUDE PRACTICE - Fetch questions from database
+# ============================================================================
+
+class PracticeQuestionResponse(BaseModel):
+    id: str
+    question: str
+    image: Optional[str]
+    has_image: bool
+    options: List[Dict[str, str]]  # [{"key": "A", "text": "option text"}]
+    answer: str
+    explanation: str
+    category: str
+    subcategory: str
+    difficulty: str
+    tags: List[str]
+    source: Optional[str]
+
+
+@router.get("/practice-questions")
+async def get_practice_questions(
+    subcategory: Optional[str] = Query(None, description="Filter by subcategory"),
+    difficulty: Optional[str] = Query(None, description="Filter by difficulty: easy, medium, hard"),
+    limit: int = Query(15, ge=1, le=50, description="Number of questions to fetch"),
+    offset: int = Query(0, ge=0, description="Offset for pagination"),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Fetch aptitude practice questions from database for unlimited free practice.
+    No AI generation - questions are pre-loaded in the database.
+    """
+    try:
+        # Build query with filters
+        query = """
+            SELECT 
+                id::text,
+                question,
+                image,
+                has_image,
+                options,
+                answer,
+                explanation,
+                category,
+                subcategory,
+                difficulty,
+                tags,
+                source
+            FROM aptitude_practice_questions
+            WHERE 1=1
+        """
+        params = {}
+        
+        if subcategory:
+            query += " AND LOWER(subcategory) = LOWER(:subcategory)"
+            params["subcategory"] = subcategory
+        
+        if difficulty:
+            query += " AND LOWER(difficulty) = LOWER(:difficulty)"
+            params["difficulty"] = difficulty
+        
+        query += " ORDER BY RANDOM() LIMIT :limit OFFSET :offset"
+        params["limit"] = limit
+        params["offset"] = offset
+        
+        # Get total count for pagination
+        count_query = """
+            SELECT COUNT(*) 
+            FROM aptitude_practice_questions
+            WHERE 1=1
+        """
+        count_params = {}
+        
+        if subcategory:
+            count_query += " AND LOWER(subcategory) = LOWER(:subcategory)"
+            count_params["subcategory"] = subcategory
+        
+        if difficulty:
+            count_query += " AND LOWER(difficulty) = LOWER(:difficulty)"
+            count_params["difficulty"] = difficulty
+        
+        with engine.begin() as connection:
+            # Get total count
+            count_result = connection.execute(text(count_query), count_params)
+            total_count = count_result.scalar()
+            
+            # Get questions
+            result = connection.execute(text(query), params)
+            rows = result.fetchall()
+            
+            questions = []
+            for row in rows:
+                questions.append({
+                    "id": row[0],
+                    "question": row[1],
+                    "image": row[2],
+                    "has_image": row[3],
+                    "options": row[4],  # Already JSONB
+                    "answer": row[5],
+                    "explanation": row[6],
+                    "category": row[7],
+                    "subcategory": row[8],
+                    "difficulty": row[9],
+                    "tags": row[10] if row[10] else [],
+                    "source": row[11]
+                })
+            
+            return {"questions": questions, "total": total_count}
+    
+    except Exception as e:
+        print(f"Error fetching practice questions: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch practice questions: {str(e)}")
+
+
+@router.get("/practice-categories")
+async def get_practice_categories(
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get all available subcategories with question counts for the sidebar.
+    """
+    try:
+        query = """
+            SELECT 
+                subcategory,
+                COUNT(*) as total_questions,
+                COUNT(CASE WHEN difficulty = 'easy' THEN 1 END) as easy_count,
+                COUNT(CASE WHEN difficulty = 'medium' THEN 1 END) as medium_count,
+                COUNT(CASE WHEN difficulty = 'hard' THEN 1 END) as hard_count
+            FROM aptitude_practice_questions
+            GROUP BY subcategory
+            ORDER BY subcategory
+        """
+        
+        with engine.begin() as connection:
+            result = connection.execute(text(query))
+            rows = result.fetchall()
+            
+            categories = []
+            for row in rows:
+                categories.append({
+                    "subcategory": row[0],
+                    "total_questions": row[1],
+                    "easy_count": row[2],
+                    "medium_count": row[3],
+                    "hard_count": row[4]
+                })
+            
+            return {"categories": categories}
+    
+    except Exception as e:
+        print(f"Error fetching categories: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to fetch categories: {str(e)}")
