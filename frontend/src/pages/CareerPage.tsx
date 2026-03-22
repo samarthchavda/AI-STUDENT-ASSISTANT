@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom';
 import { Briefcase, FileText, FileSearch } from 'lucide-react';
 import { careerAPI } from '../api/client';
 import Header from '../components/Header';
-import MultiStepResumeBuilder from '../components/MultiStepResumeBuilder';
 
 interface ResumeAnalysisResult {
   atsScore?: number
@@ -18,12 +17,8 @@ interface ResumeAnalysisResult {
 
 export default function CareerPage() {
   const navigate = useNavigate();
-  const location = useLocation();
   
-  const [selectedTab, setSelectedTab] = useState<'resume' | 'builder'>(
-    location.pathname.includes('/resume-builder') ? 'builder' : 'resume'
-  );
-
+  // Only show Resume Analysis tab (remove builder tab)
   const [resumeText, setResumeText] = useState('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [uploadMethod, setUploadMethod] = useState<'text' | 'pdf'>('pdf');
@@ -137,28 +132,23 @@ export default function CareerPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50">
       <Header />
-      <div className={`${selectedTab === 'builder' ? 'w-full px-4 md:px-6 py-4' : 'max-w-6xl mx-auto px-4 py-8'}`}>
+      <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="flex gap-4 mb-8 flex-wrap">
           <button
-            onClick={() => handleTabChange('resume')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all ${
-              selectedTab === 'resume' ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg' : 'bg-white text-gray-700 shadow-sm'
-            }`}
+            className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg"
           >
             <FileText className="w-5 h-5" /> Resume Analysis
           </button>
           <button
-            onClick={() => handleTabChange('builder')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all ${
-              selectedTab === 'builder' ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg' : 'bg-white text-gray-700 shadow-sm'
-            }`}
+            onClick={() => navigate('/career/resume-templates')}
+            className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all bg-white text-gray-700 shadow-sm hover:shadow-md"
           >
             <Briefcase className="w-5 h-5" /> Resume Builder
           </button>
         </div>
 
-        {selectedTab === 'resume' ? (
-          <div className="grid md:grid-cols-2 gap-8">
+        {/* Resume Analysis Section */}
+        <div className="grid md:grid-cols-2 gap-8">
             <div className="feature-card bg-white p-6 rounded-2xl shadow-sm border border-emerald-100">
               <h2 className="text-2xl font-bold mb-6 text-emerald-700">📄 Resume & ATS Analysis</h2>
               <div className="space-y-4">
@@ -303,9 +293,7 @@ export default function CareerPage() {
               )}
             </div>
           </div>
-        ) : (
-          <MultiStepResumeBuilder />
-        )}
+        </div>
       </div>
     </div>
   );

@@ -100,17 +100,17 @@ export default function ResumeTemplateGalleryPage() {
     ? templates 
     : templates.filter(t => t.category === selectedCategory)
 
-  const handleSelectTemplate = (templateId: string, isPro: boolean) => {
-    if (isPro && !isPro) {
+  const handleSelectTemplate = (templateId: string, isTemplatePro: boolean) => {
+    if (isTemplatePro && !isPro) {
       // Show upgrade modal
       alert('This template requires a Pro subscription. Upgrade to unlock all premium templates!')
       return
     }
     
     setSelectedTemplate(templateId)
-    // Navigate to resume builder with selected template
+    // Navigate to resume form with selected template
     setTimeout(() => {
-      navigate('/career/resume-builder', { state: { selectedTemplate: templateId } })
+      navigate('/career/resume-form', { state: { selectedTemplate: templateId } })
     }, 300)
   }
 
@@ -320,7 +320,7 @@ export default function ResumeTemplateGalleryPage() {
               </div>
 
               {/* Hover Overlay */}
-              {!template.isPro || isPro ? (
+              {(!template.isPro || isPro) && (
                 <div className="absolute inset-0 bg-gradient-to-t from-blue-600/90 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-8">
                   <button
                     onClick={() => handleSelectTemplate(template.id, template.isPro)}
@@ -330,7 +330,7 @@ export default function ResumeTemplateGalleryPage() {
                     <ArrowRight className="w-5 h-5" />
                   </button>
                 </div>
-              ) : null}
+              )}
             </div>
           ))}
         </div>

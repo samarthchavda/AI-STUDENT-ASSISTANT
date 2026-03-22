@@ -12,6 +12,7 @@ import DSAPracticeDashboardPage from './pages/DSAPracticeDashboardPage'
 import DSAEditorDemoPage from './pages/DSAEditorDemoPage'
 import CareerPage from './pages/CareerPage'
 import ResumeTemplateGalleryPage from './pages/ResumeTemplateGalleryPage'
+import ResumeBuilderFormPage from './pages/ResumeBuilderFormPage'
 import CompanyPrepPage from './pages/CompanyPrepPage'
 import PricingPage from './pages/PricingPage'
 import DashboardPage from './pages/DashboardPage'
@@ -57,8 +58,9 @@ function AppRoutes() {
       <Route path="/roadmap" element={<ProtectedRoute><DSAPracticeDashboardPage /></ProtectedRoute>} />
       <Route path="/career" element={<ProtectedRoute><CareerPage /></ProtectedRoute>} />
       <Route path="/career/resume-analysis" element={<ProtectedRoute><CareerPage /></ProtectedRoute>} />
+      <Route path="/career/resume-builder" element={<ProtectedRoute><ResumeTemplateGalleryPage /></ProtectedRoute>} />
       <Route path="/career/resume-templates" element={<ProtectedRoute><ResumeTemplateGalleryPage /></ProtectedRoute>} />
-      <Route path="/career/resume-builder" element={<ProtectedRoute><CareerPage /></ProtectedRoute>} />
+      <Route path="/career/resume-form" element={<ProtectedRoute><ResumeBuilderFormPage /></ProtectedRoute>} />
       <Route path="/company-prep" element={<ProtectedRoute><CompanyPrepPage /></ProtectedRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
