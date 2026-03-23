@@ -1,159 +1,172 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { User, Briefcase, GraduationCap, Settings, Plus, Trash2, Download, Layout, Mail, Phone, MapPin, ChevronRight, Eye, Type, ArrowLeft, Sparkles, Wand2 } from 'lucide-react';
+import { User, Briefcase, GraduationCap, Settings, Plus, Trash2, Download, Layout, Mail, Phone, MapPin, Globe, Code, Languages, Link as LinkIcon, CheckCircle2, Sparkles, Sidebar, Palette, Github, Linkedin, Eye } from 'lucide-react';
 
-// --- Types ---
-interface Experience {
-  id: number;
-  company: string;
-  position: string;
-  location: string;
-  startDate: string;
-  endDate: string;
-  description: string;
-}
-
-interface Education {
-  id: number;
-  school: string;
-  degree: string;
-  location: string;
-  startDate: string;
-  endDate: string;
-}
-
-interface ResumeData {
+// --- Expanded Data Structure ---
+const INITIAL_DATA = {
   personal: {
-    fullName: string;
-    jobTitle: string;
-    email: string;
-    phone: string;
-    address: string;
-    website: string;
-    summary: string;
-  };
-  experience: Experience[];
-  education: Education[];
-  skills: string[];
-  certifications: { id: number; name: string; year: string }[];
-}
-
-interface TemplateProps {
-  data: ResumeData;
-  themeColor: string;
-}
-
-// --- Data Constants ---
-const INITIAL_DATA: ResumeData = {
-  personal: {
-    fullName: "Alex Rivera",
-    jobTitle: "Senior Product Designer",
-    email: "alex.rivera@example.com",
-    phone: "+1 (555) 000-0000",
-    address: "San Francisco, CA",
-    website: "www.arivera.design",
-    summary: "Strategic Product Designer with 8+ years of experience in building user-centric digital products. Proven track record of leading cross-functional teams to deliver high-impact solutions for FinTech and SaaS industries."
+    fullName: "Jordan Smith",
+    jobTitle: "Senior Full Stack Engineer",
+    email: "jordan.smith@dev.io",
+    phone: "+1 (555) 123-4567",
+    address: "New York, NY",
+    website: "jordansmith.dev",
+    github: "github.com/jsmith",
+    linkedin: "linkedin.com/in/jordansmith",
+    portfolio: "jordansmith.dev",
+    summary: "Dedicated software architect with 10+ years of experience in building scalable web applications. Expert in React, Node.js, and Cloud Infrastructure. Passionate about clean code and mentoring high-performing engineering teams."
   },
   experience: [
     {
       id: 1,
-      company: "TechNova Solutions",
-      position: "Senior Designer",
-      location: "San Francisco, CA",
-      startDate: "2021-01",
+      company: "CloudScale Systems",
+      position: "Lead Engineer",
+      location: "Remote",
+      startDate: "2020-03",
       endDate: "Present",
-      description: "Led the redesign of the core banking platform, resulting in a 40% increase in user engagement. Managed a team of 5 junior designers."
+      description: "Architected a microservices-based dashboard serving 2M+ active users. Improved API response times by 60% through aggressive caching strategies."
     },
     {
       id: 2,
-      company: "Creative Pulse",
-      position: "UI/UX Designer",
-      location: "Austin, TX",
-      startDate: "2018-06",
-      endDate: "2020-12",
-      description: "Collaborated with product managers to define roadmaps. Developed a design system that reduced production time by 25%."
+      company: "Innovate AI",
+      position: "Software Developer",
+      location: "San Francisco, CA",
+      startDate: "2017-06",
+      endDate: "2020-02",
+      description: "Implemented real-time data visualization tools using D3.js and WebSockets. Collaborated with data scientists to deploy ML models into production."
+    }
+  ],
+  projects: [
+    {
+      id: 1,
+      name: "OpenSource Auth Library",
+      link: "github.com/jsmith/auth-lib",
+      description: "A lightweight authentication library for React Native with 2k+ stars on GitHub."
     }
   ],
   education: [
     {
       id: 1,
-      school: "Design Institute of Arts",
-      degree: "BFA in Interaction Design",
-      location: "New York, NY",
-      startDate: "2014",
-      endDate: "2018"
+      school: "University of Technology",
+      degree: "MS in Computer Science",
+      location: "Boston, MA",
+      startDate: "2015",
+      endDate: "2017"
     }
   ],
-  skills: ["Product Strategy", "UI/UX Design", "Figma", "React", "User Research", "Agile Methodologies", "Prototyping"],
-  certifications: [{ id: 1, name: "Google UX Design Professional Certificate", year: "2020" }]
+  skills: ["React", "TypeScript", "Node.js", "AWS", "Docker", "PostgreSQL", "System Design", "GraphQL"],
+  languages: [
+    { id: 1, name: "English", level: "Native" },
+    { id: 2, name: "Spanish", level: "Professional" }
+  ]
 };
 
 const TEMPLATES = [
-  { id: 'modern', name: 'Modern Professional', color: '#2563eb' },
-  { id: 'executive', name: 'Executive Suite', color: '#1e293b' },
-  { id: 'creative', name: 'Creative Edge', color: '#db2777' },
-  { id: 'minimal', name: 'Minimalist Clean', color: '#000000' }
+  { id: 'modern', name: 'Modern Pro', color: '#3b82f6' },
+  { id: 'executive', name: 'Executive', color: '#0f172a' },
+  { id: 'creative', name: 'Creative', color: '#ec4899' },
+  { id: 'minimal', name: 'Minimalist', color: '#18181b' },
+  { id: 'elegant', name: 'Elegant Serif', color: '#7c2d12' },
+  { id: 'tech', name: 'Terminal / Tech', color: '#16a34a' }
 ];
 
-// --- Template Components ---
-const ModernTemplate = ({ data, themeColor }: TemplateProps) => (
-  <div className="bg-white min-h-[1056px] p-12 font-sans text-gray-800 shadow-sm">
-    <header className="border-b-4 pb-6" style={{ borderColor: themeColor }}>
-      <h1 className="text-4xl font-bold tracking-tight uppercase text-gray-900">{data.personal.fullName || 'Your Name'}</h1>
-      <p className="text-xl mt-1 font-medium" style={{ color: themeColor }}>{data.personal.jobTitle || 'Your Job Title'}</p>
-      <div className="flex flex-wrap gap-4 mt-4 text-sm text-gray-600">
-        {data.personal.email && <span className="flex items-center gap-1"><Mail size={14} /> {data.personal.email}</span>}
-        {data.personal.phone && <span className="flex items-center gap-1"><Phone size={14} /> {data.personal.phone}</span>}
-        {data.personal.address && <span className="flex items-center gap-1"><MapPin size={14} /> {data.personal.address}</span>}
+// --- Specialized Templates ---
+const ElegantTemplate = ({ data, themeColor }: any) => (
+  <div className="bg-white min-h-[1056px] p-16 font-serif text-stone-900">
+    <header className="text-center border-b-2 border-stone-200 pb-8 mb-10">
+      <h1 className="text-5xl font-bold tracking-tight mb-3" style={{ color: themeColor }}>{data.personal.fullName}</h1>
+      <p className="text-xl italic text-stone-500 mb-4">{data.personal.jobTitle}</p>
+      <div className="flex justify-center gap-4 text-xs uppercase tracking-widest text-stone-400">
+        <span>{data.personal.email}</span>
+        <span>•</span>
+        <span>{data.personal.phone}</span>
+        <span>•</span>
+        <span>{data.personal.address}</span>
       </div>
+      {(data.personal.github || data.personal.linkedin || data.personal.portfolio) && (
+        <div className="flex justify-center gap-4 text-xs mt-3">
+          {data.personal.github && (
+            <a href={`https://${data.personal.github}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-stone-500 hover:text-stone-700">
+              <Github size={12} /> {data.personal.github}
+            </a>
+          )}
+          {data.personal.linkedin && (
+            <a href={`https://${data.personal.linkedin}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-stone-500 hover:text-stone-700">
+              <Linkedin size={12} /> LinkedIn
+            </a>
+          )}
+          {data.personal.portfolio && (
+            <a href={`https://${data.personal.portfolio}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-stone-500 hover:text-stone-700">
+              <Globe size={12} /> {data.personal.portfolio}
+            </a>
+          )}
+        </div>
+      )}
     </header>
-    <div className="grid grid-cols-12 gap-8 mt-8">
-      <div className="col-span-8">
-        {data.personal.summary && (
-          <section className="mb-8">
-            <h2 className="text-lg font-bold uppercase mb-3 border-b pb-1">Professional Summary</h2>
-            <p className="text-sm leading-relaxed text-gray-700">{data.personal.summary}</p>
-          </section>
-        )}
-        {data.experience.length > 0 && (
-          <section className="mb-8">
-            <h2 className="text-lg font-bold uppercase mb-4 border-b pb-1">Experience</h2>
-            <div className="space-y-6">
-              {data.experience.map((exp: Experience) => (
-                <div key={exp.id}>
-                  <div className="flex justify-between items-start mb-1">
-                    <h3 className="font-bold text-gray-900">{exp.position}</h3>
-                    <span className="text-xs font-semibold text-gray-500 uppercase">{exp.startDate} — {exp.endDate}</span>
-                  </div>
-                  <p className="text-sm font-medium mb-2" style={{ color: themeColor }}>{exp.company} • {exp.location}</p>
-                  <p className="text-sm text-gray-700 whitespace-pre-line">{exp.description}</p>
-                </div>
-              ))}
+    <div className="grid grid-cols-3 gap-12">
+      <div className="col-span-2 space-y-10">
+        <section>
+          <h2 className="text-sm font-bold uppercase tracking-[0.2em] mb-4 border-b pb-1">Profile</h2>
+          <p className="text-sm leading-relaxed text-stone-600 italic">"{data.personal.summary}"</p>
+        </section>
+        <section>
+          <h2 className="text-sm font-bold uppercase tracking-[0.2em] mb-4 border-b pb-1">Experience</h2>
+          {data.experience.map((exp: any) => (
+            <div key={exp.id} className="mb-6">
+              <div className="flex justify-between font-bold text-stone-800">
+                <h3>{exp.position}</h3>
+                <span>{exp.startDate} – {exp.endDate}</span>
+              </div>
+              <p className="text-sm font-medium italic mb-2" style={{ color: themeColor }}>{exp.company}, {exp.location}</p>
+              <p className="text-sm text-stone-600">{exp.description}</p>
             </div>
-          </section>
-        )}
-      </div>
-      <div className="col-span-4 border-l pl-8">
-        {data.education.length > 0 && (
-          <section className="mb-8">
-            <h2 className="text-lg font-bold uppercase mb-3 border-b pb-1">Education</h2>
-            {data.education.map((edu: Education) => (
-              <div key={edu.id} className="mb-4">
-                <h3 className="font-bold text-sm">{edu.degree}</h3>
-                <p className="text-xs text-gray-600">{edu.school}</p>
-                <p className="text-xs text-gray-400">{edu.startDate} — {edu.endDate}</p>
+          ))}
+        </section>
+        {data.projects && data.projects.length > 0 && (
+          <section>
+            <h2 className="text-sm font-bold uppercase tracking-[0.2em] mb-4 border-b pb-1">Projects</h2>
+            {data.projects.map((proj: any) => (
+              <div key={proj.id} className="mb-4">
+                <h3 className="font-bold text-stone-800">{proj.name}</h3>
+                {proj.link && (
+                  <a href={`https://${proj.link}`} target="_blank" rel="noopener noreferrer" className="text-xs text-stone-500 hover:text-stone-700 flex items-center gap-1">
+                    <LinkIcon size={10} /> {proj.link}
+                  </a>
+                )}
+                <p className="text-sm text-stone-600 mt-1">{proj.description}</p>
               </div>
             ))}
           </section>
         )}
-        {data.skills.length > 0 && (
-          <section className="mb-8">
-            <h2 className="text-lg font-bold uppercase mb-3 border-b pb-1">Skills</h2>
-            <div className="flex flex-wrap gap-2">
-              {data.skills.map((skill: string, i: number) => (
-                <span key={i} className="px-2 py-1 bg-gray-100 text-[10px] font-bold uppercase tracking-wider text-gray-700 rounded">{skill}</span>
-              ))}
+      </div>
+      <div className="space-y-10">
+        <section>
+          <h2 className="text-sm font-bold uppercase tracking-[0.2em] mb-4 border-b pb-1">Education</h2>
+          {data.education.map((edu: any) => (
+            <div key={edu.id} className="text-sm mb-4">
+              <p className="font-bold">{edu.degree}</p>
+              <p>{edu.school}</p>
+              <p className="text-stone-400 text-xs">{edu.startDate} – {edu.endDate}</p>
             </div>
+          ))}
+        </section>
+        <section>
+          <h2 className="text-sm font-bold uppercase tracking-[0.2em] mb-4 border-b pb-1">Skills</h2>
+          <div className="flex flex-col gap-2">
+            {data.skills.map((s: string, i: number) => (
+              <span key={i} className="text-sm text-stone-600">• {s}</span>
+            ))}
+          </div>
+        </section>
+        {data.languages && data.languages.length > 0 && (
+          <section>
+            <h2 className="text-sm font-bold uppercase tracking-[0.2em] mb-4 border-b pb-1">Languages</h2>
+            {data.languages.map((lang: any) => (
+              <div key={lang.id} className="flex justify-between text-sm mb-2">
+                <span>{lang.name}</span>
+                <span className="text-stone-400">{lang.level}</span>
+              </div>
+            ))}
           </section>
         )}
       </div>
@@ -161,61 +174,194 @@ const ModernTemplate = ({ data, themeColor }: TemplateProps) => (
   </div>
 );
 
-const ExecutiveTemplate = ({ data, themeColor }: TemplateProps) => (
-  <div className="bg-white min-h-[1056px] font-serif text-slate-900 shadow-sm">
-    <div className="h-4" style={{ backgroundColor: themeColor }}></div>
+const TechTemplate = ({ data, themeColor }: any) => (
+  <div className="bg-zinc-950 min-h-[1056px] p-12 font-mono text-zinc-300">
+    <header className="border-l-4 p-6 mb-10" style={{ borderColor: themeColor }}>
+      <h1 className="text-4xl font-bold text-white mb-2">&gt; {data.personal.fullName}</h1>
+      <p className="text-xl mb-4" style={{ color: themeColor }}>[{data.personal.jobTitle}]</p>
+      <div className="text-xs opacity-60 space-y-1">
+        <div>{data.personal.email} | {data.personal.phone} | {data.personal.address}</div>
+        <div className="flex gap-4 mt-2">
+          {data.personal.github && (
+            <a href={`https://${data.personal.github}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-white">
+              <Github size={12} /> GitHub
+            </a>
+          )}
+          {data.personal.linkedin && (
+            <a href={`https://${data.personal.linkedin}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-white">
+              <Linkedin size={12} /> LinkedIn
+            </a>
+          )}
+          {data.personal.portfolio && (
+            <a href={`https://${data.personal.portfolio}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-white">
+              <Globe size={12} /> Portfolio
+            </a>
+          )}
+        </div>
+      </div>
+    </header>
+    <div className="space-y-12">
+      <section>
+        <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+          <span style={{ color: themeColor }}>#</span> root@summary: ~
+        </h2>
+        <p className="text-sm leading-relaxed border-l border-zinc-800 pl-4">{data.personal.summary}</p>
+      </section>
+      <section>
+        <h2 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+          <span style={{ color: themeColor }}>#</span> root@experience: ~
+        </h2>
+        <div className="space-y-8">
+          {data.experience.map((exp: any) => (
+            <div key={exp.id} className="border border-zinc-800 p-4 rounded bg-zinc-900/50">
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="text-white font-bold">{exp.position} @ {exp.company}</h3>
+                <span className="text-xs font-bold" style={{ color: themeColor }}>{exp.startDate} - {exp.endDate}</span>
+              </div>
+              <p className="text-sm opacity-80">{exp.description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+      {data.projects && data.projects.length > 0 && (
+        <section>
+          <h2 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+            <span style={{ color: themeColor }}>#</span> root@projects: ~
+          </h2>
+          <div className="space-y-4">
+            {data.projects.map((proj: any) => (
+              <div key={proj.id} className="border border-zinc-800 p-4 rounded bg-zinc-900/50">
+                <h3 className="text-white font-bold mb-1">{proj.name}</h3>
+                {proj.link && (
+                  <a href={`https://${proj.link}`} target="_blank" rel="noopener noreferrer" className="text-xs opacity-60 hover:opacity-100 flex items-center gap-1">
+                    <LinkIcon size={10} /> {proj.link}
+                  </a>
+                )}
+                <p className="text-sm opacity-80 mt-2">{proj.description}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+      <section>
+        <h2 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+          <span style={{ color: themeColor }}>#</span> root@skills: ~
+        </h2>
+        <div className="flex flex-wrap gap-3">
+          {data.skills.map((s: string, i: number) => (
+            <span key={i} className="text-xs px-2 py-1 border border-zinc-700 rounded hover:border-zinc-500 cursor-default">{s}</span>
+          ))}
+        </div>
+      </section>
+    </div>
+  </div>
+);
+
+const ModernProTemplate = ({ data, themeColor }: any) => (
+  <div className="bg-white min-h-[1056px] flex flex-col font-sans text-slate-800">
+    <div className="h-2 w-full" style={{ backgroundColor: themeColor }}></div>
     <div className="p-12">
-      <header className="text-center mb-10">
-        <h1 className="text-5xl font-light tracking-widest uppercase mb-2">{data.personal.fullName || 'Your Name'}</h1>
-        <p className="text-lg tracking-[0.2em] uppercase mb-4" style={{ color: themeColor }}>{data.personal.jobTitle || 'Your Job Title'}</p>
-        <div className="flex justify-center gap-6 text-sm text-slate-500 italic">
-          {data.personal.email && <span>{data.personal.email}</span>}
-          {data.personal.phone && <><span>•</span><span>{data.personal.phone}</span></>}
-          {data.personal.address && <><span>•</span><span>{data.personal.address}</span></>}
+      <header className="flex justify-between items-start mb-12">
+        <div>
+          <h1 className="text-5xl font-black text-slate-900 tracking-tighter mb-2">{data.personal.fullName}</h1>
+          <p className="text-2xl font-medium tracking-tight" style={{ color: themeColor }}>{data.personal.jobTitle}</p>
+          <div className="flex gap-4 mt-3">
+            {data.personal.github && (
+              <a href={`https://${data.personal.github}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700">
+                <Github size={14} /> GitHub
+              </a>
+            )}
+            {data.personal.linkedin && (
+              <a href={`https://${data.personal.linkedin}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700">
+                <Linkedin size={14} /> LinkedIn
+              </a>
+            )}
+            {data.personal.portfolio && (
+              <a href={`https://${data.personal.portfolio}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700">
+                <Globe size={14} /> Portfolio
+              </a>
+            )}
+          </div>
+        </div>
+        <div className="text-right text-sm space-y-1 text-slate-500 font-medium">
+          <p className="flex items-center justify-end gap-2">{data.personal.email} <Mail size={14} /></p>
+          <p className="flex items-center justify-end gap-2">{data.personal.phone} <Phone size={14} /></p>
+          <p className="flex items-center justify-end gap-2">{data.personal.address} <MapPin size={14} /></p>
         </div>
       </header>
-      <div className="max-w-3xl mx-auto">
-        {data.personal.summary && (
-          <section className="mb-10 text-center">
-            <p className="text-md leading-relaxed italic text-slate-700 font-medium">"{data.personal.summary}"</p>
+      <div className="grid grid-cols-12 gap-12">
+        <div className="col-span-8 space-y-10">
+          <section>
+            <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-4 flex items-center gap-2">
+              <div className="w-8 h-[2px]" style={{ backgroundColor: themeColor }}></div> Summary
+            </h2>
+            <p className="text-md leading-relaxed">{data.personal.summary}</p>
           </section>
-        )}
-        {data.experience.length > 0 && (
-          <div className="border-t border-slate-200 pt-8 mb-10">
-            <h2 className="text-sm font-bold uppercase tracking-[0.3em] mb-6 text-center underline underline-offset-8">Professional Experience</h2>
+          <section>
+            <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-6 flex items-center gap-2">
+              <div className="w-8 h-[2px]" style={{ backgroundColor: themeColor }}></div> Experience
+            </h2>
             <div className="space-y-10">
-              {data.experience.map((exp: Experience) => (
+              {data.experience.map((exp: any) => (
                 <div key={exp.id}>
                   <div className="flex justify-between items-baseline mb-2">
-                    <h3 className="text-xl font-semibold">{exp.company}</h3>
-                    <span className="text-sm uppercase tracking-tighter text-slate-400 font-mono">{exp.startDate} — {exp.endDate}</span>
+                    <h3 className="text-xl font-bold">{exp.position}</h3>
+                    <span className="text-sm font-bold text-slate-400">{exp.startDate} — {exp.endDate}</span>
                   </div>
-                  <h4 className="text-md italic mb-3 opacity-80">{exp.position} | {exp.location}</h4>
-                  <p className="text-sm leading-loose text-slate-700">{exp.description}</p>
+                  <p className="font-bold text-lg mb-3" style={{ color: themeColor }}>{exp.company}</p>
+                  <p className="text-slate-600 leading-relaxed">{exp.description}</p>
                 </div>
               ))}
             </div>
-          </div>
-        )}
-        <div className="grid grid-cols-2 gap-12 border-t border-slate-200 pt-8">
-          {data.education.length > 0 && (
+          </section>
+          {data.projects && data.projects.length > 0 && (
             <section>
-              <h2 className="text-xs font-bold uppercase tracking-[0.3em] mb-4">Academic Background</h2>
-              {data.education.map((edu: Education) => (
-                <div key={edu.id} className="mb-4">
-                  <h3 className="font-bold text-sm uppercase">{edu.degree}</h3>
-                  <p className="text-sm italic">{edu.school}</p>
-                  <p className="text-xs text-slate-400">{edu.startDate} — {edu.endDate}</p>
-                </div>
-              ))}
+              <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-6 flex items-center gap-2">
+                <div className="w-8 h-[2px]" style={{ backgroundColor: themeColor }}></div> Projects
+              </h2>
+              <div className="space-y-6">
+                {data.projects.map((proj: any) => (
+                  <div key={proj.id}>
+                    <h3 className="text-lg font-bold">{proj.name}</h3>
+                    {proj.link && (
+                      <a href={`https://${proj.link}`} target="_blank" rel="noopener noreferrer" className="text-sm text-slate-500 hover:text-slate-700 flex items-center gap-1">
+                        <LinkIcon size={12} /> {proj.link}
+                      </a>
+                    )}
+                    <p className="text-slate-600 mt-2">{proj.description}</p>
+                  </div>
+                ))}
+              </div>
             </section>
           )}
-          {data.skills.length > 0 && (
-            <section>
-              <h2 className="text-xs font-bold uppercase tracking-[0.3em] mb-4">Competencies</h2>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                {data.skills.map((skill: string, i: number) => (
-                  <span key={i} className="text-sm border-b border-slate-100 pb-1 text-slate-600">{skill}</span>
+        </div>
+        <div className="col-span-4 space-y-10">
+          <section className="bg-slate-50 p-6 rounded-2xl">
+            <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Core Skills</h2>
+            <div className="flex flex-wrap gap-2">
+              {data.skills.map((s: string, i: number) => (
+                <span key={i} className="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-bold text-slate-700 shadow-sm">{s}</span>
+              ))}
+            </div>
+          </section>
+          <section className="p-6">
+            <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Education</h2>
+            {data.education.map((edu: any) => (
+              <div key={edu.id} className="mb-4">
+                <p className="font-bold text-sm">{edu.degree}</p>
+                <p className="text-xs text-slate-500">{edu.school}</p>
+              </div>
+            ))}
+          </section>
+          {data.languages && data.languages.length > 0 && (
+            <section className="p-6">
+              <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Languages</h2>
+              <div className="space-y-2">
+                {data.languages.map((lang: any) => (
+                  <div key={lang.id} className="flex justify-between text-sm">
+                    <span className="font-medium">{lang.name}</span>
+                    <span className="text-slate-400">{lang.level}</span>
+                  </div>
                 ))}
               </div>
             </section>
@@ -226,624 +372,464 @@ const ExecutiveTemplate = ({ data, themeColor }: TemplateProps) => (
   </div>
 );
 
-const CreativeTemplate = ({ data, themeColor }: TemplateProps) => (
-  <div className="bg-white min-h-[1056px] flex flex-row overflow-hidden shadow-sm">
-    <aside className="w-1/3 p-10 text-white flex flex-col" style={{ backgroundColor: themeColor }}>
-      <div className="mb-10">
-        <h1 className="text-4xl font-black leading-tight mb-2">
-          {data.personal.fullName.split(' ')[0] || 'First'}<br/>{data.personal.fullName.split(' ')[1] || 'Last'}
-        </h1>
-        <div className="h-1 w-12 bg-white mb-4"></div>
-        <p className="text-lg font-medium opacity-90">{data.personal.jobTitle || 'Your Job Title'}</p>
-      </div>
-      <div className="space-y-8 flex-grow">
-        <section>
-          <h3 className="text-xs font-bold uppercase tracking-widest mb-4 opacity-70">Contact</h3>
-          <div className="space-y-3 text-sm">
-            {data.personal.email && <p className="flex items-center gap-3"><Mail size={16} /> {data.personal.email}</p>}
-            {data.personal.phone && <p className="flex items-center gap-3"><Phone size={16} /> {data.personal.phone}</p>}
-            {data.personal.address && <p className="flex items-center gap-3"><MapPin size={16} /> {data.personal.address}</p>}
-          </div>
-        </section>
-        {data.skills.length > 0 && (
-          <section>
-            <h3 className="text-xs font-bold uppercase tracking-widest mb-4 opacity-70">Expertise</h3>
-            <div className="flex flex-wrap gap-2">
-              {data.skills.map((skill: string, i: number) => (
-                <span key={i} className="text-xs bg-white/20 px-2 py-1 rounded backdrop-blur-sm">{skill}</span>
-              ))}
-            </div>
-          </section>
-        )}
-        {data.education.length > 0 && (
-          <section>
-            <h3 className="text-xs font-bold uppercase tracking-widest mb-4 opacity-70">Education</h3>
-            {data.education.map((edu: Education) => (
-              <div key={edu.id} className="mb-4">
-                <p className="font-bold text-sm leading-tight">{edu.degree}</p>
-                <p className="text-xs opacity-80">{edu.school}</p>
-              </div>
-            ))}
-          </section>
-        )}
-      </div>
-    </aside>
-    <main className="w-2/3 p-12 bg-stone-50">
-      {data.personal.summary && (
-        <section className="mb-12">
-          <h2 className="text-2xl font-black mb-4 uppercase tracking-tighter" style={{ color: themeColor }}>About Me</h2>
-          <p className="text-sm leading-relaxed text-slate-600">{data.personal.summary}</p>
-        </section>
-      )}
-      {data.experience.length > 0 && (
-        <section>
-          <h2 className="text-2xl font-black mb-8 uppercase tracking-tighter" style={{ color: themeColor }}>Journey</h2>
-          <div className="relative border-l-2 border-slate-200 ml-2 space-y-10 pl-8">
-            {data.experience.map((exp: Experience) => (
-              <div key={exp.id} className="relative">
-                <div className="absolute -left-[41px] top-0 w-4 h-4 rounded-full bg-white border-2" style={{ borderColor: themeColor }}></div>
-                <div className="mb-1">
-                  <span className="text-[10px] font-bold uppercase text-slate-400 tracking-widest">{exp.startDate} — {exp.endDate}</span>
-                  <h3 className="text-xl font-bold text-slate-800">{exp.position}</h3>
-                  <p className="text-sm font-medium mb-3" style={{ color: themeColor }}>{exp.company}</p>
-                </div>
-                <p className="text-sm text-slate-500 leading-relaxed">{exp.description}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-    </main>
-  </div>
-);
-
-const MinimalTemplate = ({ data }: TemplateProps) => (
-  <div className="bg-white min-h-[1056px] p-16 font-sans text-neutral-900 shadow-sm flex flex-col">
-    <header className="mb-12">
-      <h1 className="text-3xl font-light tracking-tight mb-1">{data.personal.fullName || 'Your Name'}</h1>
-      <p className="text-sm tracking-widest uppercase text-neutral-400 mb-6">{data.personal.jobTitle || 'Your Job Title'}</p>
-      <div className="flex gap-4 text-xs font-medium text-neutral-500 uppercase tracking-wider">
-        {data.personal.email && <span>{data.personal.email}</span>}
-        {data.personal.phone && <><span>/</span><span>{data.personal.phone}</span></>}
-        {data.personal.address && <><span>/</span><span>{data.personal.address}</span></>}
-      </div>
-    </header>
-    <div className="space-y-12">
-      {data.personal.summary && (
-        <section className="grid grid-cols-4 gap-4">
-          <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-300">Profile</h2>
-          <div className="col-span-3">
-            <p className="text-sm leading-relaxed">{data.personal.summary}</p>
-          </div>
-        </section>
-      )}
-      {data.experience.length > 0 && (
-        <section className="grid grid-cols-4 gap-4">
-          <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-300">Experience</h2>
-          <div className="col-span-3 space-y-8">
-            {data.experience.map((exp: Experience) => (
-              <div key={exp.id}>
-                <div className="flex justify-between items-baseline mb-1">
-                  <h3 className="text-sm font-bold">{exp.position} at {exp.company}</h3>
-                  <span className="text-[10px] text-neutral-400">{exp.startDate} – {exp.endDate}</span>
-                </div>
-                <p className="text-xs text-neutral-500 mb-3 uppercase tracking-wide">{exp.location}</p>
-                <p className="text-sm text-neutral-600 leading-relaxed">{exp.description}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-      {data.skills.length > 0 && (
-        <section className="grid grid-cols-4 gap-4">
-          <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-300">Skills</h2>
-          <div className="col-span-3 flex flex-wrap gap-x-6 gap-y-2">
-            {data.skills.map((skill: string, i: number) => (
-              <span key={i} className="text-sm font-medium">{skill}</span>
-            ))}
-          </div>
-        </section>
-      )}
-      {data.education.length > 0 && (
-        <section className="grid grid-cols-4 gap-4">
-          <h2 className="text-[10px] font-bold uppercase tracking-[0.2em] text-neutral-300">Education</h2>
-          <div className="col-span-3 space-y-4">
-            {data.education.map((edu: Education) => (
-              <div key={edu.id}>
-                <div className="flex justify-between items-baseline mb-1">
-                  <h3 className="text-sm font-bold">{edu.school}</h3>
-                  <span className="text-[10px] text-neutral-400">{edu.startDate} – {edu.endDate}</span>
-                </div>
-                <p className="text-xs text-neutral-500">{edu.degree}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-    </div>
-  </div>
-);
-
-// --- Main Component ---
+// --- App Shell ---
 export default function ResumeBuilderFormPage() {
   const location = useLocation();
   const navigate = useNavigate();
   
   // Get selected template from navigation state
   const initialTemplate = (location.state as any)?.selectedTemplate || 'modern';
-  const initialColor = TEMPLATES.find(t => t.id === initialTemplate)?.color || '#2563eb';
+  const initialColor = TEMPLATES.find(t => t.id === initialTemplate)?.color || '#3b82f6';
   
-  const [data, setData] = useState<ResumeData>(INITIAL_DATA);
-  const [activeTemplate, setActiveTemplate] = useState(initialTemplate);
+  const [data, setData] = useState(INITIAL_DATA);
   const [activeTab, setActiveTab] = useState('personal');
+  const [activeTemplate, setActiveTemplate] = useState(initialTemplate);
   const [themeColor, setThemeColor] = useState(initialColor);
-  const [isPreviewMode, setIsPreviewMode] = useState(false);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiField, setAiField] = useState<string | null>(null);
-  const resumeRef = useRef<HTMLDivElement>(null);
+  const [isPreview, setIsPreview] = useState(false);
 
-  const handleInputChange = (section: keyof ResumeData, field: string, value: string) => {
-    setData(prev => ({
-      ...prev,
-      [section]: {
-        ...(prev[section] as any),
-        [field]: value
+  const CATEGORIES = [
+    { id: 'personal', label: 'Identity', icon: <User size={18} /> },
+    { id: 'summary', label: 'Summary', icon: <Sparkles size={18} /> },
+    { id: 'experience', label: 'Experience', icon: <Briefcase size={18} /> },
+    { id: 'education', label: 'Education', icon: <GraduationCap size={18} /> },
+    { id: 'skills', label: 'Expertise', icon: <Settings size={18} /> },
+    { id: 'projects', label: 'Projects', icon: <Code size={18} /> },
+    { id: 'languages', label: 'Languages', icon: <Languages size={18} /> },
+    { id: 'style', label: 'Branding', icon: <Palette size={18} /> }
+  ];
+
+  const handleUpdate = (path: string, value: any) => {
+    const keys = path.split('.');
+    setData(prev => {
+      const newData: any = { ...prev };
+      let current: any = newData;
+      for (let i = 0; i < keys.length - 1; i++) {
+        current = current[keys[i]];
       }
-    }));
+      current[keys[keys.length - 1]] = value;
+      return newData;
+    });
   };
 
-  const handleArrayChange = (section: 'experience' | 'education', id: number, field: string, value: string) => {
-    setData(prev => ({
-      ...prev,
-      [section]: prev[section].map((item: any) => item.id === id ? { ...item, [field]: value } : item)
-    }));
+  const addItem = (section: string) => {
+    const templates: any = {
+      experience: { id: Date.now(), company: '', position: '', location: '', startDate: '', endDate: '', description: '' },
+      education: { id: Date.now(), school: '', degree: '', location: '', startDate: '', endDate: '' },
+      projects: { id: Date.now(), name: '', link: '', description: '' },
+      languages: { id: Date.now(), name: '', level: 'Fluent' }
+    };
+    setData(prev => ({ ...prev, [section]: [...(prev as any)[section], templates[section]] }));
   };
 
-  const addItem = (section: 'experience' | 'education') => {
-    const newItem: any = section === 'experience' 
-      ? { id: Date.now(), company: "", position: "", location: "", startDate: "", endDate: "", description: "" }
-      : { id: Date.now(), school: "", degree: "", location: "", startDate: "", endDate: "" };
-    setData(prev => ({ ...prev, [section]: [...prev[section], newItem] }));
+  const removeItem = (section: string, id: number) => {
+    setData(prev => ({ ...prev, [section]: (prev as any)[section].filter((item: any) => item.id !== id) }));
   };
 
-  const removeItem = (section: 'experience' | 'education', id: number) => {
-    setData(prev => ({ ...prev, [section]: prev[section].filter((item: any) => item.id !== id) }));
-  };
-
-  const handleSkillChange = (value: string) => {
-    setData(prev => ({ ...prev, skills: value.split(',').map((s: string) => s.trim()).filter(s => s) }));
-  };
-
-  // AI Enhancement Function
-  const enhanceWithAI = async (field: string, currentValue: string) => {
-    setAiLoading(true);
-    setAiField(field);
-    
-    try {
-      // Simulate AI enhancement - replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      let enhancedText = currentValue;
-      
-      if (field === 'summary') {
-        enhancedText = `${currentValue || 'Results-driven professional'} with proven expertise in delivering high-impact solutions. Demonstrated ability to lead cross-functional teams and drive innovation in fast-paced environments. Committed to excellence and continuous improvement.`;
-      } else if (field === 'description') {
-        enhancedText = `${currentValue || 'Key responsibilities included'} • Led strategic initiatives resulting in measurable business impact\n• Collaborated with stakeholders to define and execute project roadmaps\n• Implemented best practices and process improvements\n• Mentored team members and fostered a culture of innovation`;
-      } else if (field === 'skills') {
-        const baseSkills = currentValue ? currentValue.split(',').map(s => s.trim()) : [];
-        const suggestedSkills = ['Leadership', 'Project Management', 'Strategic Planning', 'Team Collaboration', 'Problem Solving'];
-        enhancedText = [...new Set([...baseSkills, ...suggestedSkills])].join(', ');
-      }
-      
-      return enhancedText;
-    } catch (error) {
-      console.error('AI enhancement error:', error);
-      return currentValue;
-    } finally {
-      setAiLoading(false);
-      setAiField(null);
-    }
-  };
-
-  const handleAIEnhance = async (section: string, field: string, id?: number) => {
-    if (section === 'personal') {
-      const currentValue = (data.personal as any)[field] || '';
-      const enhanced = await enhanceWithAI(field, currentValue);
-      handleInputChange('personal', field, enhanced);
-    } else if (section === 'experience' && id) {
-      const exp = data.experience.find(e => e.id === id);
-      if (exp) {
-        const enhanced = await enhanceWithAI('description', exp.description);
-        handleArrayChange('experience', id, 'description', enhanced);
-      }
-    } else if (section === 'skills') {
-      const currentValue = data.skills.join(', ');
-      const enhanced = await enhanceWithAI('skills', currentValue);
-      handleSkillChange(enhanced);
-    }
-  };
-
-  const printResume = () => {
-    window.print();
-  };
-
-  const renderTemplate = () => {
+  const renderCurrentTemplate = () => {
+    const props = { data, themeColor };
     switch (activeTemplate) {
-      case 'modern': return <ModernTemplate data={data} themeColor={themeColor} />;
-      case 'executive': return <ExecutiveTemplate data={data} themeColor={themeColor} />;
-      case 'creative': return <CreativeTemplate data={data} themeColor={themeColor} />;
-      case 'minimal': return <MinimalTemplate data={data} themeColor={themeColor} />;
-      default: return <ModernTemplate data={data} themeColor={themeColor} />;
+      case 'modern': return <ModernProTemplate {...props} />;
+      case 'elegant': return <ElegantTemplate {...props} />;
+      case 'tech': return <TechTemplate {...props} />;
+      default: return <ModernProTemplate {...props} />;
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
-      {/* Navigation Header */}
-      <header className="h-16 bg-white border-b flex items-center justify-between px-6 sticky top-0 z-50">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate('/career/resume-templates')}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-all"
-          >
-            <ArrowLeft size={20} />
-            <span className="font-medium">Back to Templates</span>
-          </button>
-          <div className="h-6 w-px bg-gray-300 mx-2"></div>
-          <div className="bg-blue-600 p-2 rounded-lg text-white">
-            <Layout size={20} />
+    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans antialiased text-slate-900">
+      {/* Dynamic Sidebar */}
+      {!isPreview && (
+        <aside className="w-80 bg-white border-r flex flex-col shadow-xl z-20">
+          <div className="p-6 border-b flex items-center gap-3">
+            <button
+              onClick={() => navigate('/career/resume-templates')}
+              className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-colors"
+            >
+              <Layout size={20} />
+            </button>
+            <div>
+              <h1 className="font-black text-lg tracking-tight">RESUME<span className="text-indigo-600">PRO</span></h1>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Builder v2.5</p>
+            </div>
           </div>
-          <h1 className="text-xl font-bold text-slate-800">Resume Builder</h1>
-        </div>
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => setIsPreviewMode(!isPreviewMode)}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 bg-white border rounded-lg hover:bg-slate-50"
-          >
-            {isPreviewMode ? <Plus size={18} /> : <Eye size={18} />}
-            {isPreviewMode ? 'Edit Mode' : 'Preview'}
-          </button>
-          <button 
-            onClick={printResume}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-lg shadow-blue-200"
-          >
-            <Download size={18} />
-            Download PDF
-          </button>
-        </div>
-      </header>
+          <nav className="flex-grow overflow-y-auto p-4 space-y-1">
+            {CATEGORIES.map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => setActiveTab(cat.id)}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all group ${
+                  activeTab === cat.id ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                }`}
+              >
+                <span className={`${activeTab === cat.id ? 'text-indigo-600' : 'text-slate-400 group-hover:text-slate-600'}`}>
+                  {cat.icon}
+                </span>
+                {cat.label}
+                {activeTab === cat.id && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-600" />}
+              </button>
+            ))}
+          </nav>
+          <div className="p-4 border-t">
+            <button 
+              onClick={() => window.print()}
+              className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-100"
+            >
+              <Download size={18} /> Export PDF
+            </button>
+          </div>
+        </aside>
+      )}
 
-      <main className={`flex-grow flex flex-col md:flex-row ${isPreviewMode ? 'justify-center p-8' : ''}`}>
-        {/* Editor Sidebar */}
-        {!isPreviewMode && (
-          <aside className="w-full md:w-1/3 xl:w-1/4 bg-white border-r overflow-y-auto max-h-[calc(100vh-64px)] scrollbar-thin">
-            <div className="p-4 border-b flex overflow-x-auto gap-1 no-scrollbar sticky top-0 bg-white z-10">
-              <button onClick={() => setActiveTab('personal')} className={`flex flex-col items-center p-2 rounded-lg flex-1 min-w-[70px] ${activeTab === 'personal' ? 'bg-blue-50 text-blue-600' : 'text-slate-400 hover:bg-slate-50'}`}>
-                <User size={20} />
-                <span className="text-[10px] mt-1 font-bold">PROFILE</span>
-              </button>
-              <button onClick={() => setActiveTab('experience')} className={`flex flex-col items-center p-2 rounded-lg flex-1 min-w-[70px] ${activeTab === 'experience' ? 'bg-blue-50 text-blue-600' : 'text-slate-400 hover:bg-slate-50'}`}>
-                <Briefcase size={20} />
-                <span className="text-[10px] mt-1 font-bold">WORK</span>
-              </button>
-              <button onClick={() => setActiveTab('education')} className={`flex flex-col items-center p-2 rounded-lg flex-1 min-w-[70px] ${activeTab === 'education' ? 'bg-blue-50 text-blue-600' : 'text-slate-400 hover:bg-slate-50'}`}>
-                <GraduationCap size={20} />
-                <span className="text-[10px] mt-1 font-bold">EDUCATION</span>
-              </button>
-              <button onClick={() => setActiveTab('skills')} className={`flex flex-col items-center p-2 rounded-lg flex-1 min-w-[70px] ${activeTab === 'skills' ? 'bg-blue-50 text-blue-600' : 'text-slate-400 hover:bg-slate-50'}`}>
-                <Settings size={20} />
-                <span className="text-[10px] mt-1 font-bold">SKILLS</span>
-              </button>
-              <button onClick={() => setActiveTab('style')} className={`flex flex-col items-center p-2 rounded-lg flex-1 min-w-[70px] ${activeTab === 'style' ? 'bg-blue-50 text-blue-600' : 'text-slate-400 hover:bg-slate-50'}`}>
-                <Type size={20} />
-                <span className="text-[10px] mt-1 font-bold">STYLE</span>
-              </button>
+      {/* Main Content Area */}
+      <main className="flex-grow flex flex-col md:flex-row bg-slate-100 overflow-hidden relative">
+        {/* Editor Form Panel */}
+        {!isPreview && (
+          <div className="w-full md:w-[450px] bg-white border-r overflow-y-auto p-8 animate-in slide-in-from-left duration-300">
+            <div className="mb-8">
+              <h2 className="text-2xl font-black text-slate-900 mb-2">{CATEGORIES.find(c => c.id === activeTab)?.label}</h2>
+              <p className="text-sm text-slate-500">Update your professional details here.</p>
             </div>
 
-            <div className="p-6">
-              {activeTab === 'personal' && (
-                <div className="space-y-4">
-                  <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-2">Personal Information</h3>
-                  <div className="grid grid-cols-1 gap-4">
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Full Name</label>
+            {activeTab === 'personal' && (
+              <div className="space-y-5">
+                {[
+                  { label: 'Full Name', key: 'fullName' },
+                  { label: 'Job Title', key: 'jobTitle' },
+                  { label: 'Email Address', key: 'email' },
+                  { label: 'Phone Number', key: 'phone' },
+                  { label: 'Location', key: 'address' },
+                  { label: 'Personal Website', key: 'website' },
+                  { label: 'GitHub Profile', key: 'github', placeholder: 'github.com/username' },
+                  { label: 'LinkedIn Profile', key: 'linkedin', placeholder: 'linkedin.com/in/username' },
+                  { label: 'Portfolio URL', key: 'portfolio', placeholder: 'yourportfolio.com' }
+                ].map(field => (
+                  <div key={field.key}>
+                    <label className="text-[11px] font-black uppercase text-slate-400 tracking-wider mb-1 block">{field.label}</label>
+                    <input 
+                      type="text" 
+                      value={(data.personal as any)[field.key] || ''} 
+                      onChange={(e) => handleUpdate(`personal.${field.key}`, e.target.value)}
+                      placeholder={field.placeholder}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-100 focus:border-indigo-400 outline-none transition-all"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {activeTab === 'summary' && (
+              <div>
+                <label className="text-[11px] font-black uppercase text-slate-400 tracking-wider mb-2 block">Professional Summary</label>
+                <textarea 
+                  rows={10}
+                  value={data.personal.summary}
+                  onChange={(e) => handleUpdate('personal.summary', e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm leading-relaxed outline-none focus:ring-2 focus:ring-indigo-100"
+                  placeholder="Tell your professional story..."
+                />
+              </div>
+            )}
+
+            {activeTab === 'experience' && (
+              <div className="space-y-6">
+                {data.experience.map((exp, idx) => (
+                  <div key={exp.id} className="p-5 border-2 border-slate-100 rounded-2xl relative group hover:border-indigo-100 transition-colors">
+                    <button 
+                      onClick={() => removeItem('experience', exp.id)} 
+                      className="absolute top-4 right-4 text-slate-300 hover:text-red-500 transition-colors"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                    <div className="space-y-4">
                       <input 
-                        type="text" 
-                        value={data.personal.fullName}
-                        onChange={(e) => handleInputChange('personal', 'fullName', e.target.value)}
-                        placeholder="John Doe"
-                        className="w-full p-2 bg-slate-50 border rounded-md text-sm outline-none focus:ring-2 focus:ring-blue-100"
+                        placeholder="Company Name" 
+                        className="font-bold w-full outline-none bg-transparent" 
+                        value={exp.company} 
+                        onChange={e => handleUpdate(`experience.${idx}.company`, e.target.value)} 
                       />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Job Title</label>
                       <input 
-                        type="text" 
-                        value={data.personal.jobTitle}
-                        onChange={(e) => handleInputChange('personal', 'jobTitle', e.target.value)}
-                        placeholder="Senior Software Engineer"
-                        className="w-full p-2 bg-slate-50 border rounded-md text-sm outline-none"
+                        placeholder="Job Title" 
+                        className="w-full outline-none text-sm text-slate-600 bg-transparent" 
+                        value={exp.position} 
+                        onChange={e => handleUpdate(`experience.${idx}.position`, e.target.value)} 
                       />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Email</label>
-                        <input type="email" value={data.personal.email} onChange={(e) => handleInputChange('personal', 'email', e.target.value)} placeholder="john@example.com" className="w-full p-2 bg-slate-50 border rounded-md text-sm outline-none" />
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Phone</label>
-                        <input type="text" value={data.personal.phone} onChange={(e) => handleInputChange('personal', 'phone', e.target.value)} placeholder="+1 234 567 8900" className="w-full p-2 bg-slate-50 border rounded-md text-sm outline-none" />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Address</label>
-                      <input type="text" value={data.personal.address} onChange={(e) => handleInputChange('personal', 'address', e.target.value)} placeholder="San Francisco, CA" className="w-full p-2 bg-slate-50 border rounded-md text-sm outline-none" />
-                    </div>
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase">Professional Summary</label>
-                        <button
-                          onClick={() => handleAIEnhance('personal', 'summary')}
-                          disabled={aiLoading && aiField === 'summary'}
-                          className="flex items-center gap-1 px-2 py-1 text-[10px] font-bold text-purple-600 bg-purple-50 rounded-md hover:bg-purple-100 transition-all disabled:opacity-50"
-                        >
-                          {aiLoading && aiField === 'summary' ? (
-                            <>
-                              <div className="w-3 h-3 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
-                              <span>ENHANCING...</span>
-                            </>
-                          ) : (
-                            <>
-                              <Wand2 size={12} />
-                              <span>AI ENHANCE</span>
-                            </>
-                          )}
-                        </button>
+                      <input 
+                        placeholder="Location" 
+                        className="w-full outline-none text-sm text-slate-600 bg-slate-50 p-2 rounded" 
+                        value={exp.location} 
+                        onChange={e => handleUpdate(`experience.${idx}.location`, e.target.value)} 
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <input 
+                          placeholder="Start (2020-01)" 
+                          className="text-xs bg-slate-50 p-2 rounded outline-none" 
+                          value={exp.startDate} 
+                          onChange={e => handleUpdate(`experience.${idx}.startDate`, e.target.value)} 
+                        />
+                        <input 
+                          placeholder="End (Present)" 
+                          className="text-xs bg-slate-50 p-2 rounded outline-none" 
+                          value={exp.endDate} 
+                          onChange={e => handleUpdate(`experience.${idx}.endDate`, e.target.value)} 
+                        />
                       </div>
                       <textarea 
-                        rows={6}
-                        value={data.personal.summary}
-                        onChange={(e) => handleInputChange('personal', 'summary', e.target.value)}
-                        placeholder="Write a brief summary about yourself..."
-                        className="w-full p-2 bg-slate-50 border rounded-md text-sm outline-none resize-none"
+                        placeholder="Description" 
+                        rows={4} 
+                        className="w-full text-xs bg-slate-50 p-3 rounded-lg outline-none" 
+                        value={exp.description} 
+                        onChange={e => handleUpdate(`experience.${idx}.description`, e.target.value)} 
                       />
                     </div>
                   </div>
-                </div>
-              )}
+                ))}
+                <button 
+                  onClick={() => addItem('experience')} 
+                  className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-bold text-sm hover:border-indigo-300 hover:text-indigo-500 transition-all flex items-center justify-center gap-2"
+                >
+                  <Plus size={18} /> Add Role
+                </button>
+              </div>
+            )}
 
-              {activeTab === 'experience' && (
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center mb-2">
-                    <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Work Experience</h3>
-                    <button onClick={() => addItem('experience')} className="text-blue-600 hover:bg-blue-50 p-1 rounded-full">
-                      <Plus size={18} />
-                    </button>
-                  </div>
-                  {data.experience.length === 0 && (
-                    <div className="text-center py-8 text-gray-500">
-                      <Briefcase size={48} className="mx-auto mb-3 opacity-30" />
-                      <p className="text-sm">No experience added yet</p>
-                      <p className="text-xs mt-1">Click the + button to add your work experience</p>
-                    </div>
-                  )}
-                  {data.experience.map((exp) => (
-                    <div key={exp.id} className="p-4 border rounded-xl relative group bg-white shadow-sm hover:shadow-md transition-shadow">
-                      <button 
-                        onClick={() => removeItem('experience', exp.id)}
-                        className="absolute -top-2 -right-2 bg-red-50 text-red-500 p-1.5 rounded-full border border-red-100 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                      <div className="space-y-3">
-                        <input placeholder="Company Name" value={exp.company} onChange={(e) => handleArrayChange('experience', exp.id, 'company', e.target.value)} className="w-full font-bold text-sm bg-transparent border-b border-transparent focus:border-blue-200 outline-none" />
-                        <input placeholder="Job Title" value={exp.position} onChange={(e) => handleArrayChange('experience', exp.id, 'position', e.target.value)} className="w-full text-sm bg-transparent border-b border-transparent focus:border-blue-200 outline-none" />
-                        <input placeholder="Location" value={exp.location} onChange={(e) => handleArrayChange('experience', exp.id, 'location', e.target.value)} className="w-full text-xs bg-slate-50 border rounded p-2 outline-none" />
-                        <div className="flex gap-2">
-                          <input placeholder="Start (e.g., 2020-01)" value={exp.startDate} onChange={(e) => handleArrayChange('experience', exp.id, 'startDate', e.target.value)} className="w-1/2 text-xs p-1 bg-slate-50 border rounded outline-none" />
-                          <input placeholder="End (e.g., Present)" value={exp.endDate} onChange={(e) => handleArrayChange('experience', exp.id, 'endDate', e.target.value)} className="w-1/2 text-xs p-1 bg-slate-50 border rounded outline-none" />
-                        </div>
-                        <div>
-                          <div className="flex items-center justify-between mb-1">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase">Description</label>
-                            <button
-                              onClick={() => handleAIEnhance('experience', 'description', exp.id)}
-                              disabled={aiLoading && aiField === 'description'}
-                              className="flex items-center gap-1 px-2 py-1 text-[10px] font-bold text-purple-600 bg-purple-50 rounded-md hover:bg-purple-100 transition-all disabled:opacity-50"
-                            >
-                              {aiLoading && aiField === 'description' ? (
-                                <>
-                                  <div className="w-3 h-3 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
-                                  <span>AI</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Sparkles size={12} />
-                                  <span>AI</span>
-                                </>
-                              )}
-                            </button>
-                          </div>
-                          <textarea placeholder="Describe your responsibilities and achievements..." rows={4} value={exp.description} onChange={(e) => handleArrayChange('experience', exp.id, 'description', e.target.value)} className="w-full text-xs p-2 bg-slate-50 border rounded outline-none resize-none" />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {activeTab === 'education' && (
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center mb-2">
-                    <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Education</h3>
-                    <button onClick={() => addItem('education')} className="text-blue-600 hover:bg-blue-50 p-1 rounded-full">
-                      <Plus size={18} />
-                    </button>
-                  </div>
-                  {data.education.length === 0 && (
-                    <div className="text-center py-8 text-gray-500">
-                      <GraduationCap size={48} className="mx-auto mb-3 opacity-30" />
-                      <p className="text-sm">No education added yet</p>
-                      <p className="text-xs mt-1">Click the + button to add your education</p>
-                    </div>
-                  )}
-                  {data.education.map((edu) => (
-                    <div key={edu.id} className="p-4 border rounded-xl relative group bg-white shadow-sm">
-                      <button 
-                        onClick={() => removeItem('education', edu.id)}
-                        className="absolute -top-2 -right-2 bg-red-50 text-red-500 p-1.5 rounded-full border border-red-100 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                      <div className="space-y-3">
-                        <input placeholder="School/University" value={edu.school} onChange={(e) => handleArrayChange('education', edu.id, 'school', e.target.value)} className="w-full font-bold text-sm bg-transparent outline-none" />
-                        <input placeholder="Degree (e.g., BS Computer Science)" value={edu.degree} onChange={(e) => handleArrayChange('education', edu.id, 'degree', e.target.value)} className="w-full text-sm bg-transparent outline-none" />
-                        <input placeholder="Location" value={edu.location} onChange={(e) => handleArrayChange('education', edu.id, 'location', e.target.value)} className="w-full text-xs bg-slate-50 border rounded p-2 outline-none" />
-                        <div className="flex gap-2">
-                          <input placeholder="Start Year" value={edu.startDate} onChange={(e) => handleArrayChange('education', edu.id, 'startDate', e.target.value)} className="w-1/2 text-xs p-1 bg-slate-50 border rounded outline-none" />
-                          <input placeholder="End Year" value={edu.endDate} onChange={(e) => handleArrayChange('education', edu.id, 'endDate', e.target.value)} className="w-1/2 text-xs p-1 bg-slate-50 border rounded outline-none" />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {activeTab === 'skills' && (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Skills & Expertise</h3>
-                    <button
-                      onClick={() => handleAIEnhance('skills', 'skills')}
-                      disabled={aiLoading && aiField === 'skills'}
-                      className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-purple-600 bg-purple-50 rounded-lg hover:bg-purple-100 transition-all disabled:opacity-50"
+            {activeTab === 'education' && (
+              <div className="space-y-6">
+                {data.education.map((edu, idx) => (
+                  <div key={edu.id} className="p-5 border-2 border-slate-100 rounded-2xl relative group hover:border-indigo-100 transition-colors">
+                    <button 
+                      onClick={() => removeItem('education', edu.id)} 
+                      className="absolute top-4 right-4 text-slate-300 hover:text-red-500 transition-colors"
                     >
-                      {aiLoading && aiField === 'skills' ? (
-                        <>
-                          <div className="w-3 h-3 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
-                          <span>SUGGESTING...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Wand2 size={14} />
-                          <span>AI SUGGEST</span>
-                        </>
-                      )}
+                      <Trash2 size={16} />
                     </button>
+                    <div className="space-y-4">
+                      <input 
+                        placeholder="School/University" 
+                        className="font-bold w-full outline-none bg-transparent" 
+                        value={edu.school} 
+                        onChange={e => handleUpdate(`education.${idx}.school`, e.target.value)} 
+                      />
+                      <input 
+                        placeholder="Degree" 
+                        className="w-full outline-none text-sm text-slate-600 bg-transparent" 
+                        value={edu.degree} 
+                        onChange={e => handleUpdate(`education.${idx}.degree`, e.target.value)} 
+                      />
+                      <input 
+                        placeholder="Location" 
+                        className="w-full outline-none text-sm text-slate-600 bg-slate-50 p-2 rounded" 
+                        value={edu.location} 
+                        onChange={e => handleUpdate(`education.${idx}.location`, e.target.value)} 
+                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <input 
+                          placeholder="Start Year" 
+                          className="text-xs bg-slate-50 p-2 rounded outline-none" 
+                          value={edu.startDate} 
+                          onChange={e => handleUpdate(`education.${idx}.startDate`, e.target.value)} 
+                        />
+                        <input 
+                          placeholder="End Year" 
+                          className="text-xs bg-slate-50 p-2 rounded outline-none" 
+                          value={edu.endDate} 
+                          onChange={e => handleUpdate(`education.${idx}.endDate`, e.target.value)} 
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Separate by comma</label>
-                  <textarea 
-                    rows={8}
-                    value={data.skills.join(', ')}
-                    onChange={(e) => handleSkillChange(e.target.value)}
-                    className="w-full p-3 bg-slate-50 border rounded-md text-sm outline-none resize-none"
-                    placeholder="e.g. JavaScript, React, Node.js, Python, AWS..."
-                  />
-                  <div className="flex flex-wrap gap-2 mt-4">
-                    {data.skills.map((s, i) => (
-                      <span key={i} className="px-2 py-1 bg-blue-50 text-blue-600 text-[10px] font-bold rounded">{s}</span>
+                ))}
+                <button 
+                  onClick={() => addItem('education')} 
+                  className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-bold text-sm hover:border-indigo-300 hover:text-indigo-500 transition-all flex items-center justify-center gap-2"
+                >
+                  <Plus size={18} /> Add Education
+                </button>
+              </div>
+            )}
+
+            {activeTab === 'skills' && (
+              <div>
+                <label className="text-[11px] font-black uppercase text-slate-400 tracking-wider mb-4 block">Key Competencies (Comma separated)</label>
+                <textarea 
+                  rows={8}
+                  value={data.skills.join(', ')}
+                  onChange={e => setData(prev => ({ ...prev, skills: e.target.value.split(',').map(s => s.trim()).filter(s => s) }))}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm outline-none focus:ring-2 focus:ring-indigo-100"
+                />
+              </div>
+            )}
+
+            {activeTab === 'projects' && (
+              <div className="space-y-6">
+                {data.projects.map((proj, idx) => (
+                  <div key={proj.id} className="p-5 border-2 border-slate-100 rounded-2xl relative group hover:border-indigo-100 transition-colors">
+                    <button 
+                      onClick={() => removeItem('projects', proj.id)} 
+                      className="absolute top-4 right-4 text-slate-300 hover:text-red-500 transition-colors"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                    <div className="space-y-4">
+                      <input 
+                        placeholder="Project Name" 
+                        className="font-bold w-full outline-none bg-transparent" 
+                        value={proj.name} 
+                        onChange={e => handleUpdate(`projects.${idx}.name`, e.target.value)} 
+                      />
+                      <input 
+                        placeholder="Project Link (github.com/...)" 
+                        className="w-full outline-none text-sm text-slate-600 bg-slate-50 p-2 rounded" 
+                        value={proj.link} 
+                        onChange={e => handleUpdate(`projects.${idx}.link`, e.target.value)} 
+                      />
+                      <textarea 
+                        placeholder="Description" 
+                        rows={3} 
+                        className="w-full text-xs bg-slate-50 p-3 rounded-lg outline-none" 
+                        value={proj.description} 
+                        onChange={e => handleUpdate(`projects.${idx}.description`, e.target.value)} 
+                      />
+                    </div>
+                  </div>
+                ))}
+                <button 
+                  onClick={() => addItem('projects')} 
+                  className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-bold text-sm hover:border-indigo-300 hover:text-indigo-500 transition-all flex items-center justify-center gap-2"
+                >
+                  <Plus size={18} /> Add Project
+                </button>
+              </div>
+            )}
+
+            {activeTab === 'languages' && (
+              <div className="space-y-6">
+                {data.languages.map((lang, idx) => (
+                  <div key={lang.id} className="p-5 border-2 border-slate-100 rounded-2xl relative group hover:border-indigo-100 transition-colors">
+                    <button 
+                      onClick={() => removeItem('languages', lang.id)} 
+                      className="absolute top-4 right-4 text-slate-300 hover:text-red-500 transition-colors"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                    <div className="space-y-4">
+                      <input 
+                        placeholder="Language" 
+                        className="font-bold w-full outline-none bg-transparent" 
+                        value={lang.name} 
+                        onChange={e => handleUpdate(`languages.${idx}.name`, e.target.value)} 
+                      />
+                      <select 
+                        className="w-full outline-none text-sm text-slate-600 bg-slate-50 p-2 rounded" 
+                        value={lang.level} 
+                        onChange={e => handleUpdate(`languages.${idx}.level`, e.target.value)}
+                      >
+                        <option>Native</option>
+                        <option>Fluent</option>
+                        <option>Professional</option>
+                        <option>Intermediate</option>
+                        <option>Basic</option>
+                      </select>
+                    </div>
+                  </div>
+                ))}
+                <button 
+                  onClick={() => addItem('languages')} 
+                  className="w-full py-4 border-2 border-dashed border-slate-200 rounded-2xl text-slate-400 font-bold text-sm hover:border-indigo-300 hover:text-indigo-500 transition-all flex items-center justify-center gap-2"
+                >
+                  <Plus size={18} /> Add Language
+                </button>
+              </div>
+            )}
+
+            {activeTab === 'style' && (
+              <div className="space-y-8">
+                <div>
+                  <h4 className="text-xs font-black uppercase text-slate-400 mb-4">Layout Selection</h4>
+                  <div className="grid grid-cols-1 gap-3">
+                    {TEMPLATES.map(t => (
+                      <button 
+                        key={t.id} 
+                        onClick={() => { setActiveTemplate(t.id); setThemeColor(t.color); }}
+                        className={`flex items-center justify-between p-4 rounded-xl border-2 transition-all ${
+                          activeTemplate === t.id ? 'border-indigo-600 bg-indigo-50' : 'border-slate-100 hover:border-slate-200 bg-white'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-4 h-4 rounded-full" style={{ backgroundColor: t.color }}></div>
+                          <span className="font-bold text-sm">{t.name}</span>
+                        </div>
+                        {activeTemplate === t.id && <CheckCircle2 size={18} className="text-indigo-600" />}
+                      </button>
                     ))}
                   </div>
                 </div>
-              )}
-
-              {activeTab === 'style' && (
-                <div className="space-y-6">
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4">Choose Template</h3>
-                    <div className="grid grid-cols-1 gap-3">
-                      {TEMPLATES.map(t => (
-                        <button
-                          key={t.id}
-                          onClick={() => {
-                            setActiveTemplate(t.id);
-                            setThemeColor(t.color);
-                          }}
-                          className={`p-3 border rounded-xl flex items-center justify-between group transition-all ${
-                            activeTemplate === t.id ? 'border-blue-600 bg-blue-50' : 'hover:border-slate-300'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: t.color }}></div>
-                            <span className={`text-sm font-medium ${activeTemplate === t.id ? 'text-blue-700' : 'text-slate-600'}`}>{t.name}</span>
-                          </div>
-                          <ChevronRight size={16} className={activeTemplate === t.id ? 'text-blue-500' : 'text-slate-300'} />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4">Accent Color</h3>
-                    <div className="flex flex-wrap gap-3">
-                      {['#2563eb', '#1e293b', '#db2777', '#16a34a', '#ea580c', '#7c3aed', '#000000'].map(color => (
-                        <button 
-                          key={color}
-                          onClick={() => setThemeColor(color)}
-                          className={`w-8 h-8 rounded-full border-2 transition-transform hover:scale-110 ${
-                            themeColor === color ? 'border-white ring-2 ring-slate-400 ring-offset-2' : 'border-transparent'
-                          }`}
-                          style={{ backgroundColor: color }}
-                        />
-                      ))}
-                    </div>
+                <div>
+                  <h4 className="text-xs font-black uppercase text-slate-400 mb-4">Color Palette</h4>
+                  <div className="flex flex-wrap gap-3">
+                    {['#3b82f6', '#0f172a', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#000000'].map(c => (
+                      <button 
+                        key={c} 
+                        onClick={() => setThemeColor(c)}
+                        className={`w-10 h-10 rounded-full border-4 border-white shadow-md transition-transform hover:scale-110 ${
+                          themeColor === c ? 'ring-2 ring-indigo-500' : ''
+                        }`}
+                        style={{ backgroundColor: c }}
+                      />
+                    ))}
                   </div>
                 </div>
-              )}
-            </div>
-          </aside>
+              </div>
+            )}
+          </div>
         )}
 
-        {/* Resume Preview Panel */}
-        <section className={`flex-grow overflow-y-auto bg-slate-200/50 p-4 md:p-8 flex justify-center ${isPreviewMode ? 'w-full' : ''}`}>
+        {/* Live Preview Panel */}
+        <section className={`flex-grow h-full overflow-y-auto p-12 flex justify-center bg-slate-200/50 relative ${isPreview ? 'w-full' : ''}`}>
+          <div className="sticky top-4 left-1/2 -translate-x-1/2 z-30 flex items-center bg-white/80 backdrop-blur-md px-4 py-2 rounded-full shadow-lg border border-white gap-4 mb-8 h-fit">
+            <button 
+              onClick={() => setIsPreview(!isPreview)}
+              className="flex items-center gap-2 text-xs font-black uppercase text-slate-600 hover:text-indigo-600 transition-colors"
+            >
+              {isPreview ? <Sidebar size={14} /> : <Eye size={14} />}
+              {isPreview ? 'Edit' : 'Preview'}
+            </button>
+            <div className="w-px h-4 bg-slate-300"></div>
+            <div className="flex gap-1">
+              <span className="w-2 h-2 rounded-full bg-red-400"></span>
+              <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+              <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+            </div>
+          </div>
           <div 
-            ref={resumeRef}
-            className="w-full max-w-[816px] transform transition-all duration-300"
+            className="w-full max-w-[816px] bg-white shadow-2xl origin-top transition-transform duration-500"
             style={{ 
-              boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.15)',
-              margin: '0 auto'
+              minHeight: '1056px',
+              boxShadow: '0 40px 100px -20px rgba(0,0,0,0.2)'
             }}
           >
-            {renderTemplate()}
+            {renderCurrentTemplate()}
           </div>
         </section>
       </main>
 
-      {/* Global CSS for Printing */}
       <style>{`
         @media print {
-          body * {
-            visibility: hidden;
-          }
-          aside, header {
-            display: none !important;
-          }
-          .min-h-screen {
-            background-color: white !important;
-          }
-          main {
-            padding: 0 !important;
-            margin: 0 !important;
-            display: block !important;
-          }
-          section.flex-grow {
-            padding: 0 !important;
-            display: block !important;
-            background-color: transparent !important;
-          }
-          section.flex-grow * {
-            visibility: visible !important;
-          }
-          .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl {
-            box-shadow: none !important;
+          body * { visibility: hidden; }
+          main, main * { visibility: visible; }
+          aside, nav, button, .z-30 { display: none !important; }
+          section.flex-grow { padding: 0 !important; background: white !important; }
+          .max-w-[816px] { 
+            box-shadow: none !important; 
+            margin: 0 !important; 
+            width: 100% !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
           }
         }
-        .no-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-        .no-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
       `}</style>
     </div>
   );
