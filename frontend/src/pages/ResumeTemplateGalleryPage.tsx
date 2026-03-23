@@ -72,7 +72,7 @@ export default function ResumeTemplateGalleryPage() {
     
     setSelectedTemplate(templateId);
     setTimeout(() => {
-      navigate('/career/resume-builder', { state: { selectedTemplate: templateId } });
+      navigate('/career/resume-form', { state: { selectedTemplate: templateId } });
     }, 300);
   };
 
