@@ -115,8 +115,14 @@ export default function DashboardPageNew() {
   const [showCopilot, setShowCopilot] = useState(false)
   const [activities, setActivities] = useState<ActivityItem[]>([])
   const [loadingActivities, setLoadingActivities] = useState(true)
+  const [userStats, setUserStats] = useState({
+    mockTestsTaken: 0,
+    dsaProblemsSolved: 0,
+    placementReadiness: 0,
+    resumeScore: 0
+  })
 
-  // Load exam history on mount
+  // Load exam history and stats on mount
   useEffect(() => {
     loadExamHistory()
   }, [])
@@ -132,6 +138,19 @@ export default function DashboardPageNew() {
       
       if (response.ok) {
         const aptitudeHistory = await response.json()
+        
+        // Calculate real stats from user data
+        const mockTests = aptitudeHistory.length
+        const avgScore = aptitudeHistory.length > 0 
+          ? aptitudeHistory.reduce((sum: number, exam: any) => sum + exam.score_percent, 0) / aptitudeHistory.length 
+          : 0
+        
+        setUserStats({
+          mockTestsTaken: mockTests,
+          dsaProblemsSolved: 0, // TODO: Fetch from DSA API when available
+          placementReadiness: Math.round(avgScore),
+          resumeScore: 0 // TODO: Fetch from resume API when available
+        })
         
         // Convert to activity items
         const activityItems: ActivityItem[] = aptitudeHistory.slice(0, 10).map((exam: any) => ({
@@ -161,12 +180,12 @@ export default function DashboardPageNew() {
     { id: 'billing', label: 'Billing', icon: CreditCard, route: '/pricing' }
   ]
 
-  // Stats cards
+  // Stats cards - Now using real user data
   const stats: StatCard[] = [
-    { label: 'Placement Readiness', value: '75%', icon: Trophy, color: 'text-green-600' },
-    { label: 'Mock Tests Taken', value: '12', icon: Target, color: 'text-blue-600' },
-    { label: 'Resume ATS Score', value: '85/100', icon: FileText, color: 'text-purple-600' },
-    { label: 'DSA Problems Solved', value: '45', icon: Code2, color: 'text-orange-600' }
+    { label: 'Placement Readiness', value: `${userStats.placementReadiness}%`, icon: Trophy, color: 'text-green-600' },
+    { label: 'Mock Tests Taken', value: userStats.mockTestsTaken, icon: Target, color: 'text-blue-600' },
+    { label: 'Resume ATS Score', value: userStats.resumeScore > 0 ? `${userStats.resumeScore}/100` : 'Not Created', icon: FileText, color: 'text-purple-600' },
+    { label: 'DSA Problems Solved', value: userStats.dsaProblemsSolved, icon: Code2, color: 'text-orange-600' }
   ]
 
   // Free Practice Cards

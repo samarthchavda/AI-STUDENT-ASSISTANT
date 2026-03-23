@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FileText, Crown, Check, Sparkles, ArrowRight } from 'lucide-react';
 import { useAppStore } from '../store/useAppStore';
+import Header from '../components/Header';
 
 interface Template {
   id: string;
@@ -273,8 +274,10 @@ export default function ResumeTemplateGalleryPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-8 px-4">
-      <div className="max-w-7xl mx-auto">
+    <>
+      <Header />
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-8 px-4">
+        <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold gradient-text mb-4">
@@ -442,5 +445,6 @@ export default function ResumeTemplateGalleryPage() {
         </div>
       </div>
     </div>
+    </>
   );
 }
