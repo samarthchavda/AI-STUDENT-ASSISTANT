@@ -24,13 +24,31 @@ const templates: Template[] = [
     color: '#2563eb'
   },
   {
+    id: 'software',
+    name: 'Software Developer',
+    description: 'Dark sidebar with tech-focused design for developers',
+    isPro: false,
+    category: 'modern',
+    features: ['Tech Style', 'Dark Sidebar', 'Code-Friendly'],
+    color: '#10b981'
+  },
+  {
+    id: 'business',
+    name: 'Business Executive',
+    description: 'Formal serif design for C-level executives',
+    isPro: false,
+    category: 'classic',
+    features: ['Executive Style', 'Serif Font', 'Leadership Focus'],
+    color: '#1e293b'
+  },
+  {
     id: 'executive',
     name: 'Executive Suite',
     description: 'Elegant serif design for senior positions',
     isPro: false,
     category: 'classic',
     features: ['Professional', 'Serif Font', 'Traditional'],
-    color: '#1e293b'
+    color: '#0f172a'
   },
   {
     id: 'creative',
@@ -96,6 +114,71 @@ export default function ResumeTemplateGalleryPage() {
             <div className="font-medium text-[7px]">Senior Designer</div>
             <div className="text-gray-500 text-[6px]">TechNova • 2021-Present</div>
             <div className="text-gray-600 leading-tight text-[6px]">Led redesign of core platform...</div>
+          </div>
+        </div>
+      );
+    }
+
+    if (template.id === 'software') {
+      return (
+        <div className="h-64 rounded-lg border-2 border-gray-200 overflow-hidden bg-white flex text-[7px] font-mono">
+          <div className="w-2/5 bg-zinc-900 p-3 text-zinc-100 space-y-2">
+            <div className="font-black text-[9px] mb-1">JORDAN SMITH</div>
+            <div className="text-emerald-400 text-[6px] font-bold">Lead Engineer</div>
+            <div className="border-t border-zinc-800 pt-2 mt-2">
+              <div className="text-[6px] font-bold text-zinc-500 mb-1">NETWORK</div>
+              <div className="text-[5px] opacity-80">jordan@dev.io</div>
+              <div className="text-[5px] opacity-80">github.com/jsmith</div>
+            </div>
+            <div className="border-t border-zinc-800 pt-2">
+              <div className="text-[6px] font-bold text-zinc-500 mb-1">STACK</div>
+              <div className="flex flex-wrap gap-1">
+                <span className="text-[5px] bg-zinc-800 px-1 py-0.5 rounded border border-zinc-700">React</span>
+                <span className="text-[5px] bg-zinc-800 px-1 py-0.5 rounded border border-zinc-700">Go</span>
+              </div>
+            </div>
+          </div>
+          <div className="w-3/5 p-3 bg-white">
+            <div className="text-[6px] font-bold text-zinc-400 mb-2 flex items-center gap-1">
+              <div className="w-1 h-1 rounded-full bg-emerald-500"></div> PROFILE
+            </div>
+            <div className="text-[6px] text-zinc-600 leading-tight mb-3">Software architect with 10+ years...</div>
+            <div className="text-[6px] font-bold text-zinc-400 mb-2 flex items-center gap-1">
+              <div className="w-1 h-1 rounded-full bg-emerald-500"></div> EXPERIENCE
+            </div>
+            <div className="border-l-2 border-zinc-100 pl-2">
+              <div className="font-bold text-[6px]">Lead Engineer</div>
+              <div className="text-emerald-600 text-[5px]">CloudScale Systems</div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (template.id === 'business') {
+      return (
+        <div className="h-64 rounded-lg border-2 border-slate-300 bg-white overflow-hidden text-[7px] font-serif">
+          <div className="h-2 bg-slate-800"></div>
+          <div className="p-3">
+            <div className="border-b-2 border-slate-800 pb-2 mb-3 flex justify-between items-end">
+              <div>
+                <div className="font-black text-[10px] tracking-tight uppercase">ELEANOR VANCE</div>
+                <div className="text-slate-500 text-[6px] tracking-widest uppercase">CHIEF OPERATIONS OFFICER</div>
+              </div>
+              <div className="text-right text-[5px] uppercase font-bold">
+                <div>e.vance@corp.com</div>
+                <div>+1 212 555 9000</div>
+              </div>
+            </div>
+            <div className="mb-3">
+              <div className="text-[6px] font-black uppercase tracking-wider text-slate-400 mb-1">Executive Profile</div>
+              <div className="text-[6px] italic text-slate-700 leading-tight">"Visionary executive leader with 15+ years..."</div>
+            </div>
+            <div>
+              <div className="text-[6px] font-black uppercase tracking-wider text-slate-400 mb-1">Experience</div>
+              <div className="font-bold text-[7px] uppercase">GLOBAL NEXUS CORP</div>
+              <div className="text-slate-600 text-[5px] italic">COO | 2019-Present</div>
+            </div>
           </div>
         </div>
       );

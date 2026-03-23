@@ -63,6 +63,8 @@ const INITIAL_DATA = {
 
 const TEMPLATES = [
   { id: 'modern', name: 'Modern Pro', color: '#3b82f6' },
+  { id: 'software', name: 'Software Developer', color: '#10b981' },
+  { id: 'business', name: 'Business Executive', color: '#1e293b' },
   { id: 'executive', name: 'Executive', color: '#0f172a' },
   { id: 'creative', name: 'Creative', color: '#ec4899' },
   { id: 'minimal', name: 'Minimalist', color: '#18181b' },
@@ -71,6 +73,202 @@ const TEMPLATES = [
 ];
 
 // --- Specialized Templates ---
+const SoftwareDeveloperTemplate = ({ data, themeColor }: any) => (
+  <div className="bg-white min-h-[1056px] flex font-mono text-zinc-800">
+    <aside className="w-1/3 bg-zinc-900 text-zinc-100 p-10 flex flex-col">
+      <div className="mb-10">
+        <h1 className="text-3xl font-black mb-1">{data.personal.fullName}</h1>
+        <p className="text-sm font-bold opacity-80" style={{ color: themeColor }}>{data.personal.jobTitle}</p>
+      </div>
+      <div className="space-y-8 flex-grow">
+        <section>
+          <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-4 border-b border-zinc-800 pb-1">Network</h3>
+          <div className="space-y-2 text-xs">
+            <p className="flex items-center gap-2"><Mail size={14} className="text-zinc-500" /> {data.personal.email}</p>
+            {data.personal.github && (
+              <a href={`https://${data.personal.github}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-white">
+                <Github size={14} className="text-zinc-500" /> {data.personal.github}
+              </a>
+            )}
+            {data.personal.linkedin && (
+              <a href={`https://${data.personal.linkedin}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-white">
+                <Linkedin size={14} className="text-zinc-500" /> LinkedIn
+              </a>
+            )}
+            <p className="flex items-center gap-2"><MapPin size={14} className="text-zinc-500" /> {data.personal.address}</p>
+          </div>
+        </section>
+        <section>
+          <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-4 border-b border-zinc-800 pb-1">Stack</h3>
+          <div className="flex flex-wrap gap-2">
+            {data.skills.map((s: string, i: number) => (
+              <span key={i} className="px-2 py-1 bg-zinc-800 rounded text-[10px] font-bold border border-zinc-700">{s}</span>
+            ))}
+          </div>
+        </section>
+        {data.education && data.education.length > 0 && (
+          <section>
+            <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-4 border-b border-zinc-800 pb-1">Education</h3>
+            {data.education.map((edu: any) => (
+              <div key={edu.id} className="text-xs mb-3">
+                <p className="font-bold">{edu.degree}</p>
+                <p className="text-zinc-400">{edu.school}</p>
+              </div>
+            ))}
+          </section>
+        )}
+      </div>
+    </aside>
+    <main className="w-2/3 p-12 bg-white">
+      <section className="mb-10">
+        <h2 className="text-xs font-black uppercase text-zinc-400 mb-4 flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: themeColor }}></div> Profile
+        </h2>
+        <p className="text-sm leading-relaxed text-zinc-600">{data.personal.summary}</p>
+      </section>
+      <section className="mb-10">
+        <h2 className="text-xs font-black uppercase text-zinc-400 mb-6 flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: themeColor }}></div> Experience
+        </h2>
+        <div className="space-y-8">
+          {data.experience.map((exp: any) => (
+            <div key={exp.id} className="relative pl-6 border-l-2 border-zinc-100">
+              <div className="absolute -left-[5px] top-1 w-2 h-2 rounded-full bg-zinc-200"></div>
+              <div className="flex justify-between items-baseline mb-1">
+                <h3 className="font-bold text-zinc-900">{exp.position}</h3>
+                <span className="text-[10px] font-bold text-zinc-400">{exp.startDate} - {exp.endDate}</span>
+              </div>
+              <p className="text-xs font-bold mb-2" style={{ color: themeColor }}>{exp.company}</p>
+              <p className="text-xs text-zinc-600 leading-relaxed">{exp.description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+      {data.projects && data.projects.length > 0 && (
+        <section>
+          <h2 className="text-xs font-black uppercase text-zinc-400 mb-4 flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: themeColor }}></div> Projects
+          </h2>
+          {data.projects.map((proj: any) => (
+            <div key={proj.id} className="p-4 bg-zinc-50 rounded-lg border border-zinc-100 mb-4">
+              <h3 className="font-bold text-sm flex items-center gap-2">
+                {proj.name}
+                {proj.link && (
+                  <a href={`https://${proj.link}`} target="_blank" rel="noopener noreferrer">
+                    <LinkIcon size={12} className="text-zinc-400 hover:text-zinc-600" />
+                  </a>
+                )}
+              </h3>
+              <p className="text-xs text-zinc-500 mt-1">{proj.description}</p>
+            </div>
+          ))}
+        </section>
+      )}
+    </main>
+  </div>
+);
+
+const BusinessExecutiveTemplate = ({ data, themeColor }: any) => (
+  <div className="bg-white min-h-[1056px] p-16 font-serif text-slate-900">
+    <header className="border-b-4 pb-8 mb-12 flex justify-between items-end" style={{ borderColor: themeColor }}>
+      <div>
+        <h1 className="text-5xl font-black tracking-tight mb-2 uppercase">{data.personal.fullName}</h1>
+        <p className="text-xl font-medium tracking-widest text-slate-500 uppercase">{data.personal.jobTitle}</p>
+      </div>
+      <div className="text-right text-xs uppercase tracking-widest space-y-1 font-bold">
+        <p>{data.personal.email}</p>
+        <p>{data.personal.phone}</p>
+        <p>{data.personal.address}</p>
+        {(data.personal.linkedin || data.personal.portfolio) && (
+          <div className="flex justify-end gap-3 mt-2">
+            {data.personal.linkedin && (
+              <a href={`https://${data.personal.linkedin}`} target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-slate-600">
+                <Linkedin size={14} />
+              </a>
+            )}
+            {data.personal.portfolio && (
+              <a href={`https://${data.personal.portfolio}`} target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-slate-600">
+                <Globe size={14} />
+              </a>
+            )}
+          </div>
+        )}
+      </div>
+    </header>
+    <div className="grid grid-cols-12 gap-12">
+      <div className="col-span-12 mb-8">
+        <h2 className="text-sm font-black uppercase tracking-[0.3em] text-slate-400 mb-4 border-b pb-2">Executive Profile</h2>
+        <p className="text-lg leading-relaxed text-slate-700 italic font-medium">"{data.personal.summary}"</p>
+      </div>
+      <div className="col-span-8 space-y-12">
+        <section>
+          <h2 className="text-sm font-black uppercase tracking-[0.3em] text-slate-400 mb-6 border-b pb-2">Professional Experience</h2>
+          <div className="space-y-10">
+            {data.experience.map((exp: any) => (
+              <div key={exp.id}>
+                <div className="flex justify-between items-baseline mb-2">
+                  <h3 className="text-xl font-bold text-slate-900 uppercase tracking-tight">{exp.company}</h3>
+                  <span className="text-xs font-bold text-slate-400">{exp.startDate} — {exp.endDate}</span>
+                </div>
+                <p className="text-sm font-bold mb-3 italic" style={{ color: themeColor }}>{exp.position} | {exp.location}</p>
+                <p className="text-sm leading-relaxed text-slate-600">{exp.description}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+        {data.projects && data.projects.length > 0 && (
+          <section>
+            <h2 className="text-sm font-black uppercase tracking-[0.3em] text-slate-400 mb-6 border-b pb-2">Key Initiatives</h2>
+            <div className="space-y-6">
+              {data.projects.map((proj: any) => (
+                <div key={proj.id}>
+                  <h3 className="text-lg font-bold text-slate-900">{proj.name}</h3>
+                  <p className="text-sm text-slate-600 mt-2">{proj.description}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
+      <div className="col-span-4 space-y-10">
+        <section>
+          <h2 className="text-sm font-black uppercase tracking-[0.3em] text-slate-400 mb-6 border-b pb-2">Core Competencies</h2>
+          <div className="space-y-3">
+            {data.skills.map((s: string, i: number) => (
+              <div key={i} className="flex items-center gap-3">
+                <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: themeColor }}></div>
+                <span className="text-sm font-bold text-slate-700 uppercase tracking-wider">{s}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+        {data.education && data.education.length > 0 && (
+          <section>
+            <h2 className="text-sm font-black uppercase tracking-[0.3em] text-slate-400 mb-6 border-b pb-2">Education</h2>
+            {data.education.map((edu: any) => (
+              <div key={edu.id} className="mb-4">
+                <p className="font-bold text-sm text-slate-900">{edu.degree}</p>
+                <p className="text-xs text-slate-500 uppercase tracking-wider">{edu.school}</p>
+              </div>
+            ))}
+          </section>
+        )}
+        {data.languages && data.languages.length > 0 && (
+          <section>
+            <h2 className="text-sm font-black uppercase tracking-[0.3em] text-slate-400 mb-6 border-b pb-2">Languages</h2>
+            {data.languages.map((lang: any) => (
+              <div key={lang.id} className="flex justify-between text-sm mb-2">
+                <span className="font-bold">{lang.name}</span>
+                <span className="text-slate-400">{lang.level}</span>
+              </div>
+            ))}
+          </section>
+        )}
+      </div>
+    </div>
+  </div>
+);
+
 const ElegantTemplate = ({ data, themeColor }: any) => (
   <div className="bg-white min-h-[1056px] p-16 font-serif text-stone-900">
     <header className="text-center border-b-2 border-stone-200 pb-8 mb-10">
@@ -429,6 +627,8 @@ export default function ResumeBuilderFormPage() {
     const props = { data, themeColor };
     switch (activeTemplate) {
       case 'modern': return <ModernProTemplate {...props} />;
+      case 'software': return <SoftwareDeveloperTemplate {...props} />;
+      case 'business': return <BusinessExecutiveTemplate {...props} />;
       case 'elegant': return <ElegantTemplate {...props} />;
       case 'tech': return <TechTemplate {...props} />;
       default: return <ModernProTemplate {...props} />;
