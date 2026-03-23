@@ -46,18 +46,46 @@ interface TemplateProps {
 // --- Data Constants ---
 const INITIAL_DATA: ResumeData = {
   personal: {
-    fullName: "",
-    jobTitle: "",
-    email: "",
-    phone: "",
-    address: "",
-    website: "",
-    summary: ""
+    fullName: "Alex Rivera",
+    jobTitle: "Senior Product Designer",
+    email: "alex.rivera@example.com",
+    phone: "+1 (555) 000-0000",
+    address: "San Francisco, CA",
+    website: "www.arivera.design",
+    summary: "Strategic Product Designer with 8+ years of experience in building user-centric digital products. Proven track record of leading cross-functional teams to deliver high-impact solutions for FinTech and SaaS industries."
   },
-  experience: [],
-  education: [],
-  skills: [],
-  certifications: []
+  experience: [
+    {
+      id: 1,
+      company: "TechNova Solutions",
+      position: "Senior Designer",
+      location: "San Francisco, CA",
+      startDate: "2021-01",
+      endDate: "Present",
+      description: "Led the redesign of the core banking platform, resulting in a 40% increase in user engagement. Managed a team of 5 junior designers."
+    },
+    {
+      id: 2,
+      company: "Creative Pulse",
+      position: "UI/UX Designer",
+      location: "Austin, TX",
+      startDate: "2018-06",
+      endDate: "2020-12",
+      description: "Collaborated with product managers to define roadmaps. Developed a design system that reduced production time by 25%."
+    }
+  ],
+  education: [
+    {
+      id: 1,
+      school: "Design Institute of Arts",
+      degree: "BFA in Interaction Design",
+      location: "New York, NY",
+      startDate: "2014",
+      endDate: "2018"
+    }
+  ],
+  skills: ["Product Strategy", "UI/UX Design", "Figma", "React", "User Research", "Agile Methodologies", "Prototyping"],
+  certifications: [{ id: 1, name: "Google UX Design Professional Certificate", year: "2020" }]
 };
 
 const TEMPLATES = [
@@ -459,7 +487,7 @@ export default function ResumeBuilderFormPage() {
             className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-all"
           >
             <ArrowLeft size={20} />
-            <span className="font-medium">Back</span>
+            <span className="font-medium">Back to Templates</span>
           </button>
           <div className="h-6 w-px bg-gray-300 mx-2"></div>
           <div className="bg-blue-600 p-2 rounded-lg text-white">
@@ -467,29 +495,13 @@ export default function ResumeBuilderFormPage() {
           </div>
           <h1 className="text-xl font-bold text-slate-800">Resume Builder</h1>
         </div>
-        <div className="hidden md:flex bg-slate-100 p-1 rounded-full">
-          {TEMPLATES.map(t => (
-            <button
-              key={t.id}
-              onClick={() => {
-                setActiveTemplate(t.id);
-                setThemeColor(t.color);
-              }}
-              className={`px-4 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                activeTemplate === t.id ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              {t.name}
-            </button>
-          ))}
-        </div>
         <div className="flex items-center gap-3">
           <button 
             onClick={() => setIsPreviewMode(!isPreviewMode)}
             className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-600 bg-white border rounded-lg hover:bg-slate-50"
           >
             {isPreviewMode ? <Plus size={18} /> : <Eye size={18} />}
-            {isPreviewMode ? 'Edit' : 'Preview'}
+            {isPreviewMode ? 'Edit Mode' : 'Preview'}
           </button>
           <button 
             onClick={printResume}
