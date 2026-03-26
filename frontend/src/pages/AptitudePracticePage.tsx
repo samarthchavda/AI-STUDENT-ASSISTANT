@@ -46,11 +46,42 @@ const getInitialCategoryStructure = (): ParentCategory[] => [
     name: 'Verbal Ability',
     icon: '📝',
     subCategories: []
+  },
+  {
+    name: 'C Programming',
+    icon: '💻',
+    subCategories: []
+  },
+  {
+    name: 'Java Programming',
+    icon: '☕',
+    subCategories: []
+  },
+  {
+    name: 'Database',
+    icon: '🗄️',
+    subCategories: []
+  },
+  {
+    name: 'Networking',
+    icon: '🌐',
+    subCategories: []
+  },
+  {
+    name: 'Digital Electronics',
+    icon: '⚡',
+    subCategories: []
+  },
+  {
+    name: 'General Knowledge',
+    icon: '🌍',
+    subCategories: []
   }
 ]
 
 // Map subcategories to parent categories
 const subcategoryToParent: { [key: string]: string } = {
+  // Aptitude
   'Average': 'Aptitude',
   'Percentage': 'Aptitude',
   'Profit and Loss': 'Aptitude',
@@ -74,16 +105,44 @@ const subcategoryToParent: { [key: string]: string } = {
   'True Discount': 'Aptitude',
   "Banker's Discount": 'Aptitude',
   'Stocks and Shares': 'Aptitude',
+  
+  // Logical Reasoning
   'Puzzles': 'Logical Reasoning',
   'Verbal Reasoning': 'Logical Reasoning',
+  'Logical Problems': 'Logical Reasoning',
   'Odd Man Out': 'Logical Reasoning',
   'Series': 'Logical Reasoning',
   'Coding Decoding': 'Logical Reasoning',
   'Blood Relations': 'Logical Reasoning',
+  
+  // Verbal Ability
   'Synonyms': 'Verbal Ability',
   'Antonyms': 'Verbal Ability',
   'Sentence Correction': 'Verbal Ability',
-  'Spotting Errors': 'Verbal Ability'
+  'Spotting Errors': 'Verbal Ability',
+  
+  // C Programming
+  'C Basics': 'C Programming',
+  'C Programming': 'C Programming',
+  'Arrays And Strings': 'C Programming',
+  
+  // Java Programming
+  'Java Basics': 'Java Programming',
+  'Java Programming': 'Java Programming',
+  
+  // Database
+  'SQL': 'Database',
+  
+  // Networking
+  'Networking': 'Networking',
+  'Networking Basics': 'Networking',
+  
+  // Digital Electronics
+  'Digital Electronics': 'Digital Electronics',
+  
+  // General Knowledge
+  'General Knowledge': 'General Knowledge',
+  'World Geography': 'General Knowledge'
 }
 
 export default function AptitudePracticePage() {
