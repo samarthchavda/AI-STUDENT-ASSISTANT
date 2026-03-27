@@ -22,7 +22,7 @@ export const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 15000, // 15 second timeout for all requests
+  timeout: 30000, // 30 second timeout
 })
 
 // Add token to requests if available
@@ -33,6 +33,36 @@ api.interceptors.request.use((config) => {
   }
   return config
 })
+
+// Add retry logic for failed requests
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const config = error.config
+    
+    // Don't retry if already retried or if it's an auth error
+    if (config._retry || error.response?.status === 401 || error.response?.status === 403) {
+      return Promise.reject(error)
+    }
+    
+    // Retry once for timeout or 5xx errors
+    if (
+      error.code === 'ECONNABORTED' || 
+      error.message?.includes('timeout') ||
+      (error.response?.status >= 500 && error.response?.status < 600)
+    ) {
+      config._retry = true
+      console.log('🔄 Retrying request...')
+      
+      // Wait 1 second before retry
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      return api(config)
+    }
+    
+    return Promise.reject(error)
+  }
+)
 
 export interface ChatMessage {
   role: 'user' | 'assistant'

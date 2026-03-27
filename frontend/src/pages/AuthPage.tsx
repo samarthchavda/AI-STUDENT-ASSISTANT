@@ -40,6 +40,8 @@ export default function AuthPage() {
     password: '',
     confirmPassword: ''
   })
+  const [loginProgress, setLoginProgress] = useState(0)
+  const [successMessage, setSuccessMessage] = useState('')
 
   // Check for session expiration message
   useEffect(() => {
@@ -50,6 +52,23 @@ export default function AuthPage() {
       setTimeout(() => setInfoMessage(''), 5000)
     }
   }, [location])
+
+  // Progress indicator for slow logins
+  useEffect(() => {
+    if (loading) {
+      setLoginProgress(0)
+      const interval = setInterval(() => {
+        setLoginProgress(prev => {
+          if (prev >= 90) return prev // Cap at 90% until actual completion
+          return prev + 10
+        })
+      }, 1000)
+      
+      return () => clearInterval(interval)
+    } else {
+      setLoginProgress(0)
+    }
+  }, [loading])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -99,6 +118,10 @@ export default function AuthPage() {
         const response = await userAPI.login(formData.email, formData.password)
         const { access_token, refresh_token, user } = response.data
         
+        // Show success immediately
+        setSuccessMessage('Login successful! Redirecting...')
+        setLoginProgress(100)
+        
         // Store tokens
         localStorage.setItem('token', access_token)
         if (refresh_token) {
@@ -113,6 +136,9 @@ export default function AuthPage() {
           plan: user.plan_type,
           isAdmin: user.is_admin
         })
+        
+        // Small delay to show success message
+        await new Promise(resolve => setTimeout(resolve, 500))
         
         // Redirect based on admin status
         if (user.is_admin) {
@@ -130,6 +156,10 @@ export default function AuthPage() {
         )
         const { access_token, refresh_token, user } = response.data
         
+        // Show success immediately
+        setSuccessMessage('Account created! Redirecting...')
+        setLoginProgress(100)
+        
         // Store tokens
         localStorage.setItem('token', access_token)
         if (refresh_token) {
@@ -145,6 +175,9 @@ export default function AuthPage() {
           isAdmin: user.is_admin
         })
         
+        // Small delay to show success message
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
         // Redirect based on admin status
         if (user.is_admin) {
           navigate('/admin', { replace: true })
@@ -154,10 +187,16 @@ export default function AuthPage() {
       }
     } catch (err: any) {
       console.error('Auth error:', err)
-      setError(
-        err.response?.data?.detail || 
-        'An error occurred. Please try again.'
-      )
+      
+      // Handle timeout specifically
+      if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+        setError('Login is taking longer than expected. The server might be starting up. Please try again in a moment.')
+      } else {
+        setError(
+          err.response?.data?.detail || 
+          'An error occurred. Please try again.'
+        )
+      }
     } finally {
       setLoading(false)
     }
@@ -334,6 +373,12 @@ export default function AuthPage() {
                   <span className="text-sm">{infoMessage}</span>
                 </div>
               )}
+              {successMessage && (
+                <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-center gap-2 animate-pulse">
+                  <CheckCircle className="w-5 h-5 flex-shrink-0" />
+                  <span className="text-sm font-semibold">{successMessage}</span>
+                </div>
+              )}
               {error && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-2">
                   <AlertCircle className="w-5 h-5 flex-shrink-0" />
@@ -432,8 +477,25 @@ export default function AuthPage() {
               </button>
               
               {loading && (
-                <div className="text-center text-sm text-gray-600 animate-pulse">
-                  Please wait, authenticating...
+                <div className="text-center space-y-3">
+                  <div className="text-sm text-gray-600 animate-pulse">
+                    {authMode === 'login' ? 'Authenticating...' : 'Creating your account...'}
+                  </div>
+                  
+                  {/* Progress bar */}
+                  <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                    <div 
+                      className="bg-gradient-to-r from-blue-500 to-purple-500 h-full transition-all duration-1000 ease-out"
+                      style={{ width: `${loginProgress}%` }}
+                    />
+                  </div>
+                  
+                  <div className="text-xs text-gray-500">
+                    {loginProgress < 30 && 'Connecting to server...'}
+                    {loginProgress >= 30 && loginProgress < 60 && 'Verifying credentials...'}
+                    {loginProgress >= 60 && loginProgress < 90 && 'Setting up your session...'}
+                    {loginProgress >= 90 && 'Almost there...'}
+                  </div>
                 </div>
               )}
             </form>
