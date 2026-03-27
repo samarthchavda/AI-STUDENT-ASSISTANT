@@ -130,14 +130,31 @@ export default function DashboardPageNew() {
   const loadExamHistory = async () => {
     setLoadingActivities(true)
     try {
+      const token = localStorage.getItem('token')
+      
+      // Debug: Log current user info
+      console.log('🔐 Loading data for user:', {
+        userId: user?.id,
+        email: user?.email,
+        name: user?.name,
+        hasToken: !!token
+      })
+      
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/aptitude/history`, {
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Authorization': `Bearer ${token}`
         }
       })
       
       if (response.ok) {
         const aptitudeHistory = await response.json()
+        
+        // Debug: Log fetched data
+        console.log('📊 Fetched exam history:', {
+          count: aptitudeHistory.length,
+          firstExam: aptitudeHistory[0],
+          userId: user?.id
+        })
         
         // Calculate real stats from user data
         const mockTests = aptitudeHistory.length
@@ -162,6 +179,8 @@ export default function DashboardPageNew() {
         }))
         
         setActivities(activityItems)
+      } else {
+        console.error('❌ Failed to load history:', response.status, response.statusText)
       }
     } catch (error) {
       console.error('Failed to load exam history:', error)
@@ -434,6 +453,26 @@ export default function DashboardPageNew() {
 
         {/* Main Content */}
         <main className="flex-1 p-6 lg:p-8">
+          {/* User Verification Banner - Shows which user is logged in */}
+          {user && (
+            <div className="mb-6 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900">
+                    Logged in as: {user.name}
+                  </p>
+                  <p className="text-xs text-gray-600">{user.email}</p>
+                </div>
+              </div>
+              <div className="text-xs text-gray-500">
+                User ID: {user.id}
+              </div>
+            </div>
+          )}
+          
           {/* Welcome Section */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">

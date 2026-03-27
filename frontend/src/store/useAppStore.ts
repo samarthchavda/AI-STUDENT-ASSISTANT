@@ -21,15 +21,26 @@ interface AppState {
 
 export const useAppStore = create<AppState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       isAuthenticated: false,
       chatHistory: [],
       
-      setUser: (user) => set({ user, isAuthenticated: !!user }),
+      setUser: (user) => {
+        // Clear chat history when switching users
+        const currentUser = get().user
+        const switchingUsers = currentUser && user && currentUser.id !== user.id
+        
+        set({ 
+          user, 
+          isAuthenticated: !!user,
+          chatHistory: switchingUsers ? [] : get().chatHistory
+        })
+      },
       
       logout: () => {
         localStorage.removeItem('token')
+        localStorage.removeItem('refresh_token')
         set({ user: null, isAuthenticated: false, chatHistory: [] })
       },
       
@@ -42,12 +53,12 @@ export const useAppStore = create<AppState>()(
     }),
     {
       name: 'app-storage',
-        onRehydrateStorage: () => (state) => {
-          const token = localStorage.getItem('token')
-          if (!token && state?.isAuthenticated) {
-            state.logout()
-          }
-        },
+      onRehydrateStorage: () => (state) => {
+        const token = localStorage.getItem('token')
+        if (!token && state?.isAuthenticated) {
+          state.logout()
+        }
+      },
     }
   )
 )
