@@ -27,17 +27,24 @@ export default function Header() {
 
           <div className="flex items-center gap-3 sm:gap-5">
             <nav className="hidden items-center gap-2 rounded-full border border-stone-200 bg-white/75 p-1 shadow-[0_10px_25px_rgba(33,24,9,0.06)] md:flex">
-              <Link to="/dashboard" className="rounded-full px-4 py-2 text-sm font-semibold text-stone-700 transition hover:bg-stone-100 hover:text-stone-900">
-                Dashboard
-              </Link>
-              <Link to="/chat" className="rounded-full px-4 py-2 text-sm font-semibold text-stone-700 transition hover:bg-stone-100 hover:text-stone-900">
-                Copilot
-              </Link>
+              {isAuthenticated && user && (
+                <>
+                  <Link to="/dashboard" className="rounded-full px-4 py-2 text-sm font-semibold text-stone-700 transition hover:bg-stone-100 hover:text-stone-900">
+                    Dashboard
+                  </Link>
+                  <Link to="/chat" className="rounded-full px-4 py-2 text-sm font-semibold text-stone-700 transition hover:bg-stone-100 hover:text-stone-900">
+                    Copilot
+                  </Link>
+                </>
+              )}
               <Link to="/services" className="rounded-full px-4 py-2 text-sm font-semibold text-stone-700 transition hover:bg-stone-100 hover:text-stone-900">
                 Services
               </Link>
               <Link to="/about" className="rounded-full px-4 py-2 text-sm font-semibold text-stone-700 transition hover:bg-stone-100 hover:text-stone-900">
                 About
+              </Link>
+              <Link to="/pricing" className="rounded-full px-4 py-2 text-sm font-semibold text-stone-700 transition hover:bg-stone-100 hover:text-stone-900">
+                Pricing
               </Link>
             </nav>
 

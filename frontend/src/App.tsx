@@ -43,9 +43,10 @@ function AppRoutes() {
       <Route path="/services" element={<ServicesPage />} />
       <Route path="/about" element={<AboutPage />} />
       <Route path="/pricing" element={<PricingPage />} />
+      <Route path="/career/resume-templates" element={<ResumeTemplateGalleryPage />} />
       
       {/* Protected Routes - Require Login */}
-      <Route path="/chat" element={<ChatPage />} />
+      <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
       <Route path="/exam-prep" element={<ProtectedRoute><ExamPrepPage /></ProtectedRoute>} />
       <Route path="/exam-live" element={<ProtectedRoute><ExamSimulationPage /></ProtectedRoute>} />
       <Route path="/exam-result" element={<ProtectedRoute><ExamResultPage /></ProtectedRoute>} />
@@ -59,7 +60,6 @@ function AppRoutes() {
       <Route path="/career" element={<ProtectedRoute><CareerPage /></ProtectedRoute>} />
       <Route path="/career/resume-analysis" element={<ProtectedRoute><CareerPage /></ProtectedRoute>} />
       <Route path="/career/resume-builder" element={<ProtectedRoute><ResumeTemplateGalleryPage /></ProtectedRoute>} />
-      <Route path="/career/resume-templates" element={<ProtectedRoute><ResumeTemplateGalleryPage /></ProtectedRoute>} />
       <Route path="/career/resume-form" element={<ProtectedRoute><ResumeBuilderFormPage /></ProtectedRoute>} />
       <Route path="/company-prep" element={<ProtectedRoute><CompanyPrepPage /></ProtectedRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />

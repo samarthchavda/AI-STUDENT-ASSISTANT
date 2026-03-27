@@ -152,10 +152,10 @@ export default function LandingPage() {
               Get Started for Free <ArrowRight size={18} />
             </button>
             <button 
-              onClick={() => navigate('/career/resume-analysis')}
+              onClick={() => navigate('/career/resume-templates')}
               className="h-14 rounded-xl border border-slate-200 bg-white px-10 font-bold text-slate-600 hover:bg-slate-50 transition-all shadow-sm"
             >
-              Resume Analyzer
+              Browse Templates
             </button>
           </div>
         </section>
