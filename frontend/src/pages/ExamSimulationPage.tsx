@@ -77,8 +77,8 @@ export default function ExamSimulationPage() {
         })
 
         const token = localStorage.getItem('token')
-        const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
-        const fullUrl = `${apiBaseUrl}/aptitude/test?${params}`
+        const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+        const fullUrl = `${apiBaseUrl}/api/aptitude/test?${params}`
         
         console.log('Fetching questions from:', fullUrl)
         console.log('Config:', config)
@@ -187,8 +187,8 @@ export default function ExamSimulationPage() {
 
       // Submit to backend for validation using authenticated API client
       const token = localStorage.getItem('token')
-      const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
-      const response = await fetch(`${apiBaseUrl}/aptitude/submit`, {
+      const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+      const response = await fetch(`${apiBaseUrl}/api/aptitude/submit`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

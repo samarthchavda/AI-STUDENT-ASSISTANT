@@ -140,7 +140,7 @@ export default function DashboardPageNew() {
         hasToken: !!token
       })
       
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/aptitude/history`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/aptitude/history`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

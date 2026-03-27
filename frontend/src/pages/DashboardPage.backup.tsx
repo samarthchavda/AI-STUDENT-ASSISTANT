@@ -259,7 +259,7 @@ export default function DashboardPage() {
 
       // Fetch aptitude exam history from database
       try {
-        const aptitudeResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/aptitude/history`, {
+        const aptitudeResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/aptitude/history`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
@@ -274,7 +274,7 @@ export default function DashboardPage() {
 
       // Fetch usage stats for banner
       try {
-        const usageResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/aptitude/usage-stats`, {
+        const usageResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/aptitude/usage-stats`, {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
           }
