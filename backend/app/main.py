@@ -15,9 +15,12 @@ from app.core.middleware import (
 )
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
+import logging
 
 # Import routes
 from app.routes import auth_routes, chat_routes, exam_routes, coding_routes, career_routes, payment_routes, admin_routes, company_routes, company_prep_routes, public_routes, aptitude_routes
+
+logger = logging.getLogger(__name__)
 
 
 def _build_allowed_origins() -> list[str]:
@@ -92,6 +95,32 @@ app = FastAPI(
 # Add rate limiter state
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+
+@app.on_event("startup")
+async def startup_event():
+    """
+    Warm up database connection pool on startup.
+    This ensures first requests are fast by pre-creating connections.
+    """
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        logger.info("✅ Database connection pool warmed up")
+    except Exception as e:
+        logger.error(f"⚠️ Failed to warm up connection pool: {e}")
+
+
+@app.on_event("startup")
+async def log_startup_info():
+    """Log important startup information"""
+    logger.info(f"🚀 {settings.app_name} v{settings.app_version} starting...")
+    logger.info(f"📊 Environment: {settings.environment}")
+    logger.info(f"🔐 Google OAuth: {'Enabled' if settings.google_client_id else 'Disabled'}")
+    logger.info(f"🤖 AI Service: {'Configured' if ai_service.use_ai else 'Demo Mode'}")
+    logger.info(f"💾 Database pool: size=10, max_overflow=20")
+    logger.info(f"⚡ Keep-alive endpoint: /ping (use for Render)")
+
 
 # Security Middleware (order matters!)
 # --- AA PASTE KARO ---
@@ -171,6 +200,26 @@ async def health_check(request: Request):
         "database": "connected",
         "ai_service": ai_status,
         "security": "enabled"
+    }
+
+
+@app.get("/ping")
+@rate_limit("60/minute")  # Higher rate limit for keep-alive pings
+async def ping(request: Request):
+    """
+    Lightweight keep-alive endpoint for preventing cold starts on Render.
+    
+    Use with cron-job services like:
+    - cron-job.org
+    - UptimeRobot
+    - Render Cron Jobs
+    
+    Recommended: Ping every 10-14 minutes to keep instance warm
+    """
+    return {
+        "status": "alive",
+        "timestamp": datetime.utcnow().isoformat(),
+        "message": "Server is warm and ready"
     }
 
 if __name__ == "__main__":
