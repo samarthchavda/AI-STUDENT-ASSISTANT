@@ -86,8 +86,8 @@ async def chat(request: Request, chat_request: ChatRequest, db: Session = Depend
     # Enforce usage limits before Gemini call
     check_user_limit(current_user.id, db)
     
-    # Get AI response
-    response = ai_service.chat_completion(messages)
+    # Get AI response with database context
+    response = ai_service.chat_completion(messages, db=db)
     
     # Track token usage
     try:
@@ -203,11 +203,11 @@ async def chat_stream(request: Request, chat_request: ChatRequest, db: Session =
         print(f"Error saving user message: {e}")
         db.rollback()
     
-    # Stream response
+    # Stream response with database context
     async def generate():
         full_response = ""
         try:
-            for chunk in ai_service.chat_completion_stream(messages):
+            for chunk in ai_service.chat_completion_stream(messages, db=db):
                 full_response += chunk
                 # Send chunk as SSE (Server-Sent Events)
                 yield f"data: {json.dumps({'chunk': chunk})}\n\n"

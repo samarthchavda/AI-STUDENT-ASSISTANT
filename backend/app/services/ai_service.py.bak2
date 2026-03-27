@@ -2,7 +2,180 @@
 AI Service - Handles all AI-related functionality using Google Gemini API
 """
 
-from typing import List, Dict, Optional
+def chat_completion_stream(self, messages: List[Dict], db: Session = None):
+        """Generate streaming chat completion response with database-aware context (word by word like ChatGPT)"""
+
+        # Extract last user message for database search
+        last_user_message = ""
+        for msg in reversed(messages):
+            if msg['role'] == 'user':
+                last_user_message = msg['content']
+                break
+
+        # PRIORITY 1: Search for study materials FIRST
+        study_materials = []
+        study_context = ""
+
+        if db and last_user_message:
+            try:
+                study_materials = self._search_study_material(last_user_message, db, limit=3)
+
+                if study_materials:
+                    # Build study material context to inject into prompt
+                    study_context = "\n\n📚 ENGINEERING STUDY MATERIAL (from our database):\n"
+                    study_context += "I have found comprehensive study materials that match your query. Use this structured content to provide a detailed, practical response:\n\n"
+
+                    for idx, material in enumerate(study_materials, 1):
+                        study_context += f"**Material {idx}: {material['topic_name']}** ({material['branch']} - {material['category']})\n"
+                        study_context += f"Difficulty: {material['difficulty']}\n\n"
+
+                        if material['concept_explanation']:
+                            study_context += f"📖 Concept:\n{material['concept_explanation'][:300]}{'...' if len(material['concept_explanation']) > 300 else ''}\n\n"
+
+                        if material['practical_application']:
+                            study_context += f"🛠️ Practical Use:\n{material['practical_application'][:200]}{'...' if len(material['practical_application']) > 200 else ''}\n\n"
+
+                        if material['code_example']:
+                            study_context += f"💻 Code Example Available: Yes\n\n"
+
+                        if material['step_by_step_guide']:
+                            study_context += f"🚀 Step-by-Step Guide Available: Yes\n\n"
+
+                        if material['companies_asking']:
+                            study_context += f"Companies: {material['companies_asking']}\n\n"
+
+                        study_context += "---\n\n"
+
+                    study_context += "💡 INSTRUCTION: Use this study material to structure your response. Follow the format:\n"
+                    study_context += "### 📖 Concept Explanation\n"
+                    study_context += "### 🛠️ Practical Application (How to use in projects)\n"
+                    study_context += "### 💻 Code/Circuit Diagram (if applicable)\n"
+                    study_context += "### 🚀 Step-by-Step: How to Run\n"
+                    study_context += "Format for PDF readiness with clear sections and proper markdown.\n"
+            except Exception as e:
+                print(f"⚠️ Study material search error (continuing): {e}")
+                study_context = ""
+
+        # PRIORITY 2: Search for relevant company questions (secondary context)
+        relevant_questions = []
+        database_context = ""
+        source_companies = set()
+
+        if db and last_user_message and not study_materials:  # Only if no study materials found
+            try:
+                relevant_questions = self._search_relevant_questions(last_user_message, db, limit=5)
+
+                if relevant_questions:
+                    # Build database context to inject into prompt
+                    database_context = "\n\n📚 REAL-WORLD PLACEMENT CONTEXT (from our database):\n"
+                    database_context += "I have found actual interview questions from top companies that match your query. Use these specific examples to make your explanation more practical and relevant:\n\n"
+
+                    for idx, q in enumerate(relevant_questions, 1):
+                        database_context += f"{idx}. **{q['company']}** ({q['year']}) - {q['difficulty']}\n"
+                        database_context += f"   Topic: {q['topic']}\n"
+                        database_context += f"   Question: {q['question'][:200]}{'...' if len(q['question']) > 200 else ''}\n"
+                        if q['solution'] != 'Not available':
+                            database_context += f"   Solution Hint: {q['solution'][:150]}{'...' if len(q['solution']) > 150 else ''}\n"
+                        database_context += "\n"
+                        source_companies.add(q['company'])
+
+                    database_context += "💡 INSTRUCTION: Reference these real questions in your explanation to show practical application. Mention which companies ask similar questions.\n"
+            except Exception as e:
+                print(f"⚠️ Database search error (continuing without context): {e}")
+                database_context = ""
+
+        # Build simplified, direct system prompt
+        system_context = """Expert Engineering Mentor | CE • IT • ICT • EC • IOT
+
+📋 RESPONSE RULES:
+
+**Be Direct:**
+- NO long intros ("Greetings, Future Engineer...")
+- Start immediately with the answer
+- Be concise and focused
+
+**Task-Specific Format:**
+
+**1. Code Requests** ("Write X", "Create Y"):
+```language
+# Clean code with comments
+```
+### How to Run
+1. [Command 1]
+2. [Command 2]
+
+**2. Theory Questions** ("What is X?", "Explain Y"):
+### [Topic Name]
+• **Key point 1**
+• **Key point 2**
+• **Key point 3**
+
+**Example**: [One practical example]
+
+**3. Comparisons** ("X vs Y"):
+| Feature | **X** | **Y** |
+|---------|-------|-------|
+
+**4. Project Requests** ("Build X"):
+### 5-Step Roadmap
+**Step 1**: [Action]
+**Step 2**: [Action]
+**Step 3**: [Action]
+**Step 4**: [Action]
+**Step 5**: [Action]
+
+**Career Roadmaps:**
+- Provide roadmaps ONLY if user explicitly asks for "career guidance", "roadmap", or "preparation plan"
+- Otherwise, answer the specific question directly
+
+**Formatting:**
+- **Bold** all technical terms (Python, Arduino, MQTT, FastAPI, etc.)
+- Use ### for headings
+- Use bullet points for lists
+- Keep responses concise
+
+**Closing:**
+- End with ONE simple question
+- Add motivational quote ONLY for career/roadmap requests (format: > "Quote" - Author)
+
+**Language:**
+- Respond in user's language (English/Gujarati/Hindi)
+"""
+
+        # Inject study material context (PRIORITY 1) or database context (PRIORITY 2)
+        if study_context:
+            system_context += study_context
+        elif database_context:
+            system_context += database_context
+
+        # Build conversation history (skip the initial assistant greeting if present)
+        # Limit to last 6 messages to save tokens (avoids 4000+ token bloat from long histories)
+        messages = messages[-6:]
+        conversation_history = ""
+        for msg in messages:
+            if msg['role'] == 'user':
+                conversation_history += f"\n\nStudent: {msg['content']}"
+            elif msg['role'] == 'assistant' and not msg['content'].startswith("Hello! I'm your AI"):
+                conversation_history += f"\n\nAssistant: {msg['content']}"
+
+        full_prompt = f"{system_context}\n\nConversation History:{conversation_history}\n\nProvide a helpful, contextual response:"
+
+        try:
+            # Generate streaming response
+            for chunk in self._generate_response_stream(full_prompt):
+                yield chunk
+
+            # Add source attribution based on what was used (sent as final chunk)
+            if study_materials:
+                topics_list = ", ".join([m['topic_name'] for m in study_materials[:2]])
+                yield f"\n\n---\n*📚 This answer was enhanced using study materials from our database: **{topics_list}***"
+            elif relevant_questions and source_companies:
+                companies_list = ", ".join(sorted(source_companies))
+                yield f"\n\n---\n*💡 This answer was optimized using real questions from our **{companies_list}** database.*"
+        except Exception as e:
+            error_msg = str(e)
+            print(f"⚠️ Error in chat_completion_stream: {error_msg}")
+            yield f"\n\n⚠️ I encountered a small hiccup while preparing your response. Let me try to help you anyway - could you rephrase your question or ask something else?"
 from functools import lru_cache
 import json
 import re
@@ -104,17 +277,18 @@ class AIService:
         token_count = self._count_tokens(prompt)
         print(f"📊 Prompt tokens: {token_count}")
 
-        # Protect against extremely long prompts (truncate to 3500 chars)
-        if len(prompt) > 3500:
-            prompt = prompt[:3500] + "\n\n[Truncated]"
+        # Protect against extremely long prompts (truncate to 4000 chars)
+        if len(prompt) > 4000:
+            prompt = prompt[:4000] + "\n\n[Context truncated for token limit]"
 
         try:
-            # Optimized for speed + technical depth
+            # Set generation config for comprehensive responses
+            # 2000 tokens allows for complete code examples and detailed explanations
             generation_config = {
-                "temperature": 0.7,  # Focused responses
-                "top_p": 0.9,
-                "top_k": 30,
-                "max_output_tokens": 1500,  # Increased for complete code/explanations
+                "temperature": 0.8,
+                "top_p": 0.95,
+                "top_k": 40,
+                "max_output_tokens": 2000,
             }
 
             response = self.model.generate_content(
@@ -172,17 +346,18 @@ class AIService:
         token_count = self._count_tokens(prompt)
         print(f"📊 Streaming prompt tokens: {token_count}")
         
-        # Protect against extremely long prompts (truncate to 3500 chars)
-        if len(prompt) > 3500:
-            prompt = prompt[:3500] + "\n\n[Truncated]"
+        # Protect against extremely long prompts (truncate to 4000 chars)
+        if len(prompt) > 4000:
+            prompt = prompt[:4000] + "\n\n[Context truncated for token limit]"
         
         try:
-            # Optimized for speed + technical depth
+            # Set generation config for comprehensive streaming responses
+            # Increased to 2000 tokens to allow full, detailed answers with code examples
             generation_config = {
-                "temperature": 0.7,  # Focused responses
-                "top_p": 0.9,
-                "top_k": 30,
-                "max_output_tokens": 1500,  # Increased for complete code/explanations
+                "temperature": 0.8,
+                "top_p": 0.95,
+                "top_k": 40,
+                "max_output_tokens": 2000,
             }
             
             response = self.model.generate_content(
@@ -267,6 +442,62 @@ class AIService:
         # Only remove excessive newlines
         cleaned = re.sub(r"\n{3,}", "\n\n", text)
         return cleaned.strip()
+
+
+    def _search_relevant_questions(self, user_message: str, db: Session, limit: int = 5) -> List[Dict]:
+        """
+        Search CompanyQuestion table for questions matching keywords in user's message
+        Returns list of relevant questions with company, question text, and solution
+        """
+        if not db:
+            return []
+
+        try:
+            # Extract keywords from user message (simple approach)
+            keywords = user_message.lower().split()
+
+            # Common stop words to ignore
+            stop_words = {'the', 'a', 'an', 'is', 'are', 'was', 'were', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from', 'how', 'what', 'when', 'where', 'why', 'can', 'could', 'should', 'would', 'i', 'you', 'me', 'my', 'your', 'do', 'does', 'did', 'have', 'has', 'had', 'be', 'been', 'being'}
+
+            # Filter meaningful keywords (length > 3 and not stop words)
+            meaningful_keywords = [kw for kw in keywords if len(kw) > 3 and kw not in stop_words]
+
+            if not meaningful_keywords:
+                return []
+
+            # Search for questions matching any keyword in question_text or topic
+            from app.models import CompanyQuestion
+            from sqlalchemy import or_, func
+
+            # Build search conditions
+            search_conditions = []
+            for keyword in meaningful_keywords[:5]:  # Limit to first 5 keywords
+                search_conditions.append(func.lower(CompanyQuestion.question_text).contains(keyword))
+                search_conditions.append(func.lower(CompanyQuestion.topic).contains(keyword))
+
+            # Query database
+            questions = db.query(CompanyQuestion).filter(
+                or_(*search_conditions)
+            ).order_by(CompanyQuestion.frequency.desc()).limit(limit).all()
+
+            # Format results
+            results = []
+            for q in questions:
+                results.append({
+                    'company': q.company_name,
+                    'question': q.question_text,
+                    'topic': q.topic or 'General',
+                    'difficulty': q.difficulty.value if hasattr(q.difficulty, 'value') else str(q.difficulty),
+                    'solution': q.solution_outline or 'Not available',
+                    'year': q.year_asked or 'Recent'
+                })
+
+            return results
+
+        except Exception as e:
+            print(f"Error searching relevant questions: {e}")
+            return []
+
 
 
     def _build_resume_fallback(self, resume_text: str) -> str:
@@ -826,57 +1057,63 @@ Be specific and actionable. Focus on technical skills, tools, and experience."""
                 "action": "Apply now" if match_score >= 75 else "Improve resume first"
             }
         }
-
+    
     def _search_relevant_questions(self, user_message: str, db: Session, limit: int = 5) -> List[Dict]:
-            """Search CompanyQuestion table for relevant interview questions"""
-            try:
-                # Extract keywords from user message
-                keywords = user_message.lower().split()
-
-                # Common stop words to ignore
-                stop_words = {'the', 'a', 'an', 'is', 'are', 'was', 'were', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from', 'how', 'what', 'when', 'where', 'why', 'can', 'could', 'should', 'would', 'i', 'you', 'me', 'my', 'your', 'do', 'does', 'did', 'have', 'has', 'had', 'be', 'been', 'being'}
-
-                # Filter meaningful keywords (length > 3 and not stop words)
-                meaningful_keywords = [kw for kw in keywords if len(kw) > 3 and kw not in stop_words]
-
-                if not meaningful_keywords:
-                    return []
-
-                # Search for questions matching any keyword in question_text or topic
-                from app.models import CompanyQuestion
-                from sqlalchemy import or_, func
-
-                # Build search conditions
-                search_conditions = []
-                for keyword in meaningful_keywords[:5]:  # Limit to first 5 keywords
-                    search_conditions.append(func.lower(CompanyQuestion.question_text).contains(keyword))
-                    search_conditions.append(func.lower(CompanyQuestion.topic).contains(keyword))
-
-                # Query database
-                questions = db.query(CompanyQuestion).filter(
-                    or_(*search_conditions)
-                ).order_by(CompanyQuestion.frequency.desc()).limit(limit).all()
-
-                # Format results
-                results = []
-                for q in questions:
-                    results.append({
-                        'company': q.company_name,
-                        'question': q.question_text,
-                        'topic': q.topic or 'General',
-                        'difficulty': q.difficulty.value if hasattr(q.difficulty, 'value') else str(q.difficulty),
-                        'solution': q.solution_outline or 'Not available',
-                        'year': q.year_asked or 'Recent'
-                    })
-
-                return results
-
-            except Exception as e:
-                print(f"Error searching relevant questions: {e}")
+        """
+        Search CompanyQuestion table for questions matching keywords in user's message
+        Returns list of relevant questions with company, question text, and solution
+        """
+        if not db:
+            return []
+        
+        try:
+            # Extract keywords from user message (simple approach)
+            keywords = user_message.lower().split()
+            
+            # Common stop words to ignore
+            stop_words = {'the', 'a', 'an', 'is', 'are', 'was', 'were', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from', 'how', 'what', 'when', 'where', 'why', 'can', 'could', 'should', 'would', 'i', 'you', 'me', 'my', 'your', 'do', 'does', 'did', 'have', 'has', 'had', 'be', 'been', 'being'}
+            
+            # Filter meaningful keywords (length > 3 and not stop words)
+            meaningful_keywords = [kw for kw in keywords if len(kw) > 3 and kw not in stop_words]
+            
+            if not meaningful_keywords:
                 return []
+            
+            # Search for questions matching any keyword in question_text or topic
+            from app.models import CompanyQuestion
+            from sqlalchemy import or_, func
+            
+            # Build search conditions
+            search_conditions = []
+            for keyword in meaningful_keywords[:5]:  # Limit to first 5 keywords
+                search_conditions.append(func.lower(CompanyQuestion.question_text).contains(keyword))
+                search_conditions.append(func.lower(CompanyQuestion.topic).contains(keyword))
+            
+            # Query database
+            questions = db.query(CompanyQuestion).filter(
+                or_(*search_conditions)
+            ).order_by(CompanyQuestion.frequency.desc()).limit(limit).all()
+            
+            # Format results
+            results = []
+            for q in questions:
+                results.append({
+                    'company': q.company_name,
+                    'question': q.question_text,
+                    'topic': q.topic or 'General',
+                    'difficulty': q.difficulty.value if hasattr(q.difficulty, 'value') else str(q.difficulty),
+                    'solution': q.solution_outline or 'Not available',
+                    'year': q.year_asked or 'Recent'
+                })
+            
+            return results
+            
+        except Exception as e:
+            print(f"Error searching relevant questions: {e}")
+            return []
     
     def _search_study_material(self, user_message: str, db: Session, limit: int = 3) -> List[Dict]:
-        """Search engineering_study_material table for relevant study content (optimized for speed)"""
+        """Search engineering_study_material table for relevant study content"""
         try:
             # Extract keywords from user message
             keywords = user_message.lower().split()
@@ -886,30 +1123,26 @@ Be specific and actionable. Focus on technical skills, tools, and experience."""
             
             # Filter meaningful keywords
             meaningful_keywords = [kw for kw in keywords if len(kw) > 2 and kw not in stop_words]
-
+            
             if not meaningful_keywords:
                 return []
-
-            # Optimized query - fetch only essential columns
+            
+            # Search for study materials matching keywords
+            from app.models import EngineeringStudyMaterial
             from sqlalchemy import or_, func
-
-            # Build search conditions
+            
+            # Build search conditions for topic_name, keywords, and category
             search_conditions = []
-            for keyword in meaningful_keywords[:3]:  # Reduced to 3 keywords for speed
+            for keyword in meaningful_keywords[:5]:  # Limit to first 5 keywords
                 search_conditions.append(func.lower(EngineeringStudyMaterial.topic_name).contains(keyword))
                 search_conditions.append(func.lower(EngineeringStudyMaterial.keywords).contains(keyword))
-
-            # Query database with only necessary columns
-            materials = db.query(
-                EngineeringStudyMaterial.topic_name,
-                EngineeringStudyMaterial.branch,
-                EngineeringStudyMaterial.category,
-                EngineeringStudyMaterial.concept_explanation,
-                EngineeringStudyMaterial.code_example
-            ).filter(
+                search_conditions.append(func.lower(EngineeringStudyMaterial.category).contains(keyword))
+            
+            # Query database
+            materials = db.query(EngineeringStudyMaterial).filter(
                 or_(*search_conditions)
             ).limit(limit).all()
-
+            
             # Format results
             results = []
             for m in materials:
@@ -918,129 +1151,511 @@ Be specific and actionable. Focus on technical skills, tools, and experience."""
                     'branch': m.branch,
                     'category': m.category,
                     'concept_explanation': m.concept_explanation,
-                    'code_example': m.code_example or ''
+                    'practical_application': m.practical_application or '',
+                    'code_example': m.code_example or '',
+                    'step_by_step_guide': m.step_by_step_guide or '',
+                    'difficulty': m.difficulty.value if hasattr(m.difficulty, 'value') else str(m.difficulty),
+                    'keywords': m.keywords or '',
+                    'related_topics': m.related_topics or '',
+                    'companies_asking': m.companies_asking or ''
                 })
-
+            
             return results
-
+            
         except Exception as e:
             print(f"Error searching study materials: {e}")
             return []
 
-
-    
     def chat_completion(self, messages: List[Dict], db: Session = None) -> str:
-        """Generate chat completion response for engineering students with conversation context"""
+        """Generate chat completion response with database-aware context for engineering students"""
         
-        # Direct, no-fluff system prompt
-        system_context = """Senior Engineering Expert | CE•IT•ICT•EC•IOT
+        # Extract last user message for database search
+        last_user_message = ""
+        for msg in reversed(messages):
+            if msg['role'] == 'user':
+                last_user_message = msg['content']
+                break
+        
+        # PRIORITY 1: Search for study materials FIRST
+        study_materials = []
+        study_context = ""
+        
+        if db and last_user_message:
+            try:
+                study_materials = self._search_study_material(last_user_message, db, limit=3)
+                
+                if study_materials:
+                    # Build study material context to inject into prompt
+                    study_context = "\n\n📚 ENGINEERING STUDY MATERIAL (from our database):\n"
+                    study_context += "I have found comprehensive study materials that match your query. Use this structured content to provide a detailed, practical response:\n\n"
+                    
+                    for idx, material in enumerate(study_materials, 1):
+                        study_context += f"**Material {idx}: {material['topic_name']}** ({material['branch']} - {material['category']})\n"
+                        study_context += f"Difficulty: {material['difficulty']}\n\n"
+                        
+                        if material['concept_explanation']:
+                            study_context += f"📖 Concept:\n{material['concept_explanation'][:300]}{'...' if len(material['concept_explanation']) > 300 else ''}\n\n"
+                        
+                        if material['practical_application']:
+                            study_context += f"�️ Practical Use:\n{material['practical_application'][:200]}{'...' if len(material['practical_application']) > 200 else ''}\n\n"
+                        
+                        if material['code_example']:
+                            study_context += f"💻 Code Example Available: Yes\n\n"
+                        
+                        if material['step_by_step_guide']:
+                            study_context += f"🚀 Step-by-Step Guide Available: Yes\n\n"
+                        
+                        if material['companies_asking']:
+                            study_context += f"Companies: {material['companies_asking']}\n\n"
+                        
+                        study_context += "---\n\n"
+                    
+                    study_context += "💡 INSTRUCTION: Use this study material to structure your response. Follow the format:\n"
+                    study_context += "### 📖 Concept Explanation\n"
+                    study_context += "### 🛠️ Practical Application (How to use in projects)\n"
+                    study_context += "### 💻 Code/Circuit Diagram (if applicable)\n"
+                    study_context += "### 🚀 Step-by-Step: How to Run\n"
+                    study_context += "Format for PDF readiness with clear sections and proper markdown.\n"
+            except Exception as e:
+                print(f"⚠️ Study material search error (continuing): {e}")
+                study_context = ""
+        
+        # PRIORITY 2: Search for relevant company questions (secondary context)
+        relevant_questions = []
+        database_context = ""
+        source_companies = set()
+        
+        if db and last_user_message and not study_materials:  # Only if no study materials found
+            try:
+                relevant_questions = self._search_relevant_questions(last_user_message, db, limit=5)
+                
+                if relevant_questions:
+                    # Build database context to inject into prompt
+                    database_context = "\n\n📚 REAL-WORLD PLACEMENT CONTEXT (from our database):\n"
+                    database_context += "I have found actual interview questions from top companies that match your query. Use these specific examples to make your explanation more practical and relevant:\n\n"
+                    
+                    for idx, q in enumerate(relevant_questions, 1):
+                        database_context += f"{idx}. **{q['company']}** ({q['year']}) - {q['difficulty']}\n"
+                        database_context += f"   Topic: {q['topic']}\n"
+                        database_context += f"   Question: {q['question'][:200]}{'...' if len(q['question']) > 200 else ''}\n"
+                        if q['solution'] != 'Not available':
+                            database_context += f"   Solution Hint: {q['solution'][:150]}{'...' if len(q['solution']) > 150 else ''}\n"
+                        database_context += "\n"
+                        source_companies.add(q['company'])
+                    
+                    database_context += "💡 INSTRUCTION: Reference these real questions in your explanation to show practical application. Mention which companies ask similar questions.\n"
+            except Exception as e:
+                print(f"⚠️ Database search error (continuing without context): {e}")
+                database_context = ""
+        
+        # Build simplified, direct system prompt
+        system_context = """Expert Engineering Mentor | CE • IT • ICT • EC • IOT
 
-Answer immediately with high technical accuracy. No greetings, no fluff.
+📋 RESPONSE RULES:
 
-CODE: Full working solution + "How to Run"
-THEORY: Deep insights, bullet points, tables
-FORMAT: **bold** technical terms, ### headings, markdown tables
-PDF-READY: Clean structured layout
+**Be Direct:**
+- NO long intros ("Greetings, Future Engineer...")
+- Start immediately with the answer
+- Be concise and focused
 
-If DB context provided, use it as source of truth.
+**Task-Specific Format:**
+
+**1. Code Requests** ("Write X", "Create Y"):
+```language
+# Clean code with comments
+```
+### How to Run
+1. [Command 1]
+2. [Command 2]
+
+**2. Theory Questions** ("What is X?", "Explain Y"):
+### [Topic Name]
+• **Key point 1**
+• **Key point 2**
+• **Key point 3**
+
+**Example**: [One practical example]
+
+**3. Comparisons** ("X vs Y"):
+| Feature | **X** | **Y** |
+|---------|-------|-------|
+
+**4. Project Requests** ("Build X"):
+### 5-Step Roadmap
+**Step 1**: [Action]
+**Step 2**: [Action]
+**Step 3**: [Action]
+**Step 4**: [Action]
+**Step 5**: [Action]
+
+**Career Roadmaps:**
+- Provide roadmaps ONLY if user explicitly asks for "career guidance", "roadmap", or "preparation plan"
+- Otherwise, answer the specific question directly
+
+**Formatting:**
+- **Bold** all technical terms (Python, Arduino, MQTT, FastAPI, etc.)
+- Use ### for headings
+- Use bullet points for lists
+- Keep responses concise
+
+**Closing:**
+- End with ONE simple question
+- Add motivational quote ONLY for career/roadmap requests (format: > "Quote" - Author)
+
+**Language:**
+- Respond in user's language (English/Gujarati/Hindi)
 """
         
-        # Optimized database search - prioritize study materials as source of truth
-        context_injection = ""
-        if db:
-            try:
-                user_message = messages[-1]['content'] if messages else ""
-                
-                # PRIORITY 1: Study materials = source of truth (saves AI reasoning time)
-                study_materials = self._search_study_material(user_message, db, limit=1)
-                if study_materials:
-                    material = study_materials[0]
-                    context_injection += f"\n\nSOURCE OF TRUTH - {material['topic_name']}:\n{material['concept_explanation']}"
-                    if material['code_example']:
-                        context_injection += f"\n\nCODE:\n```\n{material['code_example']}\n```"
-                    context_injection += "\n\n(Use this as authoritative source. Build your answer from this.)"
-                
-                # PRIORITY 2: Company questions fallback
-                else:
-                    company_questions = self._search_relevant_questions(user_message, db, limit=1)
-                    if company_questions:
-                        q = company_questions[0]
-                        context_injection += f"\n\nREF: {q['company']}: {q['question'][:200]}"
-            
-            except Exception as e:
-                print(f"DB search error: {e}")
-                context_injection = ""
+        # Inject study material context (PRIORITY 1) or database context (PRIORITY 2)
+        if study_context:
+
+📊 WEEKLY PLANS - Use Summary Tables:
+When providing weekly/daily plans, ALWAYS include a markdown table:
+```
+| Week | Focus Area | Key Tasks | Goal |
+|------|------------|-----------|------|
+| 1-2  | **DSA Basics** | Arrays, Strings, Loops | Solve 30 problems |
+| 3-4  | **Advanced DSA** | Trees, Graphs, DP | Solve 40 problems |
+```
+
+� COMPARISONS - Use Tables:
+When comparing technologies, companies, or approaches:
+```
+| Feature | **Python** | **Java** |
+|---------|------------|----------|
+| Speed   | Moderate   | Fast |
+| Syntax  | Simple     | Verbose |
+| Use Case | Scripting | Enterprise |
+```
+
+💻 CODE QUALITY RULES:
+- Include ALL imports at the top
+- Use ONLY standard ASCII quotes and dashes
+- Code MUST work in online compilers
+- Add ### How It Works section with bullet explanations
+- **Bold** all technology names in explanations
+
+💬 MOTIVATIONAL CLOSING - Career Roadmaps Only:
+- For career roadmaps and preparation plans, ALWAYS end with a motivational quote
+- Place quote AFTER the engaging question
+- Format as blockquote: > "Quote text" - Author
+- Examples:
+  * > "Success is not final, failure is not fatal: it is the courage to continue that counts." - Winston Churchill
+  * > "The expert in anything was once a beginner." - Helen Hayes
+  * > "Your limitation—it's only your imagination."
+  * > "Don't watch the clock; do what it does. Keep going." - Sam Levenson
+  * > "The future belongs to those who believe in the beauty of their dreams." - Eleanor Roosevelt
+
+🎤 INTERACTIVE CLOSING - Always End with Engagement:
+- End EVERY response with a question to keep conversation going
+- Examples:
+  * "Would you like me to create a **detailed 7-day practice plan** for this?"
+  * "Should I explain the **interview patterns** companies use for this topic?"
+  * "Want me to provide a **comparison table** of these technologies?"
+  * "Shall I break down **Week 1** in more detail with daily tasks?"
+  * "Would you like **practice problems** to test your understanding?"
+  * "Should I give you a **practice problem** on this topic?"
+
+🚀 PLATFORM FEATURES - Mention When Relevant:
+When user asks about aptitude/exams/mock tests/practice:
+- Mention: "By the way, we have **FREE unlimited practice tests** on the platform!"
+- Add [REDIRECT_EXAM] tag at the very end
+
+🌐 LANGUAGE SUPPORT:
+- Respond in user's language (English/Gujarati/Hindi)
+- Maintain professional formatting in all languages
+
+✅ RESPONSE QUALITY CHECKLIST (verify before responding):
+✓ NO plain paragraphs - everything structured?
+✓ Used **bold** for ALL key terms and technologies?
+✓ Used ### for section headings?
+✓ Included bullet points or numbered lists?
+✓ Added blank lines between sections?
+✓ Provided step-by-step roadmap for career questions?
+✓ Used summary table for weekly plans?
+✓ Used comparison table (if applicable)?
+✓ Ended with an engaging question?
+✓ Added motivational quote (for career roadmaps only)?
+✓ Code has all imports and proper syntax (if coding)?
+✓ Professional but encouraging tone?
+"""
         
-        # Build conversation history (last 4 messages only for speed)
-        messages = messages[-4:]
+        # Inject study material context (PRIORITY 1) or database context (PRIORITY 2)
+        if study_context:
+            system_context += study_context
+        elif database_context:
+            system_context += database_context
+        
+        # Build conversation history (skip the initial assistant greeting if present)
+        # Limit to last 6 messages to save tokens (avoids 4000+ token bloat from long histories)
+        messages = messages[-6:]
         conversation_history = ""
         for msg in messages:
             if msg['role'] == 'user':
-                conversation_history += f"\nQ: {msg['content']}"
-            elif msg['role'] == 'assistant':
-                conversation_history += f"\nA: {msg['content'][:200]}"  # Truncate old responses
+                conversation_history += f"\n\nStudent: {msg['content']}"
+            elif msg['role'] == 'assistant' and not msg['content'].startswith("Hello! I'm your AI"):
+                conversation_history += f"\n\nAssistant: {msg['content']}"
         
-        full_prompt = f"{system_context}{context_injection}\n{conversation_history}\n\nAnswer:"
+        full_prompt = f"{system_context}\n\nConversation History:{conversation_history}\n\nProvide a helpful, complete, and detailed response:"
         
-        return self._generate_response(full_prompt)
+        try:
+            response = self._generate_response(full_prompt)
+            
+            # Add source attribution based on what was used
+            if study_materials:
+                topics_list = ", ".join([m['topic_name'] for m in study_materials[:2]])
+                response += f"\n\n---\n*� This answer was enhanced using study materials from our database: **{topics_list}***"
+            elif relevant_questions and source_companies:
+                companies_list = ", ".join(sorted(source_companies))
+                response += f"\n\n---\n*💡 This answer was optimized using real questions from our **{companies_list}** database.*"
+            
+            return response
+        except Exception as e:
+            error_msg = str(e)
+            print(f"⚠️ Error in chat_completion: {error_msg}")
+            return "⚠️ I encountered a small hiccup while preparing your response. Let me try to help you anyway - could you rephrase your question or ask something else?"
     
     def chat_completion_stream(self, messages: List[Dict], db: Session = None):
-        """Generate streaming chat completion response with conversation context (word by word like ChatGPT)"""
+            """Generate streaming chat completion response with database-aware context (word by word like ChatGPT)"""
 
-        # Direct, no-fluff system prompt
-        system_context = """Senior Engineering Expert | CE•IT•ICT•EC•IOT
+            # Extract last user message for database search
+            last_user_message = ""
+            for msg in reversed(messages):
+                if msg['role'] == 'user':
+                    last_user_message = msg['content']
+                    break
 
-Answer immediately with high technical accuracy. No greetings, no fluff.
+            # PRIORITY 1: Search for study materials FIRST
+            study_materials = []
+            study_context = ""
 
-CODE: Full working solution + "How to Run"
-THEORY: Deep insights, bullet points, tables
-FORMAT: **bold** technical terms, ### headings, markdown tables
-PDF-READY: Clean structured layout
+            if db and last_user_message:
+                try:
+                    study_materials = self._search_study_material(last_user_message, db, limit=3)
 
-If DB context provided, use it as source of truth.
-"""
+                    if study_materials:
+                        # Build study material context to inject into prompt
+                        study_context = "\n\n📚 ENGINEERING STUDY MATERIAL (from our database):\n"
+                        study_context += "I have found comprehensive study materials that match your query. Use this structured content to provide a detailed, practical response:\n\n"
 
-        # Optimized database search - prioritize study materials as source of truth
-        context_injection = ""
-        if db:
+                        for idx, material in enumerate(study_materials, 1):
+                            study_context += f"**Material {idx}: {material['topic_name']}** ({material['branch']} - {material['category']})\n"
+                            study_context += f"Difficulty: {material['difficulty']}\n\n"
+
+                            if material['concept_explanation']:
+                                study_context += f"📖 Concept:\n{material['concept_explanation'][:300]}{'...' if len(material['concept_explanation']) > 300 else ''}\n\n"
+
+                            if material['practical_application']:
+                                study_context += f"🛠️ Practical Use:\n{material['practical_application'][:200]}{'...' if len(material['practical_application']) > 200 else ''}\n\n"
+
+                            if material['code_example']:
+                                study_context += f"💻 Code Example Available: Yes\n\n"
+
+                            if material['step_by_step_guide']:
+                                study_context += f"🚀 Step-by-Step Guide Available: Yes\n\n"
+
+                            if material['companies_asking']:
+                                study_context += f"Companies: {material['companies_asking']}\n\n"
+
+                            study_context += "---\n\n"
+
+                        study_context += "💡 INSTRUCTION: Use this study material to structure your response. Follow the format:\n"
+                        study_context += "### 📖 Concept Explanation\n"
+                        study_context += "### 🛠️ Practical Application (How to use in projects)\n"
+                        study_context += "### 💻 Code/Circuit Diagram (if applicable)\n"
+                        study_context += "### 🚀 Step-by-Step: How to Run\n"
+                        study_context += "Format for PDF readiness with clear sections and proper markdown.\n"
+                except Exception as e:
+                    print(f"⚠️ Study material search error (continuing): {e}")
+                    study_context = ""
+
+            # PRIORITY 2: Search for relevant company questions (secondary context)
+            relevant_questions = []
+            database_context = ""
+            source_companies = set()
+
+            if db and last_user_message and not study_materials:  # Only if no study materials found
+                try:
+                    relevant_questions = self._search_relevant_questions(last_user_message, db, limit=5)
+
+                    if relevant_questions:
+                        # Build database context to inject into prompt
+                        database_context = "\n\n📚 REAL-WORLD PLACEMENT CONTEXT (from our database):\n"
+                        database_context += "I have found actual interview questions from top companies that match your query. Use these specific examples to make your explanation more practical and relevant:\n\n"
+
+                        for idx, q in enumerate(relevant_questions, 1):
+                            database_context += f"{idx}. **{q['company']}** ({q['year']}) - {q['difficulty']}\n"
+                            database_context += f"   Topic: {q['topic']}\n"
+                            database_context += f"   Question: {q['question'][:200]}{'...' if len(q['question']) > 200 else ''}\n"
+                            if q['solution'] != 'Not available':
+                                database_context += f"   Solution Hint: {q['solution'][:150]}{'...' if len(q['solution']) > 150 else ''}\n"
+                            database_context += "\n"
+                            source_companies.add(q['company'])
+
+                        database_context += "💡 INSTRUCTION: Reference these real questions in your explanation to show practical application. Mention which companies ask similar questions.\n"
+                except Exception as e:
+                    print(f"⚠️ Database search error (continuing without context): {e}")
+                    database_context = ""
+
+            # Build context-aware prompt with conversation history
+            system_context = """You are a **Multi-Disciplinary Engineering Expert** at CodeCampus AI - a comprehensive technical mentor for **CE** (Computer Engineering), **IT** (Information Technology), **ICT** (Information & Communication Technology), **EC** (Electronics & Communication), and **IOT** (Internet of Things) students.
+
+    🎯 YOUR MISSION: Be a "Do-it-all" assistant that handles coding, projects, theory, aptitude, career guidance, and placement preparation across ALL engineering branches.
+
+    🧠 CROSS-BRANCH EXPERTISE:
+    - **CE/IT/ICT**: Python, Java, C++, DSA, Web Dev, Databases, Cloud, DevOps
+    - **EC**: Circuit Design, Signal Processing, VLSI, Embedded Systems, Microcontrollers
+    - **IOT**: Sensors, Arduino, Raspberry Pi, MQTT, Edge Computing, Wireless Protocols
+    - **All Branches**: Aptitude (Quant, Logical, Verbal), Placement Prep, Interview Skills
+
+    📋 TASK-SPECIFIC EXECUTION:
+
+    **1. CODING REQUESTS** (e.g., "Create a calculator", "Write a sorting algorithm"):
+    - Provide clean, commented code with ALL imports
+    - Add ### How to Run section with exact commands
+    - Use code blocks with language tags
+    - **Bold** all technology names in explanations
+
+    **2. PROJECT BUILDING** (e.g., "Build a weather app", "Create IoT home automation"):
+    - Provide **Phase-wise Roadmap** (Phase 1, Phase 2, Phase 3)
+    - Include **Tech Stack** table with components
+    - Add **Core Logic** with architecture diagram (ASCII art if needed)
+    - Provide starter code for main components
+
+    **3. PDF/DOCUMENTATION** (e.g., "Create a PDF on Python", "Summarize this"):
+    - Format output in clean, structured markdown
+    - Use tables, headings, and bullet points
+    - Make it ready for frontend PDF conversion
+    - Include title, sections, and summary
+
+    **4. THEORY QUESTIONS** (e.g., "What is Python?", "Explain MQTT protocol"):
+    Use this structure:
+    ```
+    ### 📖 Overview
+    [Brief definition with **bold** key terms]
+
+    ### 🛠️ Real-world Use Cases
+    • [Use case 1]
+    • [Use case 2]
+    • [Use case 3]
+
+    ### 🚀 Learning Path
+    **Week 1-2**: [Focus area]
+    **Week 3-4**: [Focus area]
+    ```
+
+    **5. COMPARISONS** (e.g., "Python vs Java", "Arduino vs Raspberry Pi"):
+    - ALWAYS use markdown comparison table
+    - Include: Features, Pros, Cons, Use Cases, Best For
+
+    🚫 CRITICAL RULE - NO PLAIN PARAGRAPHS:
+    - NEVER write plain paragraph text
+    - ALWAYS use structured formatting: headings, bullets, tables, code blocks
+    - Break down information into digestible, scannable chunks
+
+    📝 MANDATORY MARKDOWN FORMATTING:
+    - **Bold ALL key terms** (e.g., **FastAPI**, **React**, **Arduino**, **MQTT**, **I2C**, **SPI**, **DSA**)
+    - Use ### for section titles
+    - Use bullet points (•) for all lists
+    - Use numbered lists (1., 2., 3.) for sequential steps
+    - Add blank lines between sections
+
+    📊 WEEKLY PLANS - Use Summary Tables:
+    When providing weekly/daily plans, ALWAYS include a markdown table:
+    ```
+    | Week | Focus Area | Key Tasks | Goal |
+    |------|------------|-----------|------|
+    | 1-2  | **DSA Basics** | Arrays, Strings, Loops | Solve 30 problems |
+    | 3-4  | **Advanced DSA** | Trees, Graphs, DP | Solve 40 problems |
+    ```
+
+    💻 CODE QUALITY RULES:
+    - Include ALL imports at the top
+    - Use ONLY standard ASCII quotes and dashes
+    - Code MUST work in online compilers
+    - Add ### How to Run section with exact commands
+    - **Bold** all technology names in explanations
+
+    💬 MOTIVATIONAL CLOSING - Career/Project Roadmaps Only:
+    - For career roadmaps or project plans, end with a short motivational quote
+    - Examples:
+      * > "Success is not final, failure is not fatal: it is the courage to continue that counts." - Winston Churchill
+      * > "The expert in anything was once a beginner." - Helen Hayes
+      * > "Your limitation—it's only your imagination."
+    - Place quote AFTER the engaging question
+
+    🎤 INTERACTIVE CLOSING - Always End with Engagement:
+    - End EVERY response with a question to keep conversation going
+    - Examples:
+      * "Would you like me to create a **detailed 7-day practice plan** for this?"
+      * "Should I explain the **interview patterns** companies use for this topic?"
+      * "Want me to provide a **comparison table** of these technologies?"
+      * "Shall I break down **Week 1** in more detail with daily tasks?"
+      * "Would you like **practice problems** to test your understanding?"
+      * "Should I give you a **practice problem** on this topic?"
+
+    🚀 PLATFORM FEATURES - Mention When Relevant:
+    When user asks about aptitude/exams/mock tests/practice:
+    - Mention: "By the way, we have **FREE unlimited practice tests** on the platform!"
+    - Add [REDIRECT_EXAM] tag at the very end
+
+    🌐 LANGUAGE SUPPORT:
+    - Respond in user's language (English/Gujarati/Hindi)
+    - Maintain professional formatting in all languages
+
+    ✅ RESPONSE QUALITY CHECKLIST (verify before responding):
+    ✓ NO plain paragraphs - everything structured?
+    ✓ Used **bold** for ALL key terms and technologies?
+    ✓ Used ### for section headings?
+    ✓ Included bullet points or numbered lists?
+    ✓ Added blank lines between sections?
+    ✓ Provided step-by-step roadmap for career questions?
+    ✓ Used summary table for weekly plans?
+    ✓ Used comparison table (if applicable)?
+    ✓ Ended with an engaging question?
+    ✓ Added motivational quote (for career/project roadmaps only)?
+    ✓ Code has all imports and proper syntax (if coding)?
+    ✓ Professional but encouraging tone?
+    """
+
+            # Inject study material context (PRIORITY 1) or database context (PRIORITY 2)
+            if study_context:
+                system_context += study_context
+            elif database_context:
+                system_context += database_context
+
+            # Build conversation history (skip the initial assistant greeting if present)
+            # Limit to last 6 messages to save tokens (avoids 4000+ token bloat from long histories)
+            messages = messages[-6:]
+            conversation_history = ""
+            for msg in messages:
+                if msg['role'] == 'user':
+                    conversation_history += f"\n\nStudent: {msg['content']}"
+                elif msg['role'] == 'assistant' and not msg['content'].startswith("Hello! I'm your AI"):
+                    conversation_history += f"\n\nAssistant: {msg['content']}"
+
+            full_prompt = f"{system_context}\n\nConversation History:{conversation_history}\n\nProvide a helpful, contextual response:"
+
             try:
-                user_message = messages[-1]['content'] if messages else ""
-                
-                # PRIORITY 1: Study materials = source of truth (saves AI reasoning time)
-                study_materials = self._search_study_material(user_message, db, limit=1)
+                # Generate streaming response
+                for chunk in self._generate_response_stream(full_prompt):
+                    yield chunk
+
+                # Add source attribution based on what was used (sent as final chunk)
                 if study_materials:
-                    material = study_materials[0]
-                    context_injection += f"\n\nSOURCE OF TRUTH - {material['topic_name']}:\n{material['concept_explanation']}"
-                    if material['code_example']:
-                        context_injection += f"\n\nCODE:\n```\n{material['code_example']}\n```"
-                    context_injection += "\n\n(Use this as authoritative source. Build your answer from this.)"
-                
-                # PRIORITY 2: Company questions fallback
-                else:
-                    company_questions = self._search_relevant_questions(user_message, db, limit=1)
-                    if company_questions:
-                        q = company_questions[0]
-                        context_injection += f"\n\nREF: {q['company']}: {q['question'][:200]}"
-            
+                    topics_list = ", ".join([m['topic_name'] for m in study_materials[:2]])
+                    yield f"\n\n---\n*📚 This answer was enhanced using study materials from our database: **{topics_list}***"
+                elif relevant_questions and source_companies:
+                    companies_list = ", ".join(sorted(source_companies))
+                    yield f"\n\n---\n*💡 This answer was optimized using real questions from our **{companies_list}** database.*"
             except Exception as e:
-                print(f"DB search error: {e}")
-                context_injection = ""
-
-        # Build conversation history (last 4 messages only for speed)
-        messages = messages[-4:]
-        conversation_history = ""
-        for msg in messages:
-            if msg['role'] == 'user':
-                conversation_history += f"\nQ: {msg['content']}"
-            elif msg['role'] == 'assistant':
-                conversation_history += f"\nA: {msg['content'][:200]}"  # Truncate old responses
-
-        full_prompt = f"{system_context}{context_injection}\n{conversation_history}\n\nAnswer:"
-
-        return self._generate_response_stream(full_prompt)
+                error_msg = str(e)
+                print(f"⚠️ Error in chat_completion_stream: {error_msg}")
+                yield f"\n\n⚠️ I encountered a small hiccup while preparing your response. Let me try to help you anyway - could you rephrase your question or ask something else?"
 
     
     def explain_topic(self, topic: str, subject: str, level: str) -> Dict:
+
         """Generate topic explanation for placement preparation"""
         explanation = self._cached_explain_topic(topic, subject, level)
         

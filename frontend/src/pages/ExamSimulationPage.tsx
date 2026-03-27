@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Clock3 } from 'lucide-react'
+import { cleanQuestionText } from '../utils/textCleaners'
 
 type Difficulty = 'Easy' | 'Medium' | 'Hard'
 
@@ -393,10 +394,7 @@ export default function ExamSimulationPage() {
         <div className="mx-auto flex max-w-5xl flex-col gap-4 px-6 py-5">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <p className="text-sm font-semibold text-slate-600">
-              Step 2 · Live Exam · {config.company}
-            </p>
-            <p className="text-sm font-semibold text-slate-600">
-              Question {currentIndex + 1} of {totalQuestions}
+              {config.company} · {config.difficulty} Level
             </p>
             {tabWarnings > 0 && (
               <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-1 text-xs font-semibold text-red-700">
@@ -426,7 +424,7 @@ export default function ExamSimulationPage() {
 
       <main className="mx-auto flex w-full max-w-5xl flex-col px-6 py-8">
         <section className="rounded-3xl border border-slate-200 bg-white p-7 md:p-9">
-          <h1 className="text-2xl font-black leading-relaxed text-slate-900">{currentQuestion.question}</h1>
+          <h1 className="text-2xl font-black leading-relaxed text-slate-900">{cleanQuestionText(currentQuestion.question)}</h1>
 
           <div className="mt-7 grid gap-4">
             {currentQuestion.options.map((option, optionIndex) => {
@@ -442,7 +440,7 @@ export default function ExamSimulationPage() {
                   }`}
                 >
                   <span className="mr-2 font-bold text-slate-500">{String.fromCharCode(65 + optionIndex)}.</span>
-                  {option}
+                  {cleanQuestionText(option)}
                 </button>
               )
             })}

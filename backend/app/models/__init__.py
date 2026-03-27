@@ -220,3 +220,24 @@ class Broadcast(Base):
     users_count = Column(Integer, default=0)
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
 
+
+class EngineeringStudyMaterial(Base):
+    """Store comprehensive study materials for all engineering branches"""
+    __tablename__ = "engineering_study_material"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    topic_name = Column(String, nullable=False, index=True)  # "Python Basics", "Arduino Programming", "Circuit Analysis"
+    branch = Column(String, nullable=False, index=True)  # "CE", "IT", "ICT", "EC", "IOT", "ALL"
+    category = Column(String, nullable=False)  # "Programming", "Theory", "Hardware", "Project"
+    concept_explanation = Column(Text, nullable=False)  # Detailed concept explanation
+    practical_application = Column(Text)  # How to use in real projects
+    code_example = Column(Text)  # Code snippets or circuit diagrams
+    step_by_step_guide = Column(Text)  # How to run/implement
+    difficulty = Column(Enum(DifficultyLevel), default=DifficultyLevel.MEDIUM)
+    keywords = Column(String)  # Comma-separated: "python,programming,loops,functions"
+    related_topics = Column(String)  # Comma-separated related topic names
+    companies_asking = Column(String)  # Companies that ask about this topic
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+

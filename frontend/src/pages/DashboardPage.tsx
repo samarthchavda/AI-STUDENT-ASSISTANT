@@ -453,22 +453,11 @@ export default function DashboardPageNew() {
 
         {/* Main Content */}
         <main className="flex-1 p-6 lg:p-8">
-          {/* User Verification Banner - Shows which user is logged in */}
+          {/* Welcome Avatar - Simple profile indicator */}
           {user && (
-            <div className="mb-6 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
-                  {user.name.charAt(0).toUpperCase()}
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">
-                    Logged in as: {user.name}
-                  </p>
-                  <p className="text-xs text-gray-600">{user.email}</p>
-                </div>
-              </div>
-              <div className="text-xs text-gray-500">
-                User ID: {user.id}
+            <div className="mb-6 flex items-center gap-3">
+              <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
+                {user.name.charAt(0).toUpperCase()}
               </div>
             </div>
           )}

@@ -247,3 +247,13 @@ html {
 .code-block-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 0.75);
 }
+
+/* Hide scrollbar for quick actions */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

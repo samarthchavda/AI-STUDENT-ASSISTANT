@@ -13,20 +13,13 @@ import 'highlight.js/styles/github-dark.css'
 const GUEST_CHAT_LIMIT = 10
 const GUEST_CHAT_USAGE_KEY = 'guest_chat_usage'
 
-const quickActions = [
-  { title: 'Placement roadmap', prompt: 'Create a 30 day roadmap for getting an IT job as a fresher in India.', icon: '🎯' },
-  { title: 'Resume help', prompt: 'Review my fresher resume and tell me what to improve for IT roles.', icon: '📄' },
-  { title: 'Interview prep', prompt: 'Ask me 5 common IT support and software developer interview questions.', icon: '💼' },
-  { title: 'Top Interview Questions', prompt: 'Show me the top 10 interview questions asked by Amazon, Microsoft, and Google for software engineers.', icon: '🏆' },
-  { title: 'Coding Questions', prompt: 'List the top 10 DSA coding questions asked in TCS, Infosys, Wipro, Amazon, and Microsoft placements.', icon: '💻' },
-  { title: 'HR Questions', prompt: 'Give me the top 10 HR round interview questions and how to answer them for freshers.', icon: '🤝' },
-]
-
 const quickInputActions = [
-  { label: 'Explain this', icon: Sparkles, prompt: 'Explain this concept in detail: ' },
-  { label: 'Fix Bugs', icon: Bug, prompt: 'Help me debug this code: ' },
-  { label: 'Optimize Code', icon: Zap, prompt: 'Optimize this code for better performance: ' },
-  { label: 'Write Code', icon: FileCode, prompt: 'Write complete working code for: ' },
+  { label: 'Explain Code', icon: Sparkles, prompt: 'Explain this code in detail: ' },
+  { label: 'Fix Bugs', icon: Bug, prompt: 'Debug this code: ' },
+  { label: 'Optimize', icon: Zap, prompt: 'Optimize this code: ' },
+  { label: 'Write Code', icon: FileCode, prompt: 'Write complete code for: ' },
+  { label: 'Roadmap', icon: BookOpen, prompt: 'Create a placement preparation roadmap for ' },
+  { label: 'Resume Help', icon: Briefcase, prompt: 'Review my resume and suggest improvements' },
 ]
 
 export default function ChatPage() {
@@ -36,7 +29,7 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
-      content: 'Hello! I\'m your AI Coding Assistant. How can I help you today?\n\n• Explain any topic\n• Debug code\n• Write full solutions\n• DSA problems\n• Interview prep\n\nJust ask me anything!'
+      content: '### AI Coding Assistant\n\nHello! I\'m your engineering mentor. Ask me anything about:\n\n• Code debugging & optimization\n• DSA problems & solutions\n• Interview preparation\n• Career roadmaps\n• Resume reviews\n\nWhat can I help you with today?'
     }
   ])
   const [input, setInput] = useState('')
@@ -327,41 +320,10 @@ export default function ChatPage() {
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
-        {/* Hero Section */}
-        <div className="border-b border-gray-200 bg-white px-4 py-8 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-7xl">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-teal-600 to-cyan-600 text-white shadow-lg">
-                <Brain className="h-6 w-6" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">AI Coding Assistant</h1>
-                <p className="text-sm text-gray-600">Full solutions with syntax highlighting</p>
-              </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {quickActions.map((action) => (
-                <button
-                  key={action.title}
-                  onClick={() => handleQuickPrompt(action.prompt)}
-                  className="group flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 text-left transition hover:border-teal-300 hover:shadow-md"
-                >
-                  <span className="text-2xl">{action.icon}</span>
-                  <div className="flex-1">
-                    <div className="font-semibold text-gray-900">{action.title}</div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Chat Messages - Gemini/ChatGPT Style */}
-        <div className="px-4 py-6 pb-48 sm:px-6 lg:px-8 bg-white">
-          <div className="mx-auto w-full max-w-4xl space-y-6">
+      <div className="min-h-screen bg-white pt-20">
+        {/* Chat Messages - Modern Bubble Design */}
+        <div className="px-4 py-8 pb-48 sm:px-6 lg:px-8">
+          <div className="mx-auto w-full max-w-4xl space-y-4">
             <AnimatePresence>
               {messages.map((message, index) => {
                 const isUser = message.role === 'user'
@@ -379,27 +341,27 @@ export default function ChatPage() {
                     {/* AI Avatar - Left Side */}
                     {!isUser && (
                       <div className="flex-shrink-0">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center">
-                          <Brain className="w-4 h-4 text-white" />
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center shadow-sm">
+                          <Brain className="w-5 h-5 text-white" />
                         </div>
                       </div>
                     )}
 
                     {/* Message Content */}
-                    <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} w-full max-w-full`}>
+                    <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} ${isUser ? 'max-w-[80%]' : 'max-w-[85%]'}`}>
                       {/* Message Bubble */}
                       <div
-                        className={`rounded-2xl px-4 py-2.5 w-full max-w-full ${
+                        className={`rounded-2xl px-5 py-3 shadow-sm ${
                           isUser
-                            ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white max-w-[80%]'
-                            : 'bg-transparent max-w-[85%]'
+                            ? 'bg-indigo-600 text-white'
+                            : 'bg-gray-50 border border-gray-100'
                         }`}
                       >
                         {/* Message Text */}
                         <div className={`prose prose-sm max-w-none ${
                           isUser 
-                            ? 'prose-invert prose-p:text-white prose-p:leading-relaxed prose-p:mb-3' 
-                            : 'prose-headings:font-bold prose-headings:text-gray-900 prose-headings:mb-3 prose-headings:mt-4 prose-p:text-gray-800 prose-p:leading-relaxed prose-p:mb-4 prose-p:text-[15px] prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-gray-900 prose-strong:font-bold prose-code:text-pink-600 prose-code:bg-pink-50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:before:content-[\'\'] prose-code:after:content-[\'\'] prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-pre:rounded-2xl prose-ul:leading-relaxed prose-ul:mb-4 prose-ul:space-y-2 prose-li:text-gray-800 prose-li:leading-relaxed prose-ol:leading-relaxed prose-ol:mb-4 prose-ol:space-y-2'
+                            ? 'prose-invert prose-p:text-white prose-p:leading-relaxed prose-p:mb-2' 
+                            : 'prose-headings:font-bold prose-headings:text-gray-900 prose-headings:mb-3 prose-headings:mt-5 first:prose-headings:mt-0 prose-h3:text-base prose-h3:font-bold prose-h3:text-gray-900 prose-p:text-gray-800 prose-p:leading-relaxed prose-p:mb-3 prose-p:text-[15px] prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline prose-strong:text-gray-900 prose-strong:font-semibold prose-code:text-pink-600 prose-code:bg-pink-50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:before:content-[\'\'] prose-code:after:content-[\'\'] prose-pre:bg-gray-900 prose-pre:text-gray-100 prose-pre:rounded-xl prose-pre:shadow-lg prose-ul:list-disc prose-ul:pl-5 prose-ul:leading-relaxed prose-ul:mb-3 prose-ul:space-y-1.5 prose-li:text-gray-800 prose-li:leading-relaxed prose-ol:list-decimal prose-ol:pl-5 prose-ol:leading-relaxed prose-ol:mb-3 prose-ol:space-y-1.5 prose-table:border-collapse prose-table:w-full prose-table:my-4 prose-th:border prose-th:border-gray-300 prose-th:bg-gray-100 prose-th:px-4 prose-th:py-2 prose-th:text-left prose-th:font-semibold prose-th:text-gray-900 prose-td:border prose-td:border-gray-300 prose-td:px-4 prose-td:py-2 prose-td:text-gray-800 prose-blockquote:border-l-4 prose-blockquote:border-blue-500 prose-blockquote:pl-4 prose-blockquote:italic prose-blockquote:text-gray-700 prose-blockquote:my-3'
                         }`}>
                           <ReactMarkdown
                             remarkPlugins={[remarkGfm]}
@@ -565,8 +527,8 @@ export default function ChatPage() {
                     {/* User Avatar - Right Side */}
                     {isUser && (
                       <div className="flex-shrink-0">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
-                          U
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-sm font-semibold shadow-sm">
+                          {isAuthenticated ? 'U' : 'G'}
                         </div>
                       </div>
                     )}
@@ -584,12 +546,12 @@ export default function ChatPage() {
                 className="flex gap-3 justify-start"
               >
                 <div className="flex-shrink-0">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center">
-                    <Brain className="w-4 h-4 text-white" />
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-teal-500 to-cyan-600 flex items-center justify-center shadow-sm">
+                    <Brain className="w-5 h-5 text-white" />
                   </div>
                 </div>
                 <div className="flex flex-col items-start">
-                  <div className="rounded-2xl bg-gray-100 px-4 py-2.5">
+                  <div className="rounded-2xl bg-gray-50 border border-gray-100 px-5 py-3 shadow-sm">
                     <div className="flex items-center gap-2">
                       <span className="text-sm text-gray-600">Thinking</span>
                       <span className="flex items-center gap-1">
@@ -610,7 +572,7 @@ export default function ChatPage() {
         </div>
 
         {/* Floating Input Area - Fixed Bottom */}
-        <div className="fixed bottom-0 left-0 right-0 border-t border-gray-200 bg-white/95 backdrop-blur-lg px-4 py-6 shadow-2xl">
+        <div className="fixed bottom-0 left-0 right-0 bg-transparent px-4 py-6">
           <div className="mx-auto w-full max-w-5xl">
             {guestLimitReached && (
               <div className="mb-4 rounded-xl border border-violet-200 bg-violet-50 p-4 text-violet-800">
@@ -634,8 +596,7 @@ export default function ChatPage() {
             )}
 
             {/* Quick Actions Row */}
-            <div className="mb-3 flex items-center gap-2 overflow-x-auto pb-2">
-              <span className="text-xs font-medium text-gray-500 whitespace-nowrap">Quick Actions:</span>
+            <div className="mb-3 flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
               {quickInputActions.map((action) => (
                 <button
                   key={action.label}
@@ -649,7 +610,7 @@ export default function ChatPage() {
               ))}
             </div>
 
-            <div className="flex items-end gap-3 rounded-2xl border-2 border-gray-200 bg-white p-3 shadow-xl transition-all focus-within:border-teal-400 focus-within:ring-4 focus-within:ring-teal-100">
+            <div className="flex items-end gap-3 rounded-2xl border border-gray-300 bg-white p-3 shadow-2xl transition-all focus-within:border-teal-400 focus-within:ring-4 focus-within:ring-teal-100/50">
               <div className="relative" ref={plusMenuRef}>
                 <button
                   onClick={() => setShowPlusMenu(!showPlusMenu)}

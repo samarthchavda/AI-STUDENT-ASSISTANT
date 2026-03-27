@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Search, ChevronDown, ChevronUp, ChevronRight, Menu, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { cleanQuestionText } from '../utils/textCleaners'
 
 interface Question {
   id: string
@@ -472,7 +473,7 @@ export default function AptitudePracticePage() {
                       </span>
                     </div>
                     <p className="text-base text-gray-800 leading-relaxed font-normal">
-                      {question.question}
+                      {cleanQuestionText(question.question)}
                     </p>
                     {question.has_image && question.image && (
                       <img src={question.image} alt="Question" className="mt-3 max-w-md rounded-lg border border-gray-200" />
@@ -512,7 +513,7 @@ export default function AptitudePracticePage() {
                             isWrong ? 'text-red-800' : 
                             'text-gray-700'
                           }`}>
-                            {option.key}) {option.text}
+                            {option.key}) {cleanQuestionText(option.text)}
                           </span>
                           {isCorrect && (
                             <span className="ml-auto text-green-600 text-xs font-semibold">✓ Correct</span>
@@ -562,7 +563,7 @@ export default function AptitudePracticePage() {
                                 Correct Answer: Option {question.answer}
                               </h4>
                               <p className="text-sm text-blue-800 leading-relaxed whitespace-pre-line">
-                                <span className="font-semibold">Explanation:</span> {question.explanation}
+                                <span className="font-semibold">Explanation:</span> {cleanQuestionText(question.explanation)}
                               </p>
                               {question.source && (
                                 <p className="text-xs text-blue-600 mt-2">Source: {question.source}</p>

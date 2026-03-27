@@ -12,7 +12,7 @@ export default function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-50 border-b border-stone-200/70 bg-[rgba(255,249,239,0.82)] backdrop-blur-xl">
+    <header className="fixed top-0 left-0 right-0 z-50 border-b border-gray-100 bg-white/80 backdrop-blur-md shadow-sm">
       <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
           <Link to="/" className="group flex items-center gap-3 transition-opacity hover:opacity-85">
