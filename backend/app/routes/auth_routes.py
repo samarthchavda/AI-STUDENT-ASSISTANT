@@ -316,7 +316,7 @@ async def logout(
 @router.post("/google", response_model=Token)
 @rate_limit("10/minute")  # Rate limit for Google OAuth
 async def google_auth(request: Request, auth_data: GoogleAuthRequest, db: Session = Depends(get_db)):
-    """Authenticate user with Google OAuth"""
+    """Authenticate user with Google OAuth - Optimized for speed"""
     try:
         if not settings.google_client_id:
             raise HTTPException(
@@ -345,6 +345,7 @@ async def google_auth(request: Request, auth_data: GoogleAuthRequest, db: Sessio
         # Check if user exists
         user = db.query(UserModel).filter(UserModel.email == normalized_email).first()
         
+        is_new_user = False
         if not user:
             # Create new user with Google OAuth
             user = UserModel(
@@ -355,15 +356,8 @@ async def google_auth(request: Request, auth_data: GoogleAuthRequest, db: Sessio
                 auth_provider="google"
             )
             db.add(user)
-            db.commit()
-            db.refresh(user)
-            
-            # Send welcome email for new Google users (non-blocking)
-            try:
-                send_welcome_email(normalized_email, name)
-            except Exception as e:
-                logger.error(f"Failed to send welcome email to {normalized_email}: {e}")
-                # Continue with registration even if email fails
+            db.flush()  # Get user.id without full commit
+            is_new_user = True
         
         # Generate tokens
         access_token = create_access_token(
@@ -382,7 +376,17 @@ async def google_auth(request: Request, auth_data: GoogleAuthRequest, db: Sessio
             expires_at=refresh_expires
         )
         db.add(refresh_token_obj)
+        
+        # Single commit for all operations
         db.commit()
+        
+        # Send welcome email asynchronously (non-blocking) - only for new users
+        if is_new_user:
+            import threading
+            threading.Thread(
+                target=lambda: send_welcome_email(normalized_email, name),
+                daemon=True
+            ).start()
         
         return {
             "access_token": access_token,

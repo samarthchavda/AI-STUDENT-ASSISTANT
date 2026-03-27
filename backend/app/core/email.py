@@ -40,7 +40,7 @@ def send_otp_email(email: str, otp: str) -> None:
     msg.attach(MIMEText(body, "plain"))
 
     try:
-        with smtplib.SMTP(settings.mail_server, settings.mail_port, timeout=10) as server:
+        with smtplib.SMTP(settings.mail_server, settings.mail_port, timeout=3) as server:
             server.ehlo()
             server.starttls()
             server.login(settings.mail_username, settings.mail_password)
@@ -221,7 +221,7 @@ def send_welcome_email(email: str, name: str) -> None:
     msg.attach(MIMEText(html_body, "html"))
 
     try:
-        with smtplib.SMTP(settings.mail_server, settings.mail_port, timeout=10) as server:
+        with smtplib.SMTP(settings.mail_server, settings.mail_port, timeout=3) as server:
             server.ehlo()
             server.starttls()
             server.login(settings.mail_username, settings.mail_password)

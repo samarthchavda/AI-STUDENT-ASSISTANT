@@ -240,13 +240,8 @@ export default function AuthPage() {
         throw new Error('No credential received from Google')
       }
 
-      // Show immediate feedback
-      console.log('🔐 Authenticating with Google...')
-
       const response = await userAPI.googleAuth(credentialResponse.credential)
       const { access_token, refresh_token, user } = response.data
-
-      console.log('✅ Authentication successful, redirecting...')
 
       localStorage.setItem('token', access_token)
       if (refresh_token) {
@@ -261,14 +256,9 @@ export default function AuthPage() {
         isAdmin: user.is_admin
       })
 
-      // Use requestAnimationFrame to ensure DOM updates complete before navigation
-      // This prevents InvalidNodeTypeError by allowing Google popup to close properly
-      requestAnimationFrame(() => {
-        setTimeout(() => {
-          const from = (location.state as any)?.from?.pathname || (user.is_admin ? '/admin' : '/dashboard')
-          navigate(from, { replace: true })
-        }, 150)
-      })
+      // Immediate navigation without delays
+      const from = (location.state as any)?.from?.pathname || (user.is_admin ? '/admin' : '/dashboard')
+      navigate(from, { replace: true })
     } catch (err: any) {
       console.error('Google auth error:', err)
       setError(
@@ -278,7 +268,7 @@ export default function AuthPage() {
       )
       setLoading(false)
     }
-  }, [googleClientId, isCurrentOriginAuthorized, location.state, navigate, setUser])
+  }, [location.state, navigate, setUser])
 
   const handleGoogleError = useCallback(() => {
     try {
