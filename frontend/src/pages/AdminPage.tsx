@@ -102,7 +102,6 @@ const AdminPage = () => {
   // DSA Management states
   const [dsaStats, setDsaStats] = useState<any>(null);
   const [dsaQuestions, setDsaQuestions] = useState<any[]>([]);
-  const [dsaSubmissions, setDsaSubmissions] = useState<any[]>([]);
   const [dsaSearchQuery, setDsaSearchQuery] = useState('');
   const [dsaTopicFilter, setDsaTopicFilter] = useState('');
   
@@ -431,14 +430,12 @@ const AdminPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const [stats, questions, submissions] = await Promise.all([
+      const [stats, questions] = await Promise.all([
         adminAPI.getDSAStats(),
-        adminAPI.getDSAQuestions({ limit: 50, search: dsaSearchQuery, topic: dsaTopicFilter }),
-        adminAPI.getDSASubmissions({ limit: 20 })
+        adminAPI.getDSAQuestions({ limit: 50, search: dsaSearchQuery, topic: dsaTopicFilter })
       ]);
       setDsaStats(stats);
       setDsaQuestions(questions.questions || []);
-      setDsaSubmissions(submissions.submissions || []);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to load DSA management data');
     } finally {
@@ -2431,129 +2428,6 @@ const AdminPage = () => {
                 <div className="p-12 text-center">
                   <Code2 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                   <p className="text-gray-500">No questions found</p>
-                </div>
-              )}
-            </div>
-
-            {/* Recent Activity Feed - Last 5 Submissions */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
-              <div className="p-6 border-b border-gray-100">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg font-bold text-gray-900">Recent Activity Feed</h2>
-                    <p className="text-sm text-gray-500 mt-1">Live feed of what users are solving right now</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span className="text-xs text-gray-500">Live</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="divide-y divide-gray-100">
-                {dsaSubmissions.slice(0, 5).map((submission, index) => (
-                  <div key={submission.id} className="p-6 hover:bg-gray-50 transition">
-                    <div className="flex items-start gap-4">
-                      {/* Index Badge */}
-                      <div className="flex-shrink-0">
-                        <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
-                          <span className="text-sm font-bold text-indigo-600">#{index + 1}</span>
-                        </div>
-                      </div>
-
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-2 flex-wrap">
-                          <span className="font-semibold text-gray-900">{submission.user_name}</span>
-                          <span className="text-sm text-gray-500">{submission.user_email}</span>
-                          <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                            submission.status === 'accepted' ? 'bg-green-100 text-green-700' :
-                            submission.status === 'wrong_answer' ? 'bg-red-100 text-red-700' :
-                            submission.status === 'runtime_error' ? 'bg-orange-100 text-orange-700' :
-                            submission.status === 'compilation_error' ? 'bg-purple-100 text-purple-700' :
-                            'bg-gray-100 text-gray-700'
-                          }`}>
-                            {submission.status === 'accepted' ? '✓ ACCEPTED' :
-                             submission.status === 'wrong_answer' ? '✗ WRONG ANSWER' :
-                             submission.status === 'runtime_error' ? '⚠ RUNTIME ERROR' :
-                             submission.status === 'compilation_error' ? '⚠ COMPILE ERROR' :
-                             submission.status.toUpperCase().replace('_', ' ')}
-                          </span>
-                        </div>
-                        
-                        <div className="text-sm text-gray-700 mb-2">
-                          <span className="text-gray-500">Problem:</span>{' '}
-                          <span className="font-medium text-gray-900">{submission.problem_title}</span>
-                        </div>
-                        
-                        <div className="flex items-center gap-4 text-xs text-gray-500">
-                          <span className="inline-flex items-center gap-1">
-                            <Code2 className="w-3 h-3" />
-                            {submission.language.toUpperCase()}
-                          </span>
-                          <span className="inline-flex items-center gap-1">
-                            <CheckCircle className="w-3 h-3" />
-                            Score: {submission.score}/100
-                          </span>
-                          <span className="inline-flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
-                            {new Date(submission.submitted_at).toLocaleString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Score Badge */}
-                      <div className="flex-shrink-0">
-                        <div className={`w-16 h-16 rounded-lg flex flex-col items-center justify-center ${
-                          submission.score >= 80 ? 'bg-green-100' :
-                          submission.score >= 50 ? 'bg-yellow-100' :
-                          'bg-red-100'
-                        }`}>
-                          <span className={`text-2xl font-bold ${
-                            submission.score >= 80 ? 'text-green-700' :
-                            submission.score >= 50 ? 'text-yellow-700' :
-                            'text-red-700'
-                          }`}>
-                            {submission.score}
-                          </span>
-                          <span className={`text-xs ${
-                            submission.score >= 80 ? 'text-green-600' :
-                            submission.score >= 50 ? 'text-yellow-600' :
-                            'text-red-600'
-                          }`}>
-                            /100
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {dsaSubmissions.length === 0 && (
-                <div className="p-12 text-center">
-                  <Activity className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No Recent Activity</h3>
-                  <p className="text-gray-500">User submissions will appear here in real-time</p>
-                </div>
-              )}
-
-              {dsaSubmissions.length > 5 && (
-                <div className="p-4 bg-gray-50 text-center border-t border-gray-100">
-                  <button
-                    onClick={() => {
-                      // In a real implementation, this would show all submissions
-                      alert('View all submissions feature coming soon!');
-                    }}
-                    className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
-                  >
-                    View all {dsaSubmissions.length} submissions →
-                  </button>
                 </div>
               )}
             </div>
