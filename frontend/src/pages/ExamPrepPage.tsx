@@ -252,7 +252,7 @@ export default function ExamPrepPage() {
 
       {showUpgradeModal && <UpgradeModal />}
 
-      <main className="mx-auto w-full max-w-5xl px-6 py-10">
+      <main className="mx-auto w-full max-w-5xl px-6 pt-24 pb-10">{/* Step 1 Setup */}
         <div className="mb-8">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Step 1 · Setup</p>
           <h1 className="mt-2 text-4xl font-black tracking-tight text-slate-900">Configure Your Aptitude Assessment</h1>

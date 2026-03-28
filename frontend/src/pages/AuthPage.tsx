@@ -10,15 +10,16 @@ export default function AuthPage() {
   const location = useLocation()
   const setUser = useAppStore((state) => state.setUser)
   const currentOrigin = window.location.origin
-  const configuredGoogleOrigins = (import.meta.env.VITE_GOOGLE_AUTHORIZED_ORIGINS || '')
+  const configuredGoogleOrigins = String(import.meta.env.VITE_GOOGLE_AUTHORIZED_ORIGINS || '')
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean)
 
   // Google Sign-In is shown when a client ID is configured and the current
   // origin is allowed by VITE_GOOGLE_AUTHORIZED_ORIGINS (if provided).
-  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() || ''
-  const isCurrentOriginAuthorized = configuredGoogleOrigins.length === 0 || configuredGoogleOrigins.includes(currentOrigin)
+  const googleClientId = String(import.meta.env.VITE_GOOGLE_CLIENT_ID || '').trim()
+  const isCurrentOriginAuthorized = configuredGoogleOrigins.length === 0 ||
+    configuredGoogleOrigins.some((origin) => currentOrigin.includes(origin.trim()))
   const canShowGoogleLogin = Boolean(googleClientId) && isCurrentOriginAuthorized
   
   const [authMode, setAuthMode] = useState<'login' | 'register' | 'forgot' | 'reset'>('login')
@@ -659,6 +660,7 @@ export default function AuthPage() {
                         theme="outline"
                         size="large"
                         text="continue_with"
+                        shape="rectangular"
                         width="320"
                         logo_alignment="left"
                       />

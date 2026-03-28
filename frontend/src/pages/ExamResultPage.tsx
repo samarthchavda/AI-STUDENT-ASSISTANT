@@ -105,7 +105,7 @@ export default function ExamResultPage() {
     <div className="min-h-screen bg-white text-slate-900">
       <Header />
 
-      <main className="mx-auto w-full max-w-5xl px-6 py-10">
+      <main className="mx-auto w-full max-w-5xl px-6 pt-24 pb-10">
         <div className="mb-8">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Step 3 · Result Dashboard</p>
           <h1 className="mt-2 text-4xl font-black tracking-tight text-slate-900">Assessment Summary</h1>

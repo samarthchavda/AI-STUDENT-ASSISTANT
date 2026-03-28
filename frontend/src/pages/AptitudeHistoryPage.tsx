@@ -96,7 +96,7 @@ export default function AptitudeHistoryPage() {
       <div className="min-h-screen bg-gray-50">
         <Header />
         
-        <main className="mx-auto max-w-5xl px-6 py-10">
+        <main className="mx-auto max-w-5xl px-6 pt-24 pb-10">
           <button
             onClick={() => setSelectedExam(null)}
             className="mb-6 inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 font-semibold"
@@ -233,7 +233,7 @@ export default function AptitudeHistoryPage() {
     <div className="min-h-screen bg-gray-50">
       <Header />
 
-      <main className="mx-auto max-w-5xl px-6 py-10">
+      <main className="mx-auto max-w-5xl px-6 pt-24 pb-10">
         <div className="mb-8">
           <h1 className="text-4xl font-black tracking-tight text-gray-900">Aptitude Exam History</h1>
           <p className="mt-3 text-gray-600">Review your past exams and track your progress over time</p>

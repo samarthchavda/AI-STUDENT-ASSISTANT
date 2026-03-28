@@ -28,6 +28,24 @@ class UserInfo(BaseModel):
     name: str
     plan_type: str
     is_admin: bool = False
+    phone: Optional[str] = None
+    phone_verified: bool = False
+    college: Optional[str] = None
+    branch: Optional[str] = None
+    cgpa: Optional[str] = None
+    graduation_year: Optional[str] = None
+    linkedin_url: Optional[str] = None
+    github_url: Optional[str] = None
+
+
+class UserProfileUpdate(BaseModel):
+    phone: Optional[str] = None
+    college: Optional[str] = None
+    branch: Optional[str] = None
+    cgpa: Optional[str] = None
+    graduation_year: Optional[str] = None
+    linkedin_url: Optional[str] = None
+    github_url: Optional[str] = None
 
 class Token(BaseModel):
     access_token: str

@@ -51,6 +51,14 @@ export interface AdminUser {
   plan: string;
   is_google_user: boolean;
   is_admin: boolean;
+  phone?: string;
+  phone_verified?: boolean;
+  college?: string;
+  branch?: string;
+  cgpa?: string;
+  graduation_year?: string;
+  linkedin_url?: string;
+  github_url?: string;
   created_at: string;
   updated_at: string;
 }
@@ -224,6 +232,42 @@ export const adminAPI = {
 
   getBroadcastStats: async (): Promise<any> => {
     const response = await api.get('/admin/broadcast/stats');
+    return response.data;
+  },
+
+  // DSA Admin APIs
+  getDSAStats: async (): Promise<any> => {
+    const response = await api.get('/admin/dsa-admin/stats');
+    return response.data;
+  },
+
+  getDSAQuestions: async (params?: { skip?: number; limit?: number; topic?: string; company?: string; search?: string }): Promise<any> => {
+    const response = await api.get('/admin/dsa-admin/questions', { params });
+    return response.data;
+  },
+
+  getDSAQuestionDetail: async (questionId: number): Promise<any> => {
+    const response = await api.get(`/admin/dsa-admin/questions/${questionId}`);
+    return response.data;
+  },
+
+  updateDSAQuestion: async (questionId: number, data: { title?: string; description?: string; constraints?: string }): Promise<any> => {
+    const response = await api.put(`/admin/dsa-admin/questions/${questionId}`, data);
+    return response.data;
+  },
+
+  getDSASubmissions: async (params?: { limit?: number; status?: string }): Promise<any> => {
+    const response = await api.get('/admin/dsa-admin/submissions', { params });
+    return response.data;
+  },
+
+  generateMissingSolutions: async (): Promise<any> => {
+    const response = await api.post('/admin/dsa-admin/generate-missing-solutions');
+    return response.data;
+  },
+
+  getDSACacheStatus: async (): Promise<any> => {
+    const response = await api.get('/admin/dsa-admin/cache-status');
     return response.data;
   },
 

@@ -254,7 +254,7 @@ export default function CodingHelpPage() {
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50">
       <Header />
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto px-4 pt-24 pb-8">
         {/* Senior Mentor Banner */}
         <div className="mb-8 rounded-2xl border border-green-200 bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 px-6 py-5 shadow-sm">
           <div className="flex flex-wrap items-start gap-4">

@@ -7,12 +7,21 @@ interface User {
   name: string
   plan: 'free' | 'basic' | 'pro'
   isAdmin?: boolean
+  phone?: string
+  phoneVerified?: boolean
+  college?: string
+  branch?: string
+  cgpa?: string
+  graduationYear?: string
+  linkedinUrl?: string
+  githubUrl?: string
 }
 
 interface AppState {
   user: User | null
   isAuthenticated: boolean
   setUser: (user: User | null) => void
+  updateUser: (updates: Partial<User>) => void
   logout: () => void
   chatHistory: any[]
   addChatMessage: (message: any) => void
@@ -36,6 +45,13 @@ export const useAppStore = create<AppState>()(
           isAuthenticated: !!user,
           chatHistory: switchingUsers ? [] : get().chatHistory
         })
+      },
+
+      updateUser: (updates) => {
+        const currentUser = get().user
+        if (currentUser) {
+          set({ user: { ...currentUser, ...updates } })
+        }
       },
       
       logout: () => {

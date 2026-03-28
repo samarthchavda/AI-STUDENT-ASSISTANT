@@ -131,7 +131,7 @@ export default function PricingPage() {
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50">
       <Header />
 
-      <div className="max-w-7xl mx-auto px-4 py-12">
+      <div className="max-w-7xl mx-auto px-4 pt-24 pb-8">
         {/* Welcome Message for Authenticated Users */}
         {isAuthenticated && user && (
           <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl p-6 mb-8 shadow-lg">

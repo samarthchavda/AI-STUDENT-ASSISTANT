@@ -203,7 +203,7 @@ export default function CompanyPrepPage() {
     <div className="min-h-screen">
       <Header />
 
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 pt-24 pb-8 sm:px-6 lg:px-8">
         <section className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-[linear-gradient(135deg,rgba(15,118,110,0.92),rgba(17,24,39,0.96))] px-6 py-8 text-white shadow-[0_28px_80px_rgba(15,23,42,0.22)] sm:px-10">
           <div className="absolute -right-16 top-0 h-44 w-44 rounded-full bg-orange-400/20 blur-3xl"></div>
           <div className="absolute bottom-0 left-1/4 h-32 w-32 rounded-full bg-teal-200/20 blur-2xl"></div>

@@ -415,9 +415,8 @@ export default function DashboardPageNew() {
       {/* Sticky Header */}
       <Header />
 
-      <div className="flex pt-16">
-        {/* Left Sidebar - Enhanced */}
-        <aside className="w-64 bg-gray-50 border-r border-gray-100 min-h-screen sticky top-16 hidden lg:block">
+      <div className="flex pt-20">{/* Left Sidebar - Enhanced */}
+        <aside className="w-64 bg-gray-50 border-r border-gray-100 min-h-screen sticky top-20 hidden lg:block">
           <div className="p-4">
             <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">
               Navigation

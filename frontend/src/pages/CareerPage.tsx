@@ -119,7 +119,7 @@ export default function CareerPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50">
       <Header />
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto px-4 pt-24 pb-8">
         <div className="flex gap-4 mb-8 flex-wrap">
           <button
             className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg"

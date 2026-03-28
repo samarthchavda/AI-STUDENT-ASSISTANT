@@ -1,5 +1,4 @@
-import { useEffect } from 'react'
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import LandingPage from './pages/LandingPage'
 import AuthPage from './pages/AuthPage'
 import ChatPage from './pages/ChatPage'
@@ -10,6 +9,8 @@ import AptitudeHistoryPage from './pages/AptitudeHistoryPage'
 import AptitudePracticePage from './pages/AptitudePracticePage'
 import DSAPracticeDashboardPage from './pages/DSAPracticeDashboardPage'
 import DSAEditorDemoPage from './pages/DSAEditorDemoPage'
+import DSADashboardPage from './pages/DSADashboardPage'
+import DSAProblemPage from './pages/DSAProblemPage'
 import CareerPage from './pages/CareerPage'
 import ResumeTemplateGalleryPage from './pages/ResumeTemplateGalleryPage'
 import ResumeBuilderFormPage from './pages/ResumeBuilderFormPage'
@@ -21,17 +22,11 @@ import ServicesPage from './pages/ServicesPage'
 import AboutPage from './pages/AboutPage'
 import ProfilePage from './pages/ProfilePage'
 import ProtectedRoute from './components/ProtectedRoute'
+import ScrollToTop from './components/ScrollToTop'
 import { useAutoLogout } from './hooks/useAutoLogout'
 
 function AppRoutes() {
   useAutoLogout()
-  const location = useLocation()
-
-  useEffect(() => {
-    if (location.pathname !== '/chat') {
-      window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
-    }
-  }, [location.pathname])
 
   return (
     <Routes>
@@ -54,7 +49,8 @@ function AppRoutes() {
       <Route path="/aptitude-history" element={<ProtectedRoute><AptitudeHistoryPage /></ProtectedRoute>} />
       <Route path="/practice-aptitude" element={<ProtectedRoute><AptitudePracticePage /></ProtectedRoute>} />
       <Route path="/dsa" element={<ProtectedRoute><DSAPracticeDashboardPage /></ProtectedRoute>} />
-      <Route path="/dsa/dashboard" element={<ProtectedRoute><DSAPracticeDashboardPage /></ProtectedRoute>} />
+      <Route path="/dsa/dashboard" element={<ProtectedRoute><DSADashboardPage /></ProtectedRoute>} />
+      <Route path="/dsa/problem/:id" element={<ProtectedRoute><DSAProblemPage /></ProtectedRoute>} />
       <Route path="/dsa/editor/:id" element={<ProtectedRoute><DSAEditorDemoPage /></ProtectedRoute>} />
       <Route path="/roadmap" element={<ProtectedRoute><DSAPracticeDashboardPage /></ProtectedRoute>} />
       <Route path="/career" element={<ProtectedRoute><CareerPage /></ProtectedRoute>} />
@@ -74,6 +70,7 @@ function AppRoutes() {
 function App() {
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <ScrollToTop />
       <AppRoutes />
     </Router>
   )

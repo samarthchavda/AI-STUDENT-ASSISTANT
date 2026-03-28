@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../store/useAppStore';
 import { adminAPI, AdminStats, AdminUser, AdminChat, AdminChatUserSummary, AdminPayment, AdminProgress, CompanyQuestion } from '../services/adminAPI';
@@ -101,7 +101,23 @@ const AdminPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
   const [openMenuUserId, setOpenMenuUserId] = useState<number | null>(null);
+  const [expandedUserId, setExpandedUserId] = useState<number | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Calculate profile completion percentage
+  const calculateProfileCompletion = (user: AdminUser) => {
+    const fields = [
+      user.phone,
+      user.college,
+      user.branch,
+      user.cgpa,
+      user.graduation_year,
+      user.linkedin_url,
+      user.github_url
+    ];
+    const filledFields = fields.filter(field => field && field.trim() !== '').length;
+    return Math.round((filledFields / 7) * 100);
+  };
 
   useEffect(() => {
     if (!user) {
@@ -550,9 +566,8 @@ const AdminPage = () => {
     <div className="min-h-screen bg-gray-50">
       <Header />
       
-      <div className="flex">
-        {/* Left Sidebar */}
-        <aside className="w-64 bg-white border-r border-gray-200 min-h-screen sticky top-0">
+      <div className="flex pt-20">{/* Left Sidebar */}
+        <aside className="w-64 bg-white border-r border-gray-200 min-h-screen sticky top-20">
           <div className="p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-1">Admin Panel</h2>
             <p className="text-sm text-gray-500">Manage your platform</p>
@@ -741,6 +756,9 @@ const AdminPage = () => {
                           Plan
                         </th>
                         <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                          Profile
+                        </th>
+                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                           Auth Type
                         </th>
                         <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
@@ -755,29 +773,55 @@ const AdminPage = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                      {users.map((user) => (
-                        <tr key={user.id} className="hover:bg-gray-50 transition">
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
-                                {user.name.charAt(0).toUpperCase()}
-                              </div>
-                              <div>
-                                <div className="font-medium text-gray-900">{user.name}</div>
-                                <div className="text-sm text-gray-500">{user.email}</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
-                              user.plan === 'pro' ? 'bg-purple-100 text-purple-700' :
-                              user.plan === 'basic' ? 'bg-blue-100 text-blue-700' :
-                              'bg-gray-100 text-gray-700'
-                            }`}>
-                              {user.plan.toUpperCase()}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4">
+                      {users.map((user) => {
+                        const profileCompletion = calculateProfileCompletion(user);
+                        const isExpanded = expandedUserId === user.id;
+                        
+                        return (
+                          <Fragment key={user.id}>
+                            <tr className="hover:bg-gray-50 transition">
+                              <td className="px-6 py-4">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
+                                    {user.name.charAt(0).toUpperCase()}
+                                  </div>
+                                  <div>
+                                    <div className="font-medium text-gray-900">{user.name}</div>
+                                    <div className="text-sm text-gray-500">{user.email}</div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4">
+                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                                  user.plan === 'pro' ? 'bg-purple-100 text-purple-700' :
+                                  user.plan === 'basic' ? 'bg-blue-100 text-blue-700' :
+                                  'bg-gray-100 text-gray-700'
+                                }`}>
+                                  {user.plan.toUpperCase()}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4">
+                                <button
+                                  onClick={() => setExpandedUserId(isExpanded ? null : user.id)}
+                                  className="flex items-center gap-2 hover:bg-gray-100 px-2 py-1 rounded transition"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-16 bg-gray-200 rounded-full h-2">
+                                      <div 
+                                        className={`h-2 rounded-full transition-all ${
+                                          profileCompletion === 100 ? 'bg-green-500' :
+                                          profileCompletion >= 50 ? 'bg-blue-500' :
+                                          'bg-orange-500'
+                                        }`}
+                                        style={{ width: `${profileCompletion}%` }}
+                                      ></div>
+                                    </div>
+                                    <span className="text-sm font-medium text-gray-700">{profileCompletion}%</span>
+                                  </div>
+                                  <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                                </button>
+                              </td>
+                              <td className="px-6 py-4">
                             {user.is_google_user ? (
                               <div className="flex items-center gap-2">
                                 <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -894,7 +938,140 @@ const AdminPage = () => {
                             )}
                           </td>
                         </tr>
-                      ))}
+                        
+                        {/* Expandable Profile Details Row */}
+                        {isExpanded && (
+                          <tr className="bg-gray-50">
+                            <td colSpan={7} className="px-6 py-4">
+                              <div className="bg-white rounded-lg p-6 border border-gray-200">
+                                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                  <UserCheck className="w-5 h-5 text-blue-600" />
+                                  Profile Details
+                                </h3>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                  {/* Contact Information */}
+                                  <div>
+                                    <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                                      <Mail className="w-4 h-4" />
+                                      Contact
+                                    </h4>
+                                    <div className="space-y-2">
+                                      <div>
+                                        <span className="text-xs text-gray-500">Phone:</span>
+                                        <p className="text-sm text-gray-900">{user.phone || <span className="text-gray-400 italic">Not provided</span>}</p>
+                                      </div>
+                                      {user.phone && (
+                                        <div>
+                                          <span className="text-xs text-gray-500">Verified:</span>
+                                          <p className="text-sm">
+                                            {user.phone_verified ? (
+                                              <span className="text-green-600 flex items-center gap-1">
+                                                <UserCheck className="w-3 h-3" />
+                                                Yes
+                                              </span>
+                                            ) : (
+                                              <span className="text-orange-600">No</span>
+                                            )}
+                                          </p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Education */}
+                                  <div>
+                                    <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                                      <Award className="w-4 h-4" />
+                                      Education
+                                    </h4>
+                                    <div className="space-y-2">
+                                      <div>
+                                        <span className="text-xs text-gray-500">College:</span>
+                                        <p className="text-sm text-gray-900">{user.college || <span className="text-gray-400 italic">Not provided</span>}</p>
+                                      </div>
+                                      <div>
+                                        <span className="text-xs text-gray-500">Branch:</span>
+                                        <p className="text-sm text-gray-900">{user.branch || <span className="text-gray-400 italic">Not provided</span>}</p>
+                                      </div>
+                                      <div>
+                                        <span className="text-xs text-gray-500">CGPA:</span>
+                                        <p className="text-sm text-gray-900">{user.cgpa || <span className="text-gray-400 italic">Not provided</span>}</p>
+                                      </div>
+                                      <div>
+                                        <span className="text-xs text-gray-500">Graduation Year:</span>
+                                        <p className="text-sm text-gray-900">{user.graduation_year || <span className="text-gray-400 italic">Not provided</span>}</p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Professional Links */}
+                                  <div>
+                                    <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                                      <TrendingUp className="w-4 h-4" />
+                                      Professional Links
+                                    </h4>
+                                    <div className="space-y-2">
+                                      <div>
+                                        <span className="text-xs text-gray-500">LinkedIn:</span>
+                                        {user.linkedin_url ? (
+                                          <a 
+                                            href={user.linkedin_url} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="text-sm text-blue-600 hover:underline block truncate"
+                                          >
+                                            {user.linkedin_url}
+                                          </a>
+                                        ) : (
+                                          <p className="text-sm text-gray-400 italic">Not provided</p>
+                                        )}
+                                      </div>
+                                      <div>
+                                        <span className="text-xs text-gray-500">GitHub:</span>
+                                        {user.github_url ? (
+                                          <a 
+                                            href={user.github_url} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            className="text-sm text-blue-600 hover:underline block truncate"
+                                          >
+                                            {user.github_url}
+                                          </a>
+                                        ) : (
+                                          <p className="text-sm text-gray-400 italic">Not provided</p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                                
+                                {/* Profile Completion Summary */}
+                                <div className="mt-6 pt-4 border-t border-gray-200">
+                                  <div className="flex items-center justify-between">
+                                    <div>
+                                      <p className="text-sm font-medium text-gray-700">Profile Completion</p>
+                                      <p className="text-xs text-gray-500 mt-1">
+                                        {profileCompletion === 100 ? '✓ Profile is complete' :
+                                         profileCompletion >= 50 ? 'Profile is partially complete' :
+                                         'Profile needs more information'}
+                                      </p>
+                                    </div>
+                                    <div className="text-right">
+                                      <p className="text-2xl font-bold text-gray-900">{profileCompletion}%</p>
+                                      <p className="text-xs text-gray-500">
+                                        {Math.round((profileCompletion / 100) * 7)}/7 fields filled
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                      )}
+                    )}
                     </tbody>
                   </table>
                 </div>

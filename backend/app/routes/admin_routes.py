@@ -190,6 +190,14 @@ async def get_all_users(
                 "plan": user.plan.value if hasattr(user.plan, 'value') else user.plan,
                 "is_google_user": user.is_google_user,
                 "is_admin": user.is_admin,
+                "phone": getattr(user, 'phone', None),
+                "phone_verified": getattr(user, 'phone_verified', False),
+                "college": getattr(user, 'college', None),
+                "branch": getattr(user, 'branch', None),
+                "cgpa": getattr(user, 'cgpa', None),
+                "graduation_year": getattr(user, 'graduation_year', None),
+                "linkedin_url": getattr(user, 'linkedin_url', None),
+                "github_url": getattr(user, 'github_url', None),
                 "created_at": user.created_at,
                 "updated_at": user.updated_at
             }

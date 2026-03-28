@@ -103,7 +103,7 @@ export default function ServicesPage() {
       <Header />
 
       {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8">
         <div className="text-center mb-16">
           <div className="inline-block mb-4">
             <span className="badge badge-primary text-sm px-4 py-2">

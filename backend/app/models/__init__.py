@@ -38,6 +38,20 @@ class User(Base):
     account_locked_until = Column(DateTime, nullable=True)
     queries_today = Column(Integer, default=0)
     last_query_date = Column(Date, nullable=True)
+    
+    # Profile fields
+    phone = Column(String, nullable=True)
+    phone_verified = Column(Boolean, default=False)
+    college = Column(String, nullable=True)
+    branch = Column(String, nullable=True)
+    cgpa = Column(String, nullable=True)
+    graduation_year = Column(String, nullable=True)
+    linkedin_url = Column(String, nullable=True)
+    github_url = Column(String, nullable=True)
+    
+    # DSA Solution tracking
+    solutions_viewed = Column(Integer, default=0)
+    
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -241,3 +255,157 @@ class EngineeringStudyMaterial(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
+
+
+# ============================================================================
+# DSA PRACTICE MODULE MODELS
+# ============================================================================
+
+class DSATopic(str, enum.Enum):
+    ARRAYS = "arrays"
+    STRINGS = "strings"
+    LINKED_LISTS = "linked_lists"
+    STACKS = "stacks"
+    QUEUES = "queues"
+    TREES = "trees"
+    GRAPHS = "graphs"
+    DYNAMIC_PROGRAMMING = "dynamic_programming"
+    GREEDY = "greedy"
+    BACKTRACKING = "backtracking"
+    SORTING = "sorting"
+    SEARCHING = "searching"
+    HASHING = "hashing"
+    HEAPS = "heaps"
+    TRIES = "tries"
+    BIT_MANIPULATION = "bit_manipulation"
+
+
+class DSALanguage(str, enum.Enum):
+    PYTHON = "python"
+    JAVASCRIPT = "javascript"
+    CPP = "cpp"
+    JAVA = "java"
+
+
+class DSASubmissionStatus(str, enum.Enum):
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    WRONG_ANSWER = "wrong_answer"
+    TIME_LIMIT_EXCEEDED = "time_limit_exceeded"
+    RUNTIME_ERROR = "runtime_error"
+    COMPILATION_ERROR = "compilation_error"
+
+
+class DSAProblem(Base):
+    """Store generated DSA problems"""
+    __tablename__ = "dsa_problems"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=False)
+    topic = Column(Enum(DSATopic), nullable=False, index=True)
+    difficulty = Column(Enum(DifficultyLevel), nullable=False, index=True)
+    company = Column(String, nullable=True, index=True)
+    constraints = Column(Text, nullable=True)
+    examples = Column(Text, nullable=True)  # JSON string
+    starter_code_python = Column(Text, nullable=True)
+    starter_code_javascript = Column(Text, nullable=True)
+    starter_code_cpp = Column(Text, nullable=True)
+    test_cases = Column(Text, nullable=True)  # JSON string
+    solution = Column(Text, nullable=True)
+    hints = Column(Text, nullable=True)  # JSON array
+    solutions_cache = Column(Text, nullable=True)  # JSON: {"python": "...", "javascript": "...", "cpp": "..."}
+    time_complexity = Column(String, nullable=True)
+    space_complexity = Column(String, nullable=True)
+    is_daily_challenge = Column(Boolean, default=False)
+    daily_challenge_date = Column(Date, nullable=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    submissions = relationship("DSASubmission", back_populates="problem", cascade="all, delete-orphan")
+    progress = relationship("DSAProgress", back_populates="problem", cascade="all, delete-orphan")
+
+
+class DSASubmission(Base):
+    """Track user code submissions"""
+    __tablename__ = "dsa_submissions"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    problem_id = Column(Integer, ForeignKey("dsa_problems.id", ondelete="CASCADE"), nullable=False, index=True)
+    code = Column(Text, nullable=False)
+    language = Column(Enum(DSALanguage), nullable=False)
+    status = Column(Enum(DSASubmissionStatus), nullable=False)
+    execution_time = Column(Integer, nullable=True)  # milliseconds
+    memory_used = Column(Integer, nullable=True)  # KB
+    test_cases_passed = Column(Integer, default=0)
+    total_test_cases = Column(Integer, default=0)
+    error_message = Column(Text, nullable=True)
+    ai_feedback = Column(Text, nullable=True)
+    score = Column(Integer, default=0)  # 0-100
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    
+    # Relationships
+    user = relationship("User")
+    problem = relationship("DSAProblem", back_populates="submissions")
+
+
+class DSAProgress(Base):
+    """Track user progress per problem"""
+    __tablename__ = "dsa_progress"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    problem_id = Column(Integer, ForeignKey("dsa_problems.id", ondelete="CASCADE"), nullable=False, index=True)
+    topic = Column(Enum(DSATopic), nullable=False, index=True)
+    difficulty = Column(Enum(DifficultyLevel), nullable=False)
+    status = Column(String, default="attempted")  # attempted, solved, mastered
+    attempts = Column(Integer, default=0)
+    best_score = Column(Integer, default=0)
+    hints_used = Column(Integer, default=0)
+    time_spent = Column(Integer, default=0)  # seconds
+    first_attempted_at = Column(DateTime, default=datetime.utcnow)
+    last_attempted_at = Column(DateTime, default=datetime.utcnow)
+    solved_at = Column(DateTime, nullable=True)
+    
+    # Relationships
+    user = relationship("User")
+    problem = relationship("DSAProblem", back_populates="progress")
+
+
+class DSAUserStats(Base):
+    """Aggregate user statistics for leaderboard"""
+    __tablename__ = "dsa_user_stats"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False, index=True)
+    total_solved = Column(Integer, default=0)
+    easy_solved = Column(Integer, default=0)
+    medium_solved = Column(Integer, default=0)
+    hard_solved = Column(Integer, default=0)
+    total_attempts = Column(Integer, default=0)
+    accuracy = Column(Integer, default=0)  # percentage
+    total_score = Column(Integer, default=0)
+    streak_days = Column(Integer, default=0)
+    last_solved_date = Column(Date, nullable=True)
+    rank = Column(Integer, nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    user = relationship("User")
+
+
+class DSAHint(Base):
+    """Track hints requested by users"""
+    __tablename__ = "dsa_hints"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    problem_id = Column(Integer, ForeignKey("dsa_problems.id", ondelete="CASCADE"), nullable=False, index=True)
+    hint_level = Column(Integer, default=1)  # 1, 2, 3 (progressive)
+    hint_text = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    user = relationship("User")
+    problem = relationship("DSAProblem")

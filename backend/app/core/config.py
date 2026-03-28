@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from pydantic import field_validator
 from pathlib import Path
 
 ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
@@ -39,6 +40,13 @@ class Settings(BaseSettings):
     mail_password: str = ""
     mail_from: str = ""
     mail_from_name: str = "CodeCampus AI"
+
+    @field_validator("google_client_id", "frontend_urls", mode="before")
+    @classmethod
+    def strip_env_values(cls, value):
+        if isinstance(value, str):
+            return value.strip()
+        return value
     
     class Config:
         env_file = str(ENV_FILE)

@@ -6,7 +6,7 @@ from google.oauth2 import id_token
 from google.auth.transport import requests
 from app.core.database import get_db
 from app.models import User as UserModel, RefreshToken, TokenBlacklist, PasswordResetOTP, PlanType
-from app.models.schemas import UserCreate, UserLogin, User, Token, RefreshTokenRequest, ForgotPasswordRequest, ResetPasswordRequest
+from app.models.schemas import UserCreate, UserLogin, User, Token, RefreshTokenRequest, ForgotPasswordRequest, ResetPasswordRequest, UserProfileUpdate
 from app.core.email import send_otp_email, send_welcome_email
 import hmac
 import hashlib
@@ -162,7 +162,8 @@ async def register(request: Request, user: UserCreate, db: Session = Depends(get
             "email": db_user.email,
             "name": db_user.name,
                 "plan_type": _user_plan_value(db_user),
-            "is_admin": db_user.is_admin
+            "is_admin": db_user.is_admin,
+            "solutions_viewed": db_user.solutions_viewed
         }
     }
 
@@ -241,7 +242,16 @@ async def login(request: Request, user_login: UserLogin, db: Session = Depends(g
             "email": user.email,
             "name": user.name,
             "plan_type": _user_plan_value(user),
-            "is_admin": user.is_admin
+            "is_admin": user.is_admin,
+            "phone": getattr(user, 'phone', None),
+            "phone_verified": getattr(user, 'phone_verified', False),
+            "college": getattr(user, 'college', None),
+            "branch": getattr(user, 'branch', None),
+            "cgpa": getattr(user, 'cgpa', None),
+            "graduation_year": getattr(user, 'graduation_year', None),
+            "linkedin_url": getattr(user, 'linkedin_url', None),
+            "github_url": getattr(user, 'github_url', None),
+            "solutions_viewed": getattr(user, 'solutions_viewed', 0)
         }
     }
 
@@ -310,7 +320,8 @@ async def refresh_access_token(
             "email": user.email,
             "name": user.name,
             "plan_type": _user_plan_value(user),
-            "is_admin": user.is_admin
+            "is_admin": user.is_admin,
+            "solutions_viewed": getattr(user, 'solutions_viewed', 0)
         }
     }
 
@@ -445,7 +456,16 @@ async def google_auth(
                 "email": user.email,
                 "name": user.name,
                 "plan_type": _user_plan_value(user),
-                "is_admin": user.is_admin
+                "is_admin": user.is_admin,
+                "phone": getattr(user, 'phone', None),
+                "phone_verified": getattr(user, 'phone_verified', False),
+                "college": getattr(user, 'college', None),
+                "branch": getattr(user, 'branch', None),
+                "cgpa": getattr(user, 'cgpa', None),
+                "graduation_year": getattr(user, 'graduation_year', None),
+                "linkedin_url": getattr(user, 'linkedin_url', None),
+                "github_url": getattr(user, 'github_url', None),
+                "solutions_viewed": getattr(user, 'solutions_viewed', 0)
             }
         }
         
@@ -476,8 +496,66 @@ async def get_current_user_info(current_user: UserModel = Depends(get_current_us
         "plan_type": _user_plan_value(current_user),
         "is_admin": current_user.is_admin,
         "auth_provider": current_user.auth_provider,
+        "phone": getattr(current_user, 'phone', None),
+        "phone_verified": getattr(current_user, 'phone_verified', False),
+        "college": getattr(current_user, 'college', None),
+        "branch": getattr(current_user, 'branch', None),
+        "cgpa": getattr(current_user, 'cgpa', None),
+        "graduation_year": getattr(current_user, 'graduation_year', None),
+        "linkedin_url": getattr(current_user, 'linkedin_url', None),
+        "github_url": getattr(current_user, 'github_url', None),
         "created_at": current_user.created_at
     }
+
+
+@router.put("/user/profile")
+async def update_user_profile(
+    profile_data: UserProfileUpdate,
+    current_user: UserModel = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update user profile information"""
+    try:
+        # Update only provided fields - use setattr to handle missing columns gracefully
+        if profile_data.phone is not None:
+            setattr(current_user, 'phone', profile_data.phone)
+        if profile_data.college is not None:
+            setattr(current_user, 'college', profile_data.college)
+        if profile_data.branch is not None:
+            setattr(current_user, 'branch', profile_data.branch)
+        if profile_data.cgpa is not None:
+            setattr(current_user, 'cgpa', profile_data.cgpa)
+        if profile_data.graduation_year is not None:
+            setattr(current_user, 'graduation_year', profile_data.graduation_year)
+        if profile_data.linkedin_url is not None:
+            setattr(current_user, 'linkedin_url', profile_data.linkedin_url)
+        if profile_data.github_url is not None:
+            setattr(current_user, 'github_url', profile_data.github_url)
+        
+        db.commit()
+        db.refresh(current_user)
+        
+        return {
+            "message": "Profile updated successfully",
+            "user": {
+                "id": current_user.id,
+                "email": current_user.email,
+                "name": current_user.name,
+                "plan_type": _user_plan_value(current_user),
+                "is_admin": current_user.is_admin,
+                "phone": getattr(current_user, 'phone', None),
+                "phone_verified": getattr(current_user, 'phone_verified', False),
+                "college": getattr(current_user, 'college', None),
+                "branch": getattr(current_user, 'branch', None),
+                "cgpa": getattr(current_user, 'cgpa', None),
+                "graduation_year": getattr(current_user, 'graduation_year', None),
+                "linkedin_url": getattr(current_user, 'linkedin_url', None),
+                "github_url": getattr(current_user, 'github_url', None)
+            }
+        }
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to update profile: {str(e)}")
 
 
 # ---------------------------------------------------------------------------

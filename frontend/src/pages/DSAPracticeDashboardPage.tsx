@@ -50,7 +50,7 @@ export default function DSAPracticeDashboardPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50">
       <Header />
 
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8">
         <div className="mb-8 rounded-2xl border border-slate-200 bg-white/90 backdrop-blur p-6 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>

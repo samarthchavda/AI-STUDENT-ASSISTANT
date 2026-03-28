@@ -492,4 +492,133 @@ export const userAPI = {
       lastActive,
     }
   },
+
+  updateProfile: (profileData: {
+    phone?: string
+    college?: string
+    branch?: string
+    cgpa?: string
+    graduationYear?: string
+    linkedinUrl?: string
+    githubUrl?: string
+  }) => api.put('/user/profile', profileData),
+}
+
+
+// ============================================================================
+// DSA PRACTICE API
+// ============================================================================
+
+export interface DSAQuestion {
+  id: number
+  title: string
+  topic: string
+  difficulty: string
+  company?: string
+  created_at?: string
+}
+
+export interface DSAQuestionDetail {
+  id: number
+  title: string
+  description: string
+  topic: string
+  difficulty: string
+  company?: string
+  constraints?: string
+  examples: Array<{
+    input: string
+    output: string
+    explanation?: string
+  }>
+  starter_code: {
+    python?: string
+    javascript?: string
+    cpp?: string
+  }
+  test_cases: Array<{
+    input: string
+    expected_output: string
+  }>
+  time_complexity?: string
+  space_complexity?: string
+  user_progress?: {
+    status: string
+    attempts: number
+    best_score: number
+    hints_used: number
+  }
+}
+
+export interface DSADashboardStats {
+  total_solved: number
+  easy_solved: number
+  medium_solved: number
+  hard_solved: number
+  accuracy: number
+  streak_days: number
+  weak_topics: Array<{
+    topic: string
+    attempts: number
+    solved: number
+  }>
+}
+
+export const dsaAPI = {
+  // Get questions with filters
+  getQuestions: (params?: {
+    topic?: string
+    difficulty?: string
+    company?: string
+    limit?: number
+    offset?: number
+  }) => api.get('/dsa/questions', { params }),
+
+  // Get question details
+  getQuestion: (id: number) => api.get(`/dsa/questions/${id}`),
+
+  // Generate new question with AI
+  generateQuestion: (data: {
+    topic: string
+    difficulty: string
+    company?: string
+  }) => api.post('/dsa/generate', data),
+
+  // Run code
+  runCode: (data: {
+    problem_id: number
+    code: string
+    language: string
+  }) => api.post('/dsa/run', data),
+
+  // Get hint
+  getHint: (data: {
+    problem_id: number
+    hint_level: number
+  }) => api.post('/dsa/hint', data),
+
+  // Get solution
+  getSolution: (problemId: number, language: string = 'python') => 
+    api.get(`/dsa/solution/${problemId}`, { params: { language } }),
+
+  // Review code
+  reviewCode: (data: {
+    problem_id: number
+    code: string
+    language: string
+  }) => api.post('/dsa/review', data),
+
+  // Get dashboard stats
+  getDashboard: () => api.get<DSADashboardStats>('/dsa/dashboard'),
+
+  // Get leaderboard
+  getLeaderboard: (limit?: number) => api.get('/dsa/leaderboard', { params: { limit } }),
+
+  // Get daily challenge
+  getDailyChallenge: () => api.get('/dsa/daily-challenge'),
+
+  // Get metadata
+  getTopics: () => api.get('/dsa/topics'),
+  getDifficulties: () => api.get('/dsa/difficulties'),
+  getLanguages: () => api.get('/dsa/languages'),
 }
