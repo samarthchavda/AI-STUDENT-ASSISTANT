@@ -271,4 +271,15 @@ export const adminAPI = {
     return response.data;
   },
 
+  // DSA User Performance APIs
+  getDSAUserPerformance: async (): Promise<any> => {
+    const response = await api.get('/admin/dsa-admin/user-performance');
+    return response.data;
+  },
+
+  getDSAUserDetail: async (userId: number): Promise<any> => {
+    const response = await api.get(`/admin/dsa-admin/user-performance/${userId}`);
+    return response.data;
+  },
+
 };

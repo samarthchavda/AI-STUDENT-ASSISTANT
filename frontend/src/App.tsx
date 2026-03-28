@@ -11,6 +11,7 @@ import DSAPracticeDashboardPage from './pages/DSAPracticeDashboardPage'
 import DSAEditorDemoPage from './pages/DSAEditorDemoPage'
 import DSADashboardPage from './pages/DSADashboardPage'
 import DSAProblemPage from './pages/DSAProblemPage'
+import DSAUserPerformancePage from './pages/DSAUserPerformancePage'
 import CareerPage from './pages/CareerPage'
 import ResumeTemplateGalleryPage from './pages/ResumeTemplateGalleryPage'
 import ResumeBuilderFormPage from './pages/ResumeBuilderFormPage'
@@ -63,6 +64,7 @@ function AppRoutes() {
       
       {/* Admin Routes - Require Login + Admin */}
       <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminPage /></ProtectedRoute>} />
+      <Route path="/admin/dsa/user-performance" element={<ProtectedRoute requireAdmin><DSAUserPerformancePage /></ProtectedRoute>} />
     </Routes>
   )
 }

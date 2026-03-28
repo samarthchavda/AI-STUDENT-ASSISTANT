@@ -368,3 +368,180 @@ async def get_cache_status(
             for q in missing_questions
         ]
     }
+
+
+# ============================================================================
+# USER PERFORMANCE ANALYTICS
+# ============================================================================
+
+@router.get("/user-performance")
+async def get_user_performance(
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    """Get performance analytics for all users who have attempted DSA problems"""
+    
+    # Get all users who have submissions
+    users_with_submissions = db.query(
+        User.id,
+        User.name,
+        User.email,
+        func.count(func.distinct(
+            case(
+                (DSASubmission.status == 'accepted', DSAProgress.problem_id),
+                else_=None
+            )
+        )).label('total_solved'),
+        func.count(DSASubmission.id).label('total_submissions'),
+        func.sum(
+            case(
+                (DSASubmission.status == 'accepted', 1),
+                else_=0
+            )
+        ).label('accepted_submissions'),
+        func.max(DSASubmission.created_at).label('last_active')
+    ).join(
+        DSASubmission, User.id == DSASubmission.user_id
+    ).outerjoin(
+        DSAProgress, 
+        (DSAProgress.user_id == User.id) & (DSAProgress.problem_id == DSASubmission.problem_id)
+    ).group_by(
+        User.id, User.name, User.email
+    ).all()
+    
+    # Build user performance list
+    user_performance = []
+    now = datetime.utcnow()
+    
+    for user_data in users_with_submissions:
+        user_id = user_data.id
+        
+        # Get difficulty breakdown
+        difficulty_breakdown = db.query(
+            DSAProblem.difficulty,
+            func.count(func.distinct(DSAProgress.problem_id)).label('count')
+        ).join(
+            DSAProgress, DSAProblem.id == DSAProgress.problem_id
+        ).filter(
+            DSAProgress.user_id == user_id,
+            DSAProgress.status == 'solved'
+        ).group_by(
+            DSAProblem.difficulty
+        ).all()
+        
+        easy_solved = 0
+        medium_solved = 0
+        hard_solved = 0
+        
+        for diff in difficulty_breakdown:
+            diff_str = str(diff.difficulty).replace('DifficultyLevel.', '').lower()
+            if diff_str == 'easy':
+                easy_solved = diff.count
+            elif diff_str == 'medium':
+                medium_solved = diff.count
+            elif diff_str == 'hard':
+                hard_solved = diff.count
+        
+        # Calculate accuracy rate
+        total_subs = user_data.total_submissions or 0
+        accepted_subs = user_data.accepted_submissions or 0
+        accuracy_rate = (accepted_subs / total_subs * 100) if total_subs > 0 else 0
+        
+        # Check if active in last 24 hours
+        is_active_24h = False
+        if user_data.last_active:
+            time_diff = now - user_data.last_active
+            is_active_24h = time_diff.total_seconds() < 86400  # 24 hours
+        
+        user_performance.append({
+            "user_id": user_id,
+            "user_name": user_data.name,
+            "user_email": user_data.email,
+            "easy_solved": easy_solved,
+            "medium_solved": medium_solved,
+            "hard_solved": hard_solved,
+            "total_solved": user_data.total_solved or 0,
+            "total_submissions": total_subs,
+            "accepted_submissions": accepted_subs,
+            "accuracy_rate": round(accuracy_rate, 2),
+            "last_active": user_data.last_active.isoformat() if user_data.last_active else None,
+            "is_active_24h": is_active_24h
+        })
+    
+    # Sort by total solved (descending)
+    user_performance.sort(key=lambda x: x['total_solved'], reverse=True)
+    
+    return {
+        "users": user_performance,
+        "total_users": len(user_performance)
+    }
+
+
+@router.get("/user-performance/{user_id}")
+async def get_user_performance_detail(
+    user_id: int,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    """Get detailed performance data for a specific user"""
+    
+    # Check if user exists
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get all submissions for this user
+    submissions = db.query(
+        DSASubmission,
+        DSAProblem.title,
+        DSAProblem.difficulty,
+        DSAProblem.topic
+    ).join(
+        DSAProblem, DSASubmission.problem_id == DSAProblem.id
+    ).filter(
+        DSASubmission.user_id == user_id
+    ).order_by(
+        DSASubmission.created_at.desc()
+    ).all()
+    
+    # Get progress data
+    progress = db.query(DSAProgress).filter(
+        DSAProgress.user_id == user_id
+    ).all()
+    
+    return {
+        "user_id": user_id,
+        "user_name": user.name,
+        "user_email": user.email,
+        "submissions": [
+            {
+                "id": sub.DSASubmission.id,
+                "problem_id": sub.DSASubmission.problem_id,
+                "problem_title": sub.title,
+                "difficulty": str(sub.difficulty).replace('DifficultyLevel.', ''),
+                "topic": str(sub.topic).replace('DSATopic.', ''),
+                "language": sub.DSASubmission.language,
+                "status": sub.DSASubmission.status,
+                "score": sub.DSASubmission.score,
+                "test_cases_passed": sub.DSASubmission.test_cases_passed,
+                "total_test_cases": sub.DSASubmission.total_test_cases,
+                "execution_time": sub.DSASubmission.execution_time,
+                "created_at": sub.DSASubmission.created_at.isoformat()
+            }
+            for sub in submissions
+        ],
+        "progress": [
+            {
+                "problem_id": p.problem_id,
+                "topic": str(p.topic).replace('DSATopic.', ''),
+                "difficulty": str(p.difficulty).replace('DifficultyLevel.', ''),
+                "status": p.status,
+                "attempts": p.attempts,
+                "best_score": p.best_score,
+                "hints_used": p.hints_used,
+                "time_spent": p.time_spent,
+                "solved_at": p.solved_at.isoformat() if p.solved_at else None
+            }
+            for p in progress
+        ]
+    }

@@ -2184,29 +2184,38 @@ const AdminPage = () => {
                 <h1 className="text-2xl font-bold text-gray-900">DSA Management</h1>
                 <p className="text-gray-500 mt-1">Monitor and manage DSA practice module</p>
               </div>
-              <button
-                onClick={async () => {
-                  if (confirm('Generate missing solutions for all questions? This may take a while.')) {
-                    setLoading(true);
-                    try {
-                      const result = await adminAPI.generateMissingSolutions();
-                      setSuccessMessage(result.message || 'Solution generation triggered!');
-                      setTimeout(() => {
-                        setSuccessMessage(null);
-                        loadDSAManagement();
-                      }, 3000);
-                    } catch (err: any) {
-                      setError(err.response?.data?.detail || 'Failed to trigger solution generation');
-                    } finally {
-                      setLoading(false);
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => navigate('/admin/dsa/user-performance')}
+                  className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium shadow-sm flex items-center gap-2"
+                >
+                  <BarChart3 className="w-5 h-5" />
+                  View User Performance Insights 📊
+                </button>
+                <button
+                  onClick={async () => {
+                    if (confirm('Generate missing solutions for all questions? This may take a while.')) {
+                      setLoading(true);
+                      try {
+                        const result = await adminAPI.generateMissingSolutions();
+                        setSuccessMessage(result.message || 'Solution generation triggered!');
+                        setTimeout(() => {
+                          setSuccessMessage(null);
+                          loadDSAManagement();
+                        }, 3000);
+                      } catch (err: any) {
+                        setError(err.response?.data?.detail || 'Failed to trigger solution generation');
+                      } finally {
+                        setLoading(false);
+                      }
                     }
-                  }
-                }}
-                className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium shadow-sm flex items-center gap-2"
-              >
-                <Database className="w-5 h-5" />
-                Generate All Missing Solutions
-              </button>
+                  }}
+                  className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium shadow-sm flex items-center gap-2"
+                >
+                  <Database className="w-5 h-5" />
+                  Generate All Missing Solutions
+                </button>
+              </div>
             </div>
 
             {/* Stats Cards - Indigo Theme */}
