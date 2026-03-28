@@ -369,3 +369,74 @@ async def get_languages():
             for lang in DSALanguage
         ]
     }
+
+
+# ============================================================================
+# GRAPH VISUALIZATION & EXPLANATION
+# ============================================================================
+
+class ExplainGraphRequest(BaseModel):
+    graph_data: str
+    problem_title: str
+    language: str = "english"
+    is_directed: bool = False
+
+
+@router.post("/explain-graph")
+async def explain_graph(
+    request: ExplainGraphRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get AI explanation of graph structure in English or Gujarati"""
+    
+    try:
+        from app.services.ai_service import AIService
+        
+        # Build prompt based on language
+        if request.language == "gujarati":
+            prompt = f"""તમે એક મદદરૂપ શિક્ષક છો. નીચેના ગ્રાફની રચનાને સરળ ગુજરાતીમાં સમજાવો:
+
+સમસ્યા: {request.problem_title}
+ગ્રાફ પ્રકાર: {"નિર્દેશિત (Directed)" if request.is_directed else "અનિર્દેશિત (Undirected)"}
+ગ્રાફ ડેટા: {request.graph_data}
+
+કૃપા કરીને સમજાવો:
+1. આ ગ્રાફમાં કેટલા નોડ્સ (શિરોબિંદુઓ) છે?
+2. આ ગ્રાફમાં કેટલા એજ (કિનારા) છે?
+3. કયા નોડ્સ એકબીજા સાથે જોડાયેલા છે?
+4. આ ગ્રાફની કોઈ ખાસ રચના છે? (જેમ કે વૃક્ષ, ચક્ર, વગેરે)
+5. આ સમસ્યાને ઉકેલવા માટે આ ગ્રાફની રચના કેવી રીતે મદદ કરે છે?
+
+સરળ અને સ્પષ્ટ ભાષામાં જવાબ આપો."""
+        else:
+            prompt = f"""You are a helpful tutor. Explain the structure of this graph in simple English:
+
+Problem: {request.problem_title}
+Graph Type: {"Directed" if request.is_directed else "Undirected"}
+Graph Data: {request.graph_data}
+
+Please explain:
+1. How many nodes (vertices) are in this graph?
+2. How many edges are in this graph?
+3. Which nodes are connected to each other?
+4. Does this graph have any special structure? (e.g., tree, cycle, etc.)
+5. How does this graph structure help solve the problem?
+
+Provide a clear and simple explanation."""
+
+        # Get AI explanation
+        ai_service = AIService()
+        explanation = ai_service.generate_response(prompt)
+        
+        return {
+            "explanation": explanation,
+            "language": request.language
+        }
+        
+    except Exception as e:
+        print(f"Error explaining graph: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to generate graph explanation"
+        )

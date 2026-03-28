@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { dsaAPI, DSAQuestionDetail } from '../api/client'
 import Header from '../components/Header'
+import GraphVisualizer from '../components/GraphVisualizer'
 import Editor from '@monaco-editor/react'
 import toast, { Toaster } from 'react-hot-toast'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
@@ -384,6 +385,18 @@ export default function DSAProblemPage() {
                           </div>
                         </div>
                       ))}
+                    </div>
+                  )}
+
+                  {/* Graph Visualizer - Only for graph problems */}
+                  {problem.topic === 'graphs' && problem.examples && problem.examples.length > 0 && (
+                    <div className="mb-6">
+                      <h2 className="text-xl font-bold text-gray-900 mb-3">Graph Visualization</h2>
+                      <GraphVisualizer
+                        exampleInput={problem.examples[0].input}
+                        problemTitle={problem.title}
+                        isDirected={problem.title.toLowerCase().includes('directed')}
+                      />
                     </div>
                   )}
 
