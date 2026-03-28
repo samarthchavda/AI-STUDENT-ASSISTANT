@@ -215,7 +215,7 @@ class Notification(Base):
     __tablename__ = "notifications"
     
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     title = Column(String, nullable=False)
     message = Column(Text, nullable=False)
     is_read = Column(Boolean, default=False)
@@ -227,7 +227,7 @@ class Broadcast(Base):
     __tablename__ = "broadcasts"
     
     id = Column(Integer, primary_key=True, index=True)
-    admin_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    admin_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     title = Column(String, nullable=False)
     message = Column(Text, nullable=False)
     target_audience = Column(String, nullable=False)  # 'all', 'pro', 'basic', 'free'
