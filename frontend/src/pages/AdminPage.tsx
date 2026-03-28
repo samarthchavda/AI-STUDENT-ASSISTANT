@@ -24,7 +24,11 @@ import {
   Activity,
   Send,
   Bell,
-  TrendingDown
+  TrendingDown,
+  Code2,
+  CheckCircle,
+  Database,
+  Edit3
 } from 'lucide-react';
 
 interface AptitudeUserSummary {
@@ -54,7 +58,7 @@ interface AptitudeExamHistory {
 const AdminPage = () => {
   const navigate = useNavigate();
   const { user, logout } = useAppStore();
-  const [activeTab, setActiveTab] = useState<'stats' | 'users' | 'chats' | 'payments' | 'progress' | 'company-questions' | 'aptitude-history' | 'ai-monitor' | 'broadcast' | 'aptitude-questions'>('stats');
+  const [activeTab, setActiveTab] = useState<'stats' | 'users' | 'chats' | 'payments' | 'progress' | 'company-questions' | 'aptitude-history' | 'ai-monitor' | 'broadcast' | 'aptitude-questions' | 'dsa-management'>('stats');
   
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -94,6 +98,13 @@ const AdminPage = () => {
   const [aptitudeFilterCategory, setAptitudeFilterCategory] = useState<string>('all')
   const [aptitudeFilterSubcategory, setAptitudeFilterSubcategory] = useState<string>('all')
   const [aptitudeStats, setAptitudeStats] = useState<any>(null)
+  
+  // DSA Management states
+  const [dsaStats, setDsaStats] = useState<any>(null);
+  const [dsaQuestions, setDsaQuestions] = useState<any[]>([]);
+  const [dsaSubmissions, setDsaSubmissions] = useState<any[]>([]);
+  const [dsaSearchQuery, setDsaSearchQuery] = useState('');
+  const [dsaTopicFilter, setDsaTopicFilter] = useState('');
   
   const [loading, setLoading] = useState(false);
   const [chatLoading, setChatLoading] = useState(false);
@@ -416,6 +427,25 @@ const AdminPage = () => {
     }
   };
 
+  const loadDSAManagement = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [stats, questions, submissions] = await Promise.all([
+        adminAPI.getDSAStats(),
+        adminAPI.getDSAQuestions({ limit: 50, search: dsaSearchQuery, topic: dsaTopicFilter }),
+        adminAPI.getDSASubmissions({ limit: 20 })
+      ]);
+      setDsaStats(stats);
+      setDsaQuestions(questions.questions || []);
+      setDsaSubmissions(submissions.submissions || []);
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Failed to load DSA management data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleAptitudeFileUpload = async () => {
     if (!aptitudeQuestionsFile) {
       setError('Please select a JSON file first');
@@ -499,6 +529,9 @@ const AdminPage = () => {
       case 'aptitude-questions':
         loadAptitudeQuestions();
         break;
+      case 'dsa-management':
+        loadDSAManagement();
+        break;
     }
   };
 
@@ -552,6 +585,7 @@ const AdminPage = () => {
   const sidebarItems = [
     { id: 'stats', label: 'Statistics', icon: BarChart3 },
     { id: 'users', label: 'Users', icon: Users },
+    { id: 'dsa-management', label: 'DSA Management', icon: Code2 },
     { id: 'aptitude-questions', label: 'Aptitude Questions', icon: Target },
     { id: 'ai-monitor', label: 'AI Monitor', icon: Activity },
     { id: 'broadcast', label: 'Broadcast', icon: Send },
@@ -2139,6 +2173,238 @@ const AdminPage = () => {
                 <p className="text-gray-500">Upload a JSON file to add questions to the database.</p>
               </div>
             )}
+          </div>
+        )}
+
+        {/* DSA Management Tab */}
+        {activeTab === 'dsa-management' && !loading && (
+          <div>
+            <div className="mb-6">
+              <h1 className="text-2xl font-bold text-gray-900">DSA Management</h1>
+              <p className="text-gray-500 mt-1">Monitor and manage DSA practice module</p>
+            </div>
+
+            {/* Stats Cards */}
+            {dsaStats && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                {/* Total Questions */}
+                <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <Code2 className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <span className="text-xs font-medium text-gray-500 uppercase">Total</span>
+                  </div>
+                  <h3 className="text-3xl font-bold text-gray-900 mb-1">{dsaStats.total_questions}</h3>
+                  <p className="text-sm text-gray-500">DSA Problems</p>
+                </div>
+
+                {/* Total Submissions */}
+                <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                      <Activity className="w-6 h-6 text-purple-600" />
+                    </div>
+                    <span className="text-xs font-medium text-purple-600 uppercase">Activity</span>
+                  </div>
+                  <h3 className="text-3xl font-bold text-gray-900 mb-1">{dsaStats.total_submissions}</h3>
+                  <p className="text-sm text-gray-500">Code Submissions</p>
+                </div>
+
+                {/* Success Rate */}
+                <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                      <CheckCircle className="w-6 h-6 text-green-600" />
+                    </div>
+                    <span className="text-xs font-medium text-green-600 uppercase">Success</span>
+                  </div>
+                  <h3 className="text-3xl font-bold text-gray-900 mb-1">{dsaStats.success_rate}%</h3>
+                  <p className="text-sm text-gray-500">Acceptance Rate</p>
+                </div>
+
+                {/* Cache Coverage */}
+                <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                      <Database className="w-6 h-6 text-orange-600" />
+                    </div>
+                    <span className="text-xs font-medium text-orange-600 uppercase">Cache</span>
+                  </div>
+                  <h3 className="text-3xl font-bold text-gray-900 mb-1">{dsaStats.cache_coverage}%</h3>
+                  <p className="text-sm text-gray-500">Solutions Cached</p>
+                </div>
+              </div>
+            )}
+
+            {/* Questions Table */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-8">
+              <div className="p-6 border-b border-gray-100">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-bold text-gray-900">DSA Questions</h2>
+                  <button
+                    onClick={() => loadDSAManagement()}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm font-medium"
+                  >
+                    Refresh
+                  </button>
+                </div>
+                
+                {/* Filters */}
+                <div className="flex gap-3">
+                  <input
+                    type="text"
+                    placeholder="Search questions..."
+                    value={dsaSearchQuery}
+                    onChange={(e) => setDsaSearchQuery(e.target.value)}
+                    className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <select
+                    value={dsaTopicFilter}
+                    onChange={(e) => setDsaTopicFilter(e.target.value)}
+                    className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">All Topics</option>
+                    <option value="arrays">Arrays</option>
+                    <option value="strings">Strings</option>
+                    <option value="linked_lists">Linked Lists</option>
+                    <option value="trees">Trees</option>
+                    <option value="graphs">Graphs</option>
+                    <option value="dynamic_programming">Dynamic Programming</option>
+                  </select>
+                  <button
+                    onClick={() => loadDSAManagement()}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm font-medium"
+                  >
+                    Apply Filters
+                  </button>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="min-w-full">
+                  <thead>
+                    <tr className="border-b border-gray-100">
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">ID</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Title</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Topic</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Difficulty</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Company</th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Cache</th>
+                      <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {dsaQuestions.map((question) => (
+                      <tr key={question.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 text-sm text-gray-600">#{question.id}</td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm font-medium text-gray-900">{question.title}</div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                            {question.topic}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                            question.difficulty === 'easy' ? 'bg-green-100 text-green-700' :
+                            question.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-red-100 text-red-700'
+                          }`}>
+                            {question.difficulty}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-600">{question.company || 'N/A'}</td>
+                        <td className="px-6 py-4">
+                          {question.has_cache ? (
+                            <span className="inline-flex items-center gap-1 text-green-600 text-sm">
+                              <CheckCircle className="w-4 h-4" />
+                              Cached
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 text-sm">No cache</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                          <button
+                            onClick={() => {
+                              const newTitle = prompt('Enter new title:', question.title);
+                              if (newTitle) {
+                                adminAPI.updateDSAQuestion(question.id, { title: newTitle })
+                                  .then(() => {
+                                    setSuccessMessage('Question updated!');
+                                    loadDSAManagement();
+                                    setTimeout(() => setSuccessMessage(null), 3000);
+                                  })
+                                  .catch((err) => setError(err.response?.data?.detail || 'Update failed'));
+                              }
+                            }}
+                            className="inline-flex items-center gap-1 px-3 py-1 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                            Quick Edit
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {dsaQuestions.length === 0 && (
+                <div className="p-12 text-center">
+                  <Code2 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500">No questions found</p>
+                </div>
+              )}
+            </div>
+
+            {/* Recent Submissions Live Feed */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+              <div className="p-6 border-b border-gray-100">
+                <h2 className="text-lg font-bold text-gray-900">Recent DSA Submissions</h2>
+                <p className="text-sm text-gray-500 mt-1">Live feed of user code submissions</p>
+              </div>
+
+              <div className="divide-y divide-gray-100">
+                {dsaSubmissions.map((submission) => (
+                  <div key={submission.id} className="p-6 hover:bg-gray-50 transition">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <span className="font-medium text-gray-900">{submission.user_name}</span>
+                          <span className="text-sm text-gray-500">{submission.user_email}</span>
+                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                            submission.status === 'accepted' ? 'bg-green-100 text-green-700' :
+                            submission.status === 'wrong_answer' ? 'bg-red-100 text-red-700' :
+                            submission.status === 'runtime_error' ? 'bg-orange-100 text-orange-700' :
+                            'bg-gray-100 text-gray-700'
+                          }`}>
+                            {submission.status.replace('_', ' ')}
+                          </span>
+                        </div>
+                        <div className="text-sm text-gray-600 mb-1">
+                          Problem: <span className="font-medium text-gray-900">{submission.problem_title}</span>
+                        </div>
+                        <div className="flex items-center gap-4 text-xs text-gray-500">
+                          <span>Language: {submission.language}</span>
+                          <span>Score: {submission.score}/100</span>
+                          <span>{new Date(submission.submitted_at).toLocaleString()}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {dsaSubmissions.length === 0 && (
+                <div className="p-12 text-center">
+                  <Activity className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-500">No recent submissions</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
         </main>
