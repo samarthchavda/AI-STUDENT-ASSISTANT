@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from pydantic import BaseModel
 
 from app.core.database import get_db
-from app.models import User, DSAProblem, DSAProgress, DSAHistory
+from app.models import User, DSAProblem, DSAProgress, DSASubmission
 from app.core.auth import get_current_user
 
 router = APIRouter(prefix="/dsa-admin", tags=["DSA Admin"])
@@ -78,12 +78,12 @@ async def get_dsa_stats(
     # Total questions
     total_questions = db.query(DSAProblem).count()
     
-    # Total submissions (from history)
-    total_submissions = db.query(DSAHistory).count()
+    # Total submissions
+    total_submissions = db.query(DSASubmission).count()
     
     # Success rate (accepted vs total)
-    accepted_count = db.query(DSAHistory).filter(
-        DSAHistory.status == 'accepted'
+    accepted_count = db.query(DSASubmission).filter(
+        DSASubmission.status == 'accepted'
     ).count()
     success_rate = (accepted_count / total_submissions * 100) if total_submissions > 0 else 0
     
@@ -116,8 +116,8 @@ async def get_dsa_stats(
     
     # Recent submissions (last 24 hours)
     yesterday = datetime.utcnow() - timedelta(days=1)
-    recent_submissions = db.query(DSAHistory).filter(
-        DSAHistory.submitted_at >= yesterday
+    recent_submissions = db.query(DSASubmission).filter(
+        DSASubmission.created_at >= yesterday
     ).count()
     
     # Average attempts per problem
@@ -200,17 +200,17 @@ async def get_dsa_question_detail(
         raise HTTPException(status_code=404, detail="Question not found")
     
     # Get submission stats for this question
-    total_attempts = db.query(DSAHistory).filter(
-        DSAHistory.problem_id == question_id
+    total_attempts = db.query(DSASubmission).filter(
+        DSASubmission.problem_id == question_id
     ).count()
     
-    accepted_attempts = db.query(DSAHistory).filter(
-        DSAHistory.problem_id == question_id,
-        DSAHistory.status == 'accepted'
+    accepted_attempts = db.query(DSASubmission).filter(
+        DSASubmission.problem_id == question_id,
+        DSASubmission.status == 'accepted'
     ).count()
     
-    unique_users = db.query(func.count(func.distinct(DSAHistory.user_id))).filter(
-        DSAHistory.problem_id == question_id
+    unique_users = db.query(func.count(func.distinct(DSASubmission.user_id))).filter(
+        DSASubmission.problem_id == question_id
     ).scalar()
     
     return {
@@ -276,14 +276,14 @@ async def get_recent_submissions(
 ):
     """Get recent code submissions"""
     
-    query = db.query(DSAHistory).join(User).join(DSAProblem)
+    query = db.query(DSASubmission).join(User).join(DSAProblem)
     
     # Filter by status if provided
     if status:
-        query = query.filter(DSAHistory.status == status)
+        query = query.filter(DSASubmission.status == status)
     
     # Get recent submissions
-    submissions = query.order_by(DSAHistory.submitted_at.desc()).limit(limit).all()
+    submissions = query.order_by(DSASubmission.created_at.desc()).limit(limit).all()
     
     return {
         "total": len(submissions),
@@ -298,7 +298,7 @@ async def get_recent_submissions(
                 "language": s.language,
                 "status": s.status,
                 "score": s.score,
-                "submitted_at": s.submitted_at
+                "submitted_at": s.created_at
             }
             for s in submissions
         ]
