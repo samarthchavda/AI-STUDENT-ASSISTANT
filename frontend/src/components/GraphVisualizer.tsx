@@ -24,7 +24,6 @@ const GraphVisualizer = ({ exampleInput, problemTitle, isDirected = false }: Gra
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [explanation, setExplanation] = useState<string>('');
   const [loading, setLoading] = useState(false);
-  const [language, setLanguage] = useState<'english' | 'gujarati'>('english');
   const [showExplanation, setShowExplanation] = useState(false);
 
   // Parse graph data from example input
@@ -175,7 +174,7 @@ const GraphVisualizer = ({ exampleInput, problemTitle, isDirected = false }: Gra
         {
           graph_data: exampleInput,
           problem_title: problemTitle,
-          language: language,
+          language: 'english',
           is_directed: isDirected,
         },
         {
@@ -189,11 +188,7 @@ const GraphVisualizer = ({ exampleInput, problemTitle, isDirected = false }: Gra
       setExplanation(response.data.explanation);
     } catch (error: any) {
       console.error('Failed to get explanation:', error);
-      setExplanation(
-        language === 'gujarati'
-          ? 'માફ કરશો, ગ્રાફની સમજૂતી મેળવવામાં ભૂલ આવી. કૃપા કરીને ફરી પ્રયાસ કરો.'
-          : 'Sorry, failed to get graph explanation. Please try again.'
-      );
+      setExplanation('Sorry, failed to get graph explanation. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -209,24 +204,14 @@ const GraphVisualizer = ({ exampleInput, problemTitle, isDirected = false }: Gra
             Interactive Graph Visualization - Drag nodes to explore
           </span>
         </div>
-        <div className="flex items-center gap-3">
-          <select
-            value={language}
-            onChange={(e) => setLanguage(e.target.value as 'english' | 'gujarati')}
-            className="px-3 py-1.5 border border-indigo-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          >
-            <option value="english">English</option>
-            <option value="gujarati">ગુજરાતી</option>
-          </select>
-          <button
-            onClick={handleExplainGraph}
-            disabled={loading}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Sparkles className="w-4 h-4" />
-            {loading ? 'Explaining...' : 'Explain Graph'}
-          </button>
-        </div>
+        <button
+          onClick={handleExplainGraph}
+          disabled={loading}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Sparkles className="w-4 h-4" />
+          {loading ? 'Explaining...' : 'Explain Graph'}
+        </button>
       </div>
 
       {/* Graph Visualization */}
@@ -254,9 +239,7 @@ const GraphVisualizer = ({ exampleInput, problemTitle, isDirected = false }: Gra
               </div>
             </div>
             <div className="flex-1">
-              <h3 className="text-lg font-bold text-gray-900 mb-2">
-                {language === 'gujarati' ? 'AI સમજૂતી' : 'AI Explanation'}
-              </h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">AI Explanation</h3>
               {loading ? (
                 <div className="space-y-2">
                   <div className="h-4 bg-indigo-200 rounded animate-pulse"></div>

@@ -388,29 +388,13 @@ async def explain_graph(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Get AI explanation of graph structure in English or Gujarati"""
+    """Get AI explanation of graph structure in English"""
     
     try:
         from app.services.ai_service import AIService
         
-        # Build prompt based on language
-        if request.language == "gujarati":
-            prompt = f"""તમે એક મદદરૂપ શિક્ષક છો. નીચેના ગ્રાફની રચનાને સરળ ગુજરાતીમાં સમજાવો:
-
-સમસ્યા: {request.problem_title}
-ગ્રાફ પ્રકાર: {"નિર્દેશિત (Directed)" if request.is_directed else "અનિર્દેશિત (Undirected)"}
-ગ્રાફ ડેટા: {request.graph_data}
-
-કૃપા કરીને સમજાવો:
-1. આ ગ્રાફમાં કેટલા નોડ્સ (શિરોબિંદુઓ) છે?
-2. આ ગ્રાફમાં કેટલા એજ (કિનારા) છે?
-3. કયા નોડ્સ એકબીજા સાથે જોડાયેલા છે?
-4. આ ગ્રાફની કોઈ ખાસ રચના છે? (જેમ કે વૃક્ષ, ચક્ર, વગેરે)
-5. આ સમસ્યાને ઉકેલવા માટે આ ગ્રાફની રચના કેવી રીતે મદદ કરે છે?
-
-સરળ અને સ્પષ્ટ ભાષામાં જવાબ આપો."""
-        else:
-            prompt = f"""You are a helpful tutor. Explain the structure of this graph in simple English:
+        # Build prompt in English only
+        prompt = f"""You are a helpful tutor. Explain the structure of this graph in simple English:
 
 Problem: {request.problem_title}
 Graph Type: {"Directed" if request.is_directed else "Undirected"}
@@ -431,7 +415,7 @@ Provide a clear and simple explanation."""
         
         return {
             "explanation": explanation,
-            "language": request.language
+            "language": "english"
         }
         
     except Exception as e:
@@ -439,4 +423,88 @@ Provide a clear and simple explanation."""
         raise HTTPException(
             status_code=500,
             detail="Failed to generate graph explanation"
+        )
+
+
+# ============================================================================
+# EDITORIAL & ALGORITHM BREAKDOWN
+# ============================================================================
+
+@router.get("/editorial/{problem_id}")
+async def get_editorial(
+    problem_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get step-by-step editorial and algorithm breakdown for a problem"""
+    
+    try:
+        from app.models import DSAProblem
+        from app.services.ai_service import AIService
+        
+        # Get problem
+        problem = db.query(DSAProblem).filter(DSAProblem.id == problem_id).first()
+        if not problem:
+            raise HTTPException(status_code=404, detail="Problem not found")
+        
+        # Build editorial prompt
+        prompt = f"""You are an expert algorithm tutor. Provide a comprehensive editorial for this DSA problem:
+
+Problem: {problem.title}
+Topic: {problem.topic}
+Difficulty: {problem.difficulty}
+Description: {problem.description}
+
+Please provide a detailed step-by-step breakdown including:
+
+1. PROBLEM UNDERSTANDING
+   - What is the problem asking?
+   - What are the key constraints?
+   - What makes this problem challenging?
+
+2. INTUITION
+   - What is the core insight needed to solve this?
+   - How should we think about this problem?
+   - What patterns or techniques apply here?
+
+3. APPROACH
+   - What algorithm/data structure should we use?
+   - Why is this the optimal approach?
+   - What are the key steps?
+
+4. ALGORITHM STEPS
+   - Step 1: [Detailed explanation]
+   - Step 2: [Detailed explanation]
+   - Step 3: [Detailed explanation]
+   - Continue with all necessary steps...
+
+5. COMPLEXITY ANALYSIS
+   - Time Complexity: [Explain why]
+   - Space Complexity: [Explain why]
+
+6. EDGE CASES TO CONSIDER
+   - List important edge cases
+   - How to handle them
+
+7. OPTIMIZATION TIPS
+   - How to optimize further if needed
+   - Common mistakes to avoid
+
+Make the explanation clear, educational, and easy to understand. Use examples where helpful."""
+
+        # Get AI explanation
+        ai_service = AIService()
+        editorial = ai_service.generate_response(prompt)
+        
+        return {
+            "editorial": editorial,
+            "problem_id": problem_id,
+            "problem_title": problem.title
+        }
+        
+    except Exception as e:
+        print(f"Error generating editorial: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="Failed to generate editorial"
         )

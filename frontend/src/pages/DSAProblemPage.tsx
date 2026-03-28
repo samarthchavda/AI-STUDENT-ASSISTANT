@@ -25,6 +25,8 @@ export default function DSAProblemPage() {
   const [loading, setLoading] = useState(true)
   const [running, setRunning] = useState(false)
   const [activeTab, setActiveTab] = useState<TabType>('description')
+  const [editorial, setEditorial] = useState<string>('')
+  const [loadingEditorial, setLoadingEditorial] = useState(false)
   
   // Modals
   const [showSolutionModal, setShowSolutionModal] = useState(false)
@@ -118,6 +120,38 @@ export default function DSAProblemPage() {
       setLoadingSolution(false)
     }
   }
+
+  const loadEditorial = async () => {
+    if (!problem || editorial) return // Don't reload if already loaded
+    
+    setLoadingEditorial(true)
+    
+    try {
+      const token = localStorage.getItem('token')
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+      
+      const response = await fetch(`${API_URL}/api/dsa/editorial/${problem.id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      })
+      
+      const data = await response.json()
+      setEditorial(data.editorial)
+    } catch (error) {
+      console.error('Failed to load editorial:', error)
+      setEditorial('Failed to load editorial. Please try again later.')
+    } finally {
+      setLoadingEditorial(false)
+    }
+  }
+
+  // Load editorial when tab is switched
+  useEffect(() => {
+    if (activeTab === 'editorial' && !editorial && !loadingEditorial) {
+      loadEditorial()
+    }
+  }, [activeTab])
 
   const getLanguageSolutionCode = () => {
     if (!solution) return null
@@ -360,6 +394,58 @@ export default function DSAProblemPage() {
                     </div>
                   </div>
 
+                  {/* Graph Visualizer - Directly under Problem Statement for graph problems */}
+                  {problem.topic === 'graphs' && problem.examples && problem.examples.length > 0 && (
+                    <div className="mb-6">
+                      <h2 className="text-xl font-bold text-gray-900 mb-3">Graph Visualization</h2>
+                      <GraphVisualizer
+                        exampleInput={problem.examples[0].input}
+                        problemTitle={problem.title}
+                        isDirected={problem.title.toLowerCase().includes('directed')}
+                      />
+                    </div>
+                  )}
+
+                  {/* Company Motivation - Why this question is asked */}
+                  {problem.company && (
+                    <div className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-indigo-500 rounded-r-xl p-5">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
+                          <Award className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-bold text-gray-900 mb-2 flex items-center gap-2">
+                            Why Companies Ask This Question
+                          </h3>
+                          <p className="text-gray-700 text-sm leading-relaxed mb-3">
+                            This problem is frequently asked by <span className="font-semibold text-indigo-700">{problem.company}</span> to evaluate:
+                          </p>
+                          <ul className="space-y-2 text-sm text-gray-700">
+                            <li className="flex items-start gap-2">
+                              <span className="text-indigo-600 font-bold">•</span>
+                              <span><strong>Problem-solving skills:</strong> Your ability to break down complex problems into manageable steps</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                              <span className="text-indigo-600 font-bold">•</span>
+                              <span><strong>Algorithm knowledge:</strong> Understanding of {problem.topic.replace('_', ' ')} data structures and their applications</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                              <span className="text-indigo-600 font-bold">•</span>
+                              <span><strong>Code optimization:</strong> Writing efficient solutions that scale with large inputs</span>
+                            </li>
+                            <li className="flex items-start gap-2">
+                              <span className="text-indigo-600 font-bold">•</span>
+                              <span><strong>Real-world application:</strong> Similar patterns appear in production systems like social networks, routing algorithms, and dependency management</span>
+                            </li>
+                          </ul>
+                          <p className="text-xs text-indigo-600 font-semibold mt-3">
+                            💡 Mastering this problem will help you ace technical interviews at top tech companies!
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Examples */}
                   {problem.examples && problem.examples.length > 0 && (
                     <div className="mb-6">
@@ -385,18 +471,6 @@ export default function DSAProblemPage() {
                           </div>
                         </div>
                       ))}
-                    </div>
-                  )}
-
-                  {/* Graph Visualizer - Only for graph problems */}
-                  {problem.topic === 'graphs' && problem.examples && problem.examples.length > 0 && (
-                    <div className="mb-6">
-                      <h2 className="text-xl font-bold text-gray-900 mb-3">Graph Visualization</h2>
-                      <GraphVisualizer
-                        exampleInput={problem.examples[0].input}
-                        problemTitle={problem.title}
-                        isDirected={problem.title.toLowerCase().includes('directed')}
-                      />
                     </div>
                   )}
 
@@ -434,15 +508,60 @@ export default function DSAProblemPage() {
               )}
 
               {activeTab === 'editorial' && (
-                <div className="text-center py-12">
-                  <BookOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-600 mb-4">Editorial coming soon!</p>
-                  <button
-                    onClick={handleGetSolution}
-                    className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold transition-colors"
-                  >
-                    View Solution
-                  </button>
+                <div>
+                  {loadingEditorial ? (
+                    <div className="flex items-center justify-center py-12">
+                      <div className="text-center">
+                        <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-4 border-purple-600 mb-3"></div>
+                        <p className="text-gray-600 font-medium">Loading editorial...</p>
+                      </div>
+                    </div>
+                  ) : editorial ? (
+                    <div className="space-y-6">
+                      {/* Editorial Header */}
+                      <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border-l-4 border-purple-600 rounded-r-xl p-6">
+                        <div className="flex items-center gap-3 mb-2">
+                          <BookOpen className="w-6 h-6 text-purple-600" />
+                          <h2 className="text-2xl font-bold text-gray-900">Editorial & Algorithm Breakdown</h2>
+                        </div>
+                        <p className="text-gray-600 text-sm">
+                          Step-by-step explanation of the optimal approach to solve this problem
+                        </p>
+                      </div>
+
+                      {/* Editorial Content */}
+                      <div className="prose prose-gray max-w-none">
+                        <div className="bg-white rounded-xl border border-gray-200 p-6 whitespace-pre-wrap text-gray-700 leading-relaxed">
+                          {editorial}
+                        </div>
+                      </div>
+
+                      {/* View Full Solution Button */}
+                      <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-purple-200 rounded-xl p-6 text-center">
+                        <p className="text-gray-700 mb-4">
+                          Ready to see the complete implementation?
+                        </p>
+                        <button
+                          onClick={handleGetSolution}
+                          className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl font-bold transition-all shadow-lg inline-flex items-center gap-2"
+                        >
+                          <Code2 className="w-5 h-5" />
+                          View Complete Solution
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <BookOpen className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                      <p className="text-gray-600 mb-4">Editorial coming soon!</p>
+                      <button
+                        onClick={handleGetSolution}
+                        className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold transition-colors"
+                      >
+                        View Solution
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 
