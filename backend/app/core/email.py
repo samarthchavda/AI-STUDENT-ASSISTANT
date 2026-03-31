@@ -231,3 +231,50 @@ def send_welcome_email(email: str, name: str) -> None:
         logger.error("Failed to send welcome email to %s: %s", email, exc)
         # Don't raise exception - registration should succeed even if email fails
         pass
+
+
+
+def send_email(to_email: str, subject: str, body: str, html_body: str = None) -> None:
+    """
+    Generic function to send emails.
+    
+    Args:
+        to_email: Recipient email address
+        subject: Email subject
+        body: Plain text email body
+        html_body: Optional HTML email body
+    
+    When SMTP credentials are not configured, logs to console for development.
+    """
+    if not settings.mail_username or not settings.mail_password:
+        # Mock / development mode — print to console instead of sending
+        logger.warning(
+            "[MOCK EMAIL] To: %s | Subject: %s\n%s", to_email, subject, body
+        )
+        return
+
+    sender = f"{settings.mail_from_name} <{settings.mail_from or settings.mail_username}>"
+
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"] = sender
+    msg["To"] = to_email
+    
+    # Attach plain text version
+    msg.attach(MIMEText(body, "plain"))
+    
+    # Attach HTML version if provided
+    if html_body:
+        msg.attach(MIMEText(html_body, "html"))
+
+    try:
+        with smtplib.SMTP(settings.mail_server, settings.mail_port, timeout=3) as server:
+            server.ehlo()
+            server.starttls()
+            server.login(settings.mail_username, settings.mail_password)
+            server.sendmail(settings.mail_from or settings.mail_username, [to_email], msg.as_string())
+        logger.info("Email sent to %s", to_email)
+    except Exception as exc:
+        logger.error("Failed to send email to %s: %s", to_email, exc)
+        # Don't raise exception - allow operation to continue even if email fails
+        pass

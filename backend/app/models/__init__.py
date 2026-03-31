@@ -409,3 +409,167 @@ class DSAHint(Base):
     # Relationships
     user = relationship("User")
     problem = relationship("DSAProblem")
+
+
+# ============================================================================
+# ADMIN PANEL ENHANCEMENTS
+# ============================================================================
+
+class SystemHealthLog(Base):
+    """Track system health metrics for monitoring"""
+    __tablename__ = "system_health_logs"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    metric_type = Column(String, nullable=False, index=True)  # 'gemini_api', 'database_query', 'api_endpoint'
+    endpoint = Column(String, nullable=True)
+    response_time_ms = Column(Integer, nullable=False)
+    status = Column(String, nullable=False)  # 'success', 'error', 'timeout'
+    error_message = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+
+
+class AdminAuditLog(Base):
+    """Track all admin actions for audit trail"""
+    __tablename__ = "admin_audit_logs"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    admin_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    action_type = Column(String, nullable=False, index=True)
+    target_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    action_details = Column(Text, nullable=False)
+    ip_address = Column(String, nullable=True)
+    user_agent = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    
+    # Relationships
+    admin = relationship("User", foreign_keys=[admin_id])
+    target_user = relationship("User", foreign_keys=[target_user_id])
+
+
+class UserSession(Base):
+    """Track active user sessions for online/offline status"""
+    __tablename__ = "user_sessions"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    session_token = Column(String, unique=True, nullable=False)
+    ip_address = Column(String, nullable=True)
+    user_agent = Column(Text, nullable=True)
+    last_activity = Column(DateTime, default=datetime.utcnow, index=True)
+    is_active = Column(Boolean, default=True, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    user = relationship("User")
+
+
+
+# ============================================================================
+# GROWTH & STARTUP FEATURES
+# ============================================================================
+
+class Referral(Base):
+    """Track user referrals for growth"""
+    __tablename__ = "referrals"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    referrer_user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    referred_user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    referral_code = Column(String, nullable=False, index=True)
+    status = Column(String, default="pending")  # pending, completed, rewarded
+    reward_given = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    completed_at = Column(DateTime, nullable=True)
+    
+    # Relationships
+    referrer = relationship("User", foreign_keys=[referrer_user_id])
+    referred = relationship("User", foreign_keys=[referred_user_id])
+
+
+class UserEngagementLog(Base):
+    """Track user engagement for analytics"""
+    __tablename__ = "user_engagement_logs"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    action_type = Column(String, nullable=False, index=True)
+    action_details = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    
+    # Relationships
+    user = relationship("User")
+
+
+class LeaderboardHistory(Base):
+    """Track leaderboard rank changes over time"""
+    __tablename__ = "leaderboard_history"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    rank = Column(Integer, nullable=False)
+    total_solved = Column(Integer, nullable=False)
+    accuracy = Column(Integer, nullable=False)
+    total_score = Column(Integer, nullable=False)
+    snapshot_date = Column(Date, nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    user = relationship("User")
+
+
+class EmailCampaign(Base):
+    """Track email campaigns for marketing"""
+    __tablename__ = "email_campaigns"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    campaign_name = Column(String, nullable=False)
+    campaign_type = Column(String, nullable=False)  # nudge, promotion, announcement, welcome
+    subject = Column(String, nullable=False)
+    body = Column(Text, nullable=False)
+    target_audience = Column(String, nullable=True)
+    sent_count = Column(Integer, default=0)
+    opened_count = Column(Integer, default=0)
+    clicked_count = Column(Integer, default=0)
+    created_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    sent_at = Column(DateTime, nullable=True)
+    
+    # Relationships
+    creator = relationship("User", foreign_keys=[created_by])
+
+
+class EmailLog(Base):
+    """Track individual email sends"""
+    __tablename__ = "email_logs"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    campaign_id = Column(Integer, ForeignKey("email_campaigns.id", ondelete="CASCADE"), nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    email = Column(String, nullable=False)
+    status = Column(String, nullable=False, index=True)  # sent, delivered, opened, clicked, bounced, failed
+    sent_at = Column(DateTime, default=datetime.utcnow)
+    opened_at = Column(DateTime, nullable=True)
+    clicked_at = Column(DateTime, nullable=True)
+    error_message = Column(Text, nullable=True)
+    
+    # Relationships
+    campaign = relationship("EmailCampaign")
+    user = relationship("User")
+
+
+class RevenueAnalytics(Base):
+    """Daily revenue analytics for business metrics"""
+    __tablename__ = "revenue_analytics"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    date = Column(Date, unique=True, nullable=False, index=True)
+    total_revenue = Column(Integer, default=0)
+    total_transactions = Column(Integer, default=0)
+    new_pro_users = Column(Integer, default=0)
+    new_basic_users = Column(Integer, default=0)
+    churned_users = Column(Integer, default=0)
+    refund_amount = Column(Integer, default=0)
+    mrr = Column(Integer, default=0)  # Monthly Recurring Revenue
+    arr = Column(Integer, default=0)  # Annual Recurring Revenue
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Code Campus AI — Resume Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<style>
+  :root {
+    --bg: #f4f7fb;
+    --surface: #ffffff;
+    --surface2: #f8fafc;
+    --border: #e2e8f0;
+    --accent: #10b981;
+    --accent2: #ef4444;
+    --accent3: #06b6d4;
+    --text: #0f172a;
+    --muted: #64748b;
+    --card: #17172200;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: radial-gradient(circle at 0% 0%, #e6fff4, transparent 42%),
+      radial-gradient(circle at 100% 0%, #ecfeff, transparent 38%),
+      linear-gradient(180deg, #f8fbff 0%, #f4f7fb 100%);
+    color: var(--text);
+    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    min-height: 100vh;
+  }
+
+  /* ── LAYOUT ── */
+  .app { display: flex; min-height: 100vh; align-items: flex-start; }
+  .sidebar {
+    width: 380px; flex-shrink: 0; background: var(--surface);
+    border-right: 1px solid var(--border); overflow-y: auto;
+    max-height: 100vh; position: sticky; top: 0;
+    box-shadow: 10px 0 30px rgba(15, 23, 42, 0.05);
+  }
+  .main { flex: 1; padding: 22px 24px 30px; overflow: visible; }
+
+  /* ── TEMPLATE GRID (Step 1) ── */
+  #step-templates { display: block; }
+  #step-form { display: none; }
+  #step-preview { display: none; }
+
+  #step-templates {
+    max-width: 1520px;
+    margin: 0 auto;
+    padding: 8px 6px 12px;
+  }
+
+  .templates-head {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 14px;
+  }
+
+  .templates-stat {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    border: 1px solid #bbf7d0;
+    background: linear-gradient(135deg, #ecfdf5, #f0fdfa);
+    color: #047857;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    padding: 8px 14px;
+    white-space: nowrap;
+    box-shadow: 0 8px 18px rgba(16, 185, 129, 0.12);
+  }
+
+  .section-header { font-family: 'Syne', sans-serif; font-size: 34px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 6px; line-height: 1.08; }
+  .section-header {
+    letter-spacing: -0.03em;
+    background: linear-gradient(135deg, #065f46 0%, #0ea5a3 46%, #2563eb 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .section-sub { color: #64748b; font-size: 15px; margin-bottom: 10px; max-width: 880px; }
+
+  .filter-bar { display: flex; gap: 12px; margin: 16px 0 28px; flex-wrap: wrap; }
+  .filter-btn {
+    padding: 8px 15px;
+    border-radius: 999px;
+    border: 1px solid #d1fae5;
+    background: #ffffff;
+    color: #334155;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all .25s ease;
+    box-shadow: 0 5px 14px rgba(15, 23, 42, 0.04);
+  }
+  .filter-btn:hover:not(.active) {
+    border-color: #34d399;
+    color: #065f46;
+    background: #ecfdf5;
+  }
+  .filter-btn.active {
+    color: #ffffff;
+    border-color: #059669;
+    background: linear-gradient(135deg, #10b981, #0ea5a3);
+    box-shadow: 0 10px 22px rgba(16, 185, 129, 0.24);
+  }
+
+  .template-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; }
+  .template-card {
+    border-radius: 22px;
+    border: 1px solid #dbe4f0;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: linear-gradient(180deg, #ffffff, #f8fbff);
+    position: relative;
+    isolation: isolate;
+    box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
+  }
+  .template-card::before {
+    content: '';
+    position: absolute;
+    inset: -14px;
+    z-index: -1;
+    border-radius: 24px;
+    background: radial-gradient(circle at top, var(--card-glow, rgba(16, 185, 129, 0.22)), transparent 65%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .template-card:hover {
+    border-color: #86efac;
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 26px 52px rgba(16, 185, 129, 0.2);
+  }
+  .template-card:hover::before {
+    opacity: 1;
+  }
+  .template-card.selected {
+    border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2), 0 26px 56px rgba(16, 185, 129, 0.24);
+    animation: select-pop 0.3s ease;
+  }
+  .template-card.selected::before {
+    opacity: 1;
+    background: radial-gradient(circle at top, rgba(16, 185, 129, 0.4), transparent 66%);
+  }
+  .template-thumb {
+    width: 100%;
+    aspect-ratio: 1 / 1.04;
+    overflow: hidden;
+    background: #f1f5f9;
+    position: relative;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .template-card.variant-dark .template-thumb { background: linear-gradient(180deg, #0f172a, #111827); }
+  .template-card.variant-sidebar .template-thumb { background: linear-gradient(180deg, #f8fafc, #e2e8f0); }
+  .template-card.variant-centered .template-thumb { background: linear-gradient(180deg, #f0fdf4, #ecfeff); }
+  .template-card.variant-gradient .template-thumb { background: linear-gradient(135deg, #dbeafe, #dcfce7); }
+  .template-thumb iframe {
+    width: 800px;
+    height: 1067px;
+    --frame-scale: 0.42;
+    transform-origin: top left;
+    transform: scale(var(--frame-scale));
+    border: none;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.28s ease, transform 0.32s ease;
+  }
+  .template-card:hover .template-thumb iframe {
+    transform: scale(calc(var(--frame-scale) + 0.02));
+  }
+
+  .thumb-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 40%, rgba(2, 6, 23, 0.62) 100%);
+    opacity: 0;
+    display: flex;
+    align-items: end;
+    justify-content: center;
+    padding: 14px;
+    transition: opacity 0.28s ease;
+    pointer-events: none;
+    z-index: 3;
+  }
+
+  .template-card:hover .thumb-overlay {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .card-actions {
+    display: flex;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .card-btn {
+    flex: 1;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.34);
+    background: rgba(255, 255, 255, 0.14);
+    color: #f8fafc;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 8px 10px;
+    cursor: pointer;
+    backdrop-filter: blur(5px);
+    transition: all .2s ease;
+  }
+
+  .card-btn:hover {
+    background: rgba(255, 255, 255, 0.24);
+  }
+
+  .card-btn.primary {
+    border-color: rgba(16, 185, 129, 0.5);
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.88), rgba(14, 165, 233, 0.86));
+  }
+  .template-card.loaded .template-thumb iframe {
+    opacity: 1;
+  }
+  .template-card.loading .template-thumb::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(30,41,59,0.85) 8%, rgba(71,85,105,0.65) 24%, rgba(30,41,59,0.85) 40%);
+    background-size: 220% 100%;
+    animation: shimmer 1.2s linear infinite;
+    z-index: 1;
+  }
+  .template-info {
+    padding: 14px 15px 16px;
+    background: #ffffff;
+    min-height: 122px;
+    display: flex;
+    flex-direction: column;
+  }
+  .template-name { font-weight: 700; font-size: 16px; margin-bottom: 4px; color: #0f172a; }
+  .template-desc {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 10px;
+    min-height: 17px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .template-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: auto;
+  }
+  .template-tag {
+    font-size: 11px;
+    font-weight: 600;
+    color: #0f766e;
+    border: 1px solid #ccfbf1;
+    background: #f0fdfa;
+    border-radius: 999px;
+    padding: 4px 8px;
+  }
+  .template-cat { font-size: 12px; color: #475569; font-weight: 600; margin-bottom: 2px; }
+  .premium-badge {
+    position: absolute; top: 8px; right: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fdf4ff;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 999px;
+    letter-spacing: 0.02em;
+    border: 1px solid rgba(99, 102, 241, 0.5);
+    box-shadow: 0 8px 18px rgba(99, 102, 241, 0.34);
+  }
+  .premium-badge .badge-icon { font-size: 9px; line-height: 1; }
+  .free-badge {
+    position: absolute; top: 8px; right: 8px;
+    background: #dcfce7;
+    color: #166534;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 999px;
+    letter-spacing: 0.02em;
+    border: 1px solid #86efac;
+  }
+  .lock-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: rgba(15, 23, 42, 0.72);
+    color: #f8fafc;
+    border: 1px solid rgba(226, 232, 240, 0.55);
+    border-radius: 999px;
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 3px 7px;
+    z-index: 2;
+  }
+  .template-card.is-locked {
+    border-color: rgba(99, 102, 241, 0.42);
+  }
+  .template-card.is-locked .template-thumb::after {
+    content: 'Upgrade To Use';
+    position: absolute;
+    inset: auto 10px 10px 10px;
+    background: rgba(15, 23, 42, 0.82);
+    color: #f8fafc;
+    font-size: 11px;
+    font-weight: 600;
+    text-align: center;
+    border-radius: 8px;
+    padding: 8px;
+    z-index: 2;
+    backdrop-filter: blur(2px);
+  }
+  .selected-check {
+    position: absolute; top: 8px; left: 8px;
+    width: 24px; height: 24px; border-radius: 50%;
+    background: linear-gradient(135deg, #10b981, #0ea5e9);
+    color: #fff; display: none; align-items: center; justify-content: center;
+    font-size: 13px;
+  }
+  .template-card.selected .selected-check { display: flex; }
+
+  @keyframes shimmer {
+    0% { background-position: 210% 0; }
+    100% { background-position: -210% 0; }
+  }
+
+  @keyframes select-pop {
+    0% { transform: scale(1); }
+    55% { transform: scale(1.03); }
+    100% { transform: scale(1); }
+  }
+
+  /* ── FORM SIDEBAR ── */
+  .form-section { padding: 20px; border-bottom: 1px solid var(--border); }
+  .form-section-title {
+    font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1px; color: var(--muted);
+    margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+  }
+  .form-section-title span { color: var(--accent); }
+  .form-group { margin-bottom: 12px; }
+  label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px; }
+  input, textarea {
+    width: 100%; background: #ffffff; border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 12px; color: var(--text);
+    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; font-size: 13px; outline: none;
+    transition: border-color .2s;
+  }
+  input:focus, textarea:focus { border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 70px; }
+
+  .add-btn {
+    width: 100%; padding: 8px; border-radius: 8px; border: 1px dashed var(--border);
+    background: transparent; color: var(--muted); cursor: pointer; font-size: 13px;
+    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; transition: all .2s; margin-top: 8px;
+  }
+  .add-btn:hover { border-color: var(--accent); color: var(--accent); background: #ecfdf3; }
+
+  .entry-card {
+    background: #f8fafc; border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px; margin-bottom: 8px; position: relative;
+  }
+  .entry-card .remove-btn {
+    position: absolute; top: 8px; right: 8px;
+    background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px;
+    line-height: 1; padding: 0;
+  }
+  .entry-card .remove-btn:hover { color: var(--accent2); }
+  .entry-card input { margin-bottom: 6px; }
+
+  .skills-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .skill-tag {
+    background: #ecfdf3; border: 1px solid #bbf7d0;
+    color: #047857; padding: 4px 10px; border-radius: 20px; font-size: 12px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .skill-tag button { background: none; border: none; color: #047857; cursor: pointer; font-size: 14px; line-height: 1; padding: 0; }
+  .skill-input-row { display: flex; gap: 8px; }
+  .skill-input-row input { flex: 1; }
+  .skill-add-btn {
+    padding: 8px 14px; background: var(--accent); border: none; border-radius: 8px;
+    color: #fff; cursor: pointer; font-size: 13px; font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    white-space: nowrap;
+  }
+
+  /* ── ACTION BUTTONS ── */
+  .action-bar {
+    padding: 16px 20px; position: sticky; bottom: 0;
+    background: rgba(255, 255, 255, 0.96); border-top: 1px solid var(--border);
+    backdrop-filter: blur(8px);
+  }
+  .btn-primary {
+    width: 100%; padding: 12px; border-radius: 10px; border: none;
+    background: linear-gradient(135deg, var(--accent), #059669);
+    color: #fff; font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700;
+    cursor: pointer; transition: opacity .2s; letter-spacing: 0.3px;
+  }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-secondary {
+    width: 100%; padding: 10px; border-radius: 10px;
+    border: 1px solid var(--border); background: transparent;
+    color: #334155; font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; font-size: 14px;
+    cursor: pointer; margin-top: 8px; transition: all .2s;
+  }
+  .btn-secondary:hover { border-color: #34d399; color: #065f46; background: #ecfdf5; }
+
+  /* ── PREVIEW ── */
+  .preview-wrap {
+    background: #fff; border-radius: 12px; overflow: hidden;
+    border: 1px solid var(--border);
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08); max-width: 850px; margin: 0 auto;
+  }
+  #resume-preview { width: 100%; }
+
+  .preview-actions { display: flex; gap: 12px; margin-bottom: 24px; }
+  .preview-actions .btn-dl {
+    padding: 12px 24px; border-radius: 10px; border: none;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: #fff; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 15px;
+    cursor: pointer; display: flex; align-items: center; gap: 8px; transition: opacity .2s;
+  }
+  .preview-actions .btn-dl:hover { opacity: 0.9; }
+  .preview-actions .btn-back {
+    padding: 12px 24px; border-radius: 10px; border: 1px solid var(--border);
+    background: #ffffff; color: #334155; font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    font-size: 14px; cursor: pointer; transition: all .2s;
+  }
+  .preview-actions .btn-back:hover { border-color: #34d399; color: #065f46; background: #ecfdf5; }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: #f1f5f9; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+  /* ── TEMPLATE SELECTED INDICATOR ── */
+  .selected-template-bar {
+    padding: 12px 20px; background: #ecfdf5;
+    border-bottom: 1px solid #bbf7d0;
+    font-size: 13px; color: var(--muted); display: none;
+  }
+  .selected-template-bar strong { color: #047857; }
+
+  @media print { .sidebar, .preview-actions { display: none !important; } .main { padding: 0; } }
+
+  @media (max-width: 1024px) {
+    .app { display: block; min-height: auto; }
+    .sidebar {
+      position: static;
+      width: 100%;
+      max-height: none;
+      border-right: none;
+      border-bottom: 1px solid var(--border);
+    }
+    .main { padding: 18px; }
+    #step-templates { padding: 22px; border-radius: 20px; }
+    .templates-head { display: block; margin-bottom: 10px; }
+    .templates-stat { margin-top: 10px; }
+    .section-header { font-size: 30px; }
+    .section-sub { font-size: 15px; }
+    .template-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+    .template-thumb iframe { --frame-scale: 0.36; }
+  }
+
+  @media (max-width: 640px) {
+    .main { padding: 14px; }
+    #step-templates { padding: 8px; }
+    .section-header { font-size: 24px; }
+    .section-sub { font-size: 14px; margin-bottom: 18px; }
+    .filter-bar { margin-bottom: 18px; gap: 8px; }
+    .template-grid { grid-template-columns: 1fr; }
+    .template-thumb iframe { --frame-scale: 0.39; }
+    .card-actions { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- SIDEBAR (form) -->
+  <aside class="sidebar" id="sidebar" style="display:none;">
+    <div class="selected-template-bar" id="sel-bar">
+      Template: <strong id="sel-name">—</strong>
+    </div>
+
+    <!-- Personal Info -->
+    <div class="form-section">
+      <div class="form-section-title"><span>01</span> Personal Info</div>
+      <div class="form-group"><label>Full Name</label><input id="f-name" placeholder="Arjun Patel" /></div>
+      <div class="form-group"><label>Email</label><input id="f-email" placeholder="arjun@email.com" /></div>
+      <div class="form-group"><label>Phone</label><input id="f-phone" placeholder="+91 98765 43210" /></div>
+      <div class="form-group"><label>Location</label><input id="f-location" placeholder="Ahmedabad, Gujarat" /></div>
+      <div class="form-group"><label>LinkedIn URL</label><input id="f-linkedin" placeholder="linkedin.com/in/arjun" /></div>
+      <div class="form-group"><label>GitHub URL</label><input id="f-github" placeholder="github.com/arjun" /></div>
+      <div class="form-group"><label>Summary / Objective</label><textarea id="f-summary" placeholder="Final year CS student seeking SDE role..."></textarea></div>
+    </div>
+
+    <!-- Skills -->
+    <div class="form-section">
+      <div class="form-section-title"><span>02</span> Skills</div>
+      <div class="skills-wrap" id="skills-wrap"></div>
+      <div class="skill-input-row">
+        <input id="skill-input" placeholder="e.g. React" onkeydown="if(event.key==='Enter')addSkill()" />
+        <button class="skill-add-btn" onclick="addSkill()">Add</button>
+      </div>
+    </div>
+
+    <!-- Experience -->
+    <div class="form-section">
+      <div class="form-section-title"><span>03</span> Experience</div>
+      <div id="exp-list"></div>
+      <button class="add-btn" onclick="addExp()">+ Add Experience</button>
+    </div>
+
+    <!-- Education -->
+    <div class="form-section">
+      <div class="form-section-title"><span>04</span> Education</div>
+      <div id="edu-list"></div>
+      <button class="add-btn" onclick="addEdu()">+ Add Education</button>
+    </div>
+
+    <!-- Projects -->
+    <div class="form-section">
+      <div class="form-section-title"><span>05</span> Projects</div>
+      <div id="proj-list"></div>
+      <button class="add-btn" onclick="addProj()">+ Add Project</button>
+    </div>
+
+    <div class="action-bar">
+      <button class="btn-primary" onclick="goStep(3)">Preview Resume →</button>
+      <button class="btn-secondary" onclick="goStep(1)">← Back to Templates</button>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+
+    <!-- STEP 1: Template Selection -->
+    <div id="step-templates">
+      <div class="templates-head">
+        <div>
+          <div class="section-header">Choose Your Template</div>
+          <div class="section-sub">Pick a design, compare styles instantly, and launch with an ATS-ready resume layout.</div>
+        </div>
+        <div class="templates-stat">15 Templates • ATS Optimized</div>
+      </div>
+      <div class="filter-bar" id="filter-bar">
+        <button class="filter-btn active" onclick="filterTemplates('All', this)">All (15)</button>
+        <button class="filter-btn" onclick="filterTemplates('ATS-Friendly', this)">ATS-Friendly</button>
+        <button class="filter-btn" onclick="filterTemplates('Professional', this)">Professional</button>
+        <button class="filter-btn" onclick="filterTemplates('Modern', this)">Modern</button>
+        <button class="filter-btn" onclick="filterTemplates('Creative', this)">Creative</button>
+        <button class="filter-btn" onclick="filterTemplates('free', this)">Free Only</button>
+        <button class="filter-btn" onclick="filterTemplates('premium', this)">Premium</button>
+      </div>
+      <div class="template-grid" id="template-grid"></div>
+    </div>
+
+    <!-- STEP 2: Fill Form -->
+    <div id="step-form" style="display:none;">
+      <div class="section-header">Fill Your Details</div>
+      <div class="section-sub">Your information updates the preview in real time.</div>
+      <div style="background: var(--surface2); border-radius: 12px; padding: 24px; text-align:center; color: var(--muted);">
+        <div style="font-size: 40px; margin-bottom: 12px;">👈</div>
+        Fill your details in the sidebar on the left, then click <strong style="color:var(--text)">Preview Resume</strong>
+      </div>
+    </div>
+
+    <!-- STEP 3: Preview -->
+    <div id="step-preview" style="display:none;">
+      <div class="section-header">Preview & Download</div>
+      <div class="section-sub">Your resume is ready. Download as PDF or go back to edit.</div>
+      <div class="preview-actions">
+        <button class="btn-dl" onclick="downloadPDF()">⬇ Download PDF</button>
+        <button class="btn-back" onclick="goStep(2)">← Edit Details</button>
+        <button class="btn-back" onclick="goStep(1)">Change Template</button>
+      </div>
+      <div class="preview-wrap">
+        <div id="resume-preview"></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+//  DATA
+// ─────────────────────────────────────────────
+const TEMPLATES = [
+  { id:'ats-simple',      name:'ATS Simple',           category:'ATS-Friendly', tier:'free',    fn: tplATSSimple },
+  { id:'ats-clean',       name:'ATS Clean',            category:'ATS-Friendly', tier:'free',    fn: tplATSClean },
+  { id:'ats-compact',     name:'ATS Compact',          category:'ATS-Friendly', tier:'free',    fn: tplATSCompact },
+  { id:'prof-classic',    name:'Professional Classic', category:'Professional', tier:'free',    fn: tplProfClassic },
+  { id:'prof-navy',       name:'Professional Navy',    category:'Professional', tier:'free',    fn: tplProfNavy },
+  { id:'prof-twocol',     name:'Professional Two Col', category:'Professional', tier:'free',    fn: tplProfTwoCol },
+  { id:'mod-minimal',     name:'Modern Minimalist',    category:'Modern',       tier:'free',    fn: tplModMinimal },
+  { id:'mod-bold',        name:'Modern Bold',          category:'Modern',       tier:'free',    fn: tplModBold },
+  { id:'creative-teal',   name:'Creative Teal',        category:'Creative',     tier:'free',    fn: tplCreativeTeal },
+  { id:'creative-purple', name:'Creative Purple',      category:'Creative',     tier:'free',    fn: tplCreativePurple },
+  { id:'prem-glass',      name:'Modern Glass',         category:'Modern',       tier:'premium', fn: tplPremGlass },
+  { id:'prem-exec',       name:'Executive Gold',       category:'Professional', tier:'premium', fn: tplPremExec },
+  { id:'prem-neon',       name:'Creative Neon',        category:'Creative',     tier:'premium', fn: tplPremNeon },
+  { id:'prem-elegant',    name:'Elegant Serif',        category:'Professional', tier:'premium', fn: tplPremElegant },
+  { id:'prem-gradient',   name:'Creative Gradient',    category:'Creative',     tier:'premium', fn: tplPremGradient },
+];
+
+const TEMPLATE_META = {
+  'ats-simple': { desc: 'Best for ATS submissions', tags: ['ATS-Friendly', 'Minimal'], variant: 'variant-sidebar' },
+  'ats-clean': { desc: 'Corporate hiring pipelines', tags: ['ATS', 'Clean'], variant: 'variant-centered' },
+  'ats-compact': { desc: 'One-page fresher profile', tags: ['Compact', 'Fast Scan'], variant: 'variant-sidebar' },
+  'prof-classic': { desc: 'Traditional interview style', tags: ['Classic', 'Professional'], variant: 'variant-centered' },
+  'prof-navy': { desc: 'Best for leadership roles', tags: ['Sidebar', 'Executive'], variant: 'variant-dark' },
+  'prof-twocol': { desc: 'Balanced two-column resume', tags: ['Two-Column', 'Recruiter'], variant: 'variant-sidebar' },
+  'mod-minimal': { desc: 'Modern, minimal and clean', tags: ['Modern', 'Elegant'], variant: 'variant-centered' },
+  'mod-bold': { desc: 'Strong developer-first look', tags: ['Developer', 'Bold'], variant: 'variant-dark' },
+  'creative-teal': { desc: 'Fresh creative branding', tags: ['Creative', 'Teal'], variant: 'variant-gradient' },
+  'creative-purple': { desc: 'Vibrant visual portfolio', tags: ['Creative', 'Colorful'], variant: 'variant-gradient' },
+  'prem-glass': { desc: 'Premium glassmorphism design', tags: ['Pro', 'Glass'], variant: 'variant-dark' },
+  'prem-exec': { desc: 'C-suite and senior hiring', tags: ['Pro', 'Executive'], variant: 'variant-centered' },
+  'prem-neon': { desc: 'Distinct tech brand style', tags: ['Pro', 'Neon'], variant: 'variant-dark' },
+  'prem-elegant': { desc: 'Elegant high-trust profile', tags: ['Pro', 'Elegant'], variant: 'variant-centered' },
+  'prem-gradient': { desc: 'Color-rich premium portfolio', tags: ['Pro', 'Gradient'], variant: 'variant-gradient' },
+};
+
+function getTemplateMeta(template) {
+  return TEMPLATE_META[template.id] || { desc: 'Optimized resume format', tags: [template.category], variant: 'variant-centered' };
+}
+
+const params = new URLSearchParams(window.location.search);
+const USER_PLAN = (params.get('plan') || 'free').toLowerCase();
+// Premium template access is granted to PRO plan users.
+// Keep 'premium' as a legacy alias if older data sends it.
+const IS_PREMIUM_USER = USER_PLAN === 'pro' || USER_PLAN === 'premium';
+
+let selectedTemplate = null;
+let currentStep = 1;
+let skills = [];
+let experiences = [];
+let educations = [];
+let projects = [];
+
+// ─────────────────────────────────────────────
+//  NAV
+// ─────────────────────────────────────────────
+function goStep(n) {
+  if (n === 2 && !selectedTemplate) { alert('Please select a template first!'); return; }
+  if (n === 3) renderPreview();
+  currentStep = n;
+  document.getElementById('step-templates').style.display = n === 1 ? 'block' : 'none';
+  document.getElementById('step-form').style.display      = n === 2 ? 'block' : 'none';
+  document.getElementById('step-preview').style.display   = n === 3 ? 'block' : 'none';
+  document.getElementById('sidebar').style.display        = n === 1 ? 'none'  : 'flex';
+  document.getElementById('sidebar').style.flexDirection  = 'column';
+  queueResizeReport();
+}
+
+// ─────────────────────────────────────────────
+//  TEMPLATE GRID
+// ─────────────────────────────────────────────
+function buildGrid(filter='All') {
+  const grid = document.getElementById('template-grid');
+  grid.innerHTML = '';
+  const sampleData = getSampleData();
+  TEMPLATES.forEach(t => {
+    const show = filter==='All' || t.category===filter || t.tier===filter;
+    if (!show) return;
+    const isLockedForUser = t.tier === 'premium' && !IS_PREMIUM_USER;
+    const meta = getTemplateMeta(t);
+    const card = document.createElement('div');
+    card.className = 'template-card loading ' + meta.variant + (selectedTemplate?.id===t.id?' selected':'') + (isLockedForUser ? ' is-locked' : '');
+    card.onclick = () => selectTemplate(t, card);
+    const html = t.fn(sampleData, t.tier === 'free' || IS_PREMIUM_USER);
+    const tagsHtml = (meta.tags || []).slice(0, 3).map(tag => `<span class="template-tag">${tag}</span>`).join('');
+    card.innerHTML = `
+      <div class="selected-check">✓</div>
+      ${t.tier==='premium' ? '<div class="premium-badge"><span class="badge-icon">★</span><span>PRO</span></div>' : '<div class="free-badge">FREE</div>'}
+      ${isLockedForUser ? '<div class="lock-badge">LOCKED</div>' : ''}
+      <div class="template-thumb">
+        <iframe srcdoc="${escHtml(wrapHtml(html))}"></iframe>
+        <div class="thumb-overlay">
+          <div class="card-actions">
+            <button class="card-btn" data-action="preview">Preview</button>
+            <button class="card-btn primary" data-action="use">Use Template</button>
+          </div>
+        </div>
+      </div>
+      <div class="template-info">
+        <div class="template-name">${t.name}</div>
+        <div class="template-cat">${t.category} · ${t.tier==='premium'?'Pro':'Free'}</div>
+        <div class="template-desc">${meta.desc}</div>
+        <div class="template-tags">${tagsHtml}</div>
+      </div>`;
+    const frame = card.querySelector('iframe');
+    card.style.setProperty('--card-glow', t.tier === 'premium' ? 'rgba(99, 102, 241, 0.28)' : 'rgba(16, 185, 129, 0.24)');
+
+    const previewBtn = card.querySelector('[data-action="preview"]');
+    const useBtn = card.querySelector('[data-action="use"]');
+    if (previewBtn) {
+      previewBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        selectTemplate(t, card);
+      });
+    }
+    if (useBtn) {
+      useBtn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        selectTemplate(t, card);
+      });
+    }
+
+    if (frame) {
+      frame.addEventListener('load', () => {
+        card.classList.remove('loading');
+        card.classList.add('loaded');
+        queueResizeReport();
+      }, { once: true });
+    }
+    grid.appendChild(card);
+  });
+  queueResizeReport();
+}
+
+function escHtml(s){ return s.replace(/"/g,'&quot;'); }
+function wrapHtml(body){ return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{box-sizing:border-box;margin:0;padding:0}body{background:#fff}</style></head><body>${body}</body></html>`; }
+
+function selectTemplate(t, cardEl) {
+  if (t.tier === 'premium' && !IS_PREMIUM_USER) {
+    alert('This Professional template is available for Premium users. Please upgrade to continue.');
+    return;
+  }
+
+  selectedTemplate = t;
+  document.querySelectorAll('.template-card').forEach(c => c.classList.remove('selected'));
+  cardEl.classList.remove('selected');
+  void cardEl.offsetWidth;
+  cardEl.classList.add('selected');
+  document.getElementById('sel-bar').style.display = 'block';
+  document.getElementById('sel-name').textContent = t.name;
+  setTimeout(() => goStep(2), 300);
+}
+
+function filterTemplates(filter, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  buildGrid(filter);
+  queueResizeReport();
+}
+
+// ─────────────────────────────────────────────
+//  FORM HANDLERS
+// ─────────────────────────────────────────────
+function addSkill() {
+  const inp = document.getElementById('skill-input');
+  const val = inp.value.trim();
+  if (!val || skills.includes(val)) return;
+  skills.push(val);
+  inp.value = '';
+  renderSkills();
+}
+function removeSkill(s) { skills = skills.filter(x=>x!==s); renderSkills(); }
+function renderSkills() {
+  document.getElementById('skills-wrap').innerHTML = skills.map(s =>
+    `<div class="skill-tag">${s}<button onclick="removeSkill('${s}')">×</button></div>`
+  ).join('');
+  queueResizeReport();
+}
+
+let expCount=0;
+function addExp() {
+  const id = ++expCount;
+  experiences.push({ id, title:'', company:'', location:'', startDate:'', endDate:'', bullets:[''] });
+  renderExp();
+}
+function removeExp(id) { experiences = experiences.filter(e=>e.id!==id); renderExp(); }
+function renderExp() {
+  document.getElementById('exp-list').innerHTML = experiences.map(e => `
+    <div class="entry-card">
+      <button class="remove-btn" onclick="removeExp(${e.id})">×</button>
+      <input placeholder="Job Title" value="${e.title}" oninput="updateExp(${e.id},'title',this.value)" />
+      <input placeholder="Company Name" value="${e.company}" oninput="updateExp(${e.id},'company',this.value)" />
+      <input placeholder="Location" value="${e.location}" oninput="updateExp(${e.id},'location',this.value)" />
+      <div style="display:flex;gap:6px;">
+        <input placeholder="Start (May 2023)" value="${e.startDate}" oninput="updateExp(${e.id},'startDate',this.value)" style="flex:1"/>
+        <input placeholder="End (Jun 2024)" value="${e.endDate}" oninput="updateExp(${e.id},'endDate',this.value)" style="flex:1"/>
+      </div>
+      <input placeholder="Key achievement (separate with |)" value="${e.bullets.join('|')}" oninput="updateExp(${e.id},'bullets',this.value.split('|'))" style="margin-top:4px"/>
+    </div>`).join('');
+  queueResizeReport();
+}
+function updateExp(id, key, val) { const e = experiences.find(x=>x.id===id); if(e) e[key]=val; }
+
+let eduCount=0;
+function addEdu() {
+  const id = ++eduCount;
+  educations.push({ id, degree:'', school:'', year:'', gpa:'' });
+  renderEdu();
+}
+function removeEdu(id) { educations = educations.filter(e=>e.id!==id); renderEdu(); }
+function renderEdu() {
+  document.getElementById('edu-list').innerHTML = educations.map(e => `
+    <div class="entry-card">
+      <button class="remove-btn" onclick="removeEdu(${e.id})">×</button>
+      <input placeholder="Degree (B.Tech CS)" value="${e.degree}" oninput="updateEdu(${e.id},'degree',this.value)" />
+      <input placeholder="College / University" value="${e.school}" oninput="updateEdu(${e.id},'school',this.value)" />
+      <div style="display:flex;gap:6px;">
+        <input placeholder="Year (2025)" value="${e.year}" oninput="updateEdu(${e.id},'year',this.value)" style="flex:1"/>
+        <input placeholder="GPA (8.7)" value="${e.gpa}" oninput="updateEdu(${e.id},'gpa',this.value)" style="flex:1"/>
+      </div>
+    </div>`).join('');
+  queueResizeReport();
+}
+function updateEdu(id, key, val) { const e = educations.find(x=>x.id===id); if(e) e[key]=val; }
+
+let projCount=0;
+function addProj() {
+  const id = ++projCount;
+  projects.push({ id, name:'', link:'', description:'' });
+  renderProj();
+}
+function removeProj(id) { projects = projects.filter(p=>p.id!==id); renderProj(); }
+function renderProj() {
+  document.getElementById('proj-list').innerHTML = projects.map(p => `
+    <div class="entry-card">
+      <button class="remove-btn" onclick="removeProj(${p.id})">×</button>
+      <input placeholder="Project Name" value="${p.name}" oninput="updateProj(${p.id},'name',this.value)" />
+      <input placeholder="GitHub / Live Link" value="${p.link}" oninput="updateProj(${p.id},'link',this.value)" />
+      <textarea placeholder="Short description..." oninput="updateProj(${p.id},'description',this.value)" style="min-height:56px">${p.description}</textarea>
+    </div>`).join('');
+  queueResizeReport();
+}
+function updateProj(id, key, val) { const p = projects.find(x=>x.id===id); if(p) p[key]=val; }
+
+// ─────────────────────────────────────────────
+//  GET DATA
+// ─────────────────────────────────────────────
+function getData() {
+  return {
+    name:       document.getElementById('f-name').value || 'Your Name',
+    email:      document.getElementById('f-email').value,
+    phone:      document.getElementById('f-phone').value,
+    location:   document.getElementById('f-location').value,
+    linkedin:   document.getElementById('f-linkedin').value,
+    github:     document.getElementById('f-github').value,
+    summary:    document.getElementById('f-summary').value,
+    skills,
+    experience: experiences.map(e => ({ ...e, bullets: Array.isArray(e.bullets) ? e.bullets : [e.bullets] })),
+    education:  educations,
+    projects,
+  };
+}
+
+function getSampleData() {
+  return {
+    name: 'Arjun Patel', email: 'arjun@email.com', phone: '+91 98765 43210',
+    location: 'Ahmedabad, Gujarat', linkedin: 'linkedin.com/in/arjun', github: 'github.com/arjun',
+    summary: 'Final year CS student seeking SDE role. Passionate about building scalable web apps.',
+    skills: ['React', 'Node.js', 'Python', 'MongoDB', 'Git', 'SQL'],
+    experience: [{ id:1, title:'SDE Intern', company:'TechCorp', location:'Bengaluru', startDate:'May 2024', endDate:'Jul 2024', bullets:['Built REST APIs reducing response time by 30%','Implemented Redis caching for 10k+ daily users'] }],
+    education: [{ id:1, degree:'B.Tech Computer Science', school:'LDCE, Ahmedabad', year:'2025', gpa:'8.7' }],
+    projects: [{ id:1, name:'Code Campus AI', link:'github.com/arjun/codecampus', description:'Placement prep platform with AI copilot and resume builder for students.' }],
+  };
+}
+
+// ─────────────────────────────────────────────
+//  PREVIEW + DOWNLOAD
+// ─────────────────────────────────────────────
+function renderPreview() {
+  if (!selectedTemplate) return;
+  const isAllowedTemplate = selectedTemplate.tier === 'free' || IS_PREMIUM_USER;
+  const html = selectedTemplate.fn(getData(), isAllowedTemplate);
+  document.getElementById('resume-preview').innerHTML = html;
+  queueResizeReport();
+}
+
+// Report dynamic iframe height to parent so the outer page handles scrolling.
+let resizeTimer = null;
+function reportParentHeight() {
+  const bodyHeight = document.body.scrollHeight;
+  const docHeight = document.documentElement.scrollHeight;
+  const nextHeight = Math.max(bodyHeight, docHeight, 900);
+  window.parent?.postMessage({ type: 'resume-builder-height', height: nextHeight }, window.location.origin);
+}
+
+function queueResizeReport() {
+  if (resizeTimer) {
+    clearTimeout(resizeTimer);
+  }
+  resizeTimer = setTimeout(reportParentHeight, 40);
+}
+
+function downloadPDF() {
+  const el = document.getElementById('resume-preview');
+  const name = document.getElementById('f-name').value || 'resume';
+  html2pdf().set({
+    margin: 0, filename: name.replace(/\s+/g,'-') + '-resume.pdf',
+    image: { type:'jpeg', quality:0.98 },
+    html2canvas: { scale:2, useCORS:true },
+    jsPDF: { unit:'mm', format:'a4', orientation:'portrait' }
+  }).from(el).save();
+}
+
+// ─────────────────────────────────────────────
+//  ── TEMPLATE FUNCTIONS (15) ──────────────────
+// ─────────────────────────────────────────────
+
+function h(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function secTitle(label, style='') {
+  return `<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;border-bottom:1.5px solid #111;padding-bottom:3px;margin:16px 0 8px;${style}">${label}</div>`;
+}
+
+// ── 1. ATS Simple ──
+function tplATSSimple(d) {
+  const expHtml = (d.experience||[]).map(e=>`
+    <div style="margin-bottom:12px">
+      <b>${h(e.title)}</b> — ${h(e.company)}<br>
+      <span style="font-size:12px;color:#555">${h(e.location)} | ${h(e.startDate)} – ${h(e.endDate)}</span>
+      <ul style="margin:4px 0 0;padding-left:18px">${(e.bullets||[]).map(b=>`<li>${h(b)}</li>`).join('')}</ul>
+    </div>`).join('');
+  const eduHtml = (d.education||[]).map(e=>`<div style="margin-bottom:8px"><b>${h(e.degree)}</b> — ${h(e.school)} | ${h(e.year)}${e.gpa?` | GPA: ${h(e.gpa)}`:''}</div>`).join('');
+  const skillHtml = (d.skills||[]).map(s=>`<span style="background:#f0f0f0;padding:2px 10px;border-radius:3px;font-size:12px;margin:2px">${h(s)}</span>`).join('');
+  const projHtml = (d.projects||[]).map(p=>`<div style="margin-bottom:10px"><b>${h(p.name)}</b>${p.link?` <span style="font-size:11px;color:#555">— ${h(p.link)}</span>`:''}<p style="margin:2px 0 0">${h(p.description)}</p></div>`).join('');
+  return `<div style="font-family:Arial,sans-serif;max-width:800px;margin:0 auto;padding:40px;font-size:14px;line-height:1.5;color:#222">
+    <div style="font-size:26px;font-weight:700">${h(d.name)}</div>
+    <div style="font-size:12px;color:#444;margin-bottom:16px">${[d.email,d.phone,d.location,d.linkedin,d.github].filter(Boolean).join(' | ')}</div>
+    ${d.summary?secTitle('Summary')+`<p style="margin:0">${h(d.summary)}</p>`:''}
+    ${expHtml?secTitle('Experience')+expHtml:''}
+    ${eduHtml?secTitle('Education')+eduHtml:''}
+    ${skillHtml?secTitle('Skills')+`<div style="display:flex;flex-wrap:wrap;gap:6px">${skillHtml}</div>`:''}
+    ${projHtml?secTitle('Projects')+projHtml:''}
+  </div>`;
+}
+
+// ── 2. ATS Clean ──
+function tplATSClean(d) {
+  const expHtml = (d.experience||[]).map(e=>`
+    <div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between"><b>${h(e.title)} — ${h(e.company)}</b><span style="font-size:12px;color:#555">${h(e.startDate)} – ${h(e.endDate)}</span></div>
+      <div style="font-size:12px;color:#666">${h(e.location)}</div>
+      <ul style="margin:4px 0 0;padding-left:18px">${(e.bullets||[]).map(b=>`<li>${h(b)}</li>`).join('')}</ul>
+    </div>`).join('');
+  const eduHtml = (d.education||[]).map(e=>`<div style="display:flex;justify-content:space-between;margin-bottom:6px"><div><b>${h(e.degree)}</b> — ${h(e.school)}${e.gpa?` | GPA ${h(e.gpa)}`:''}</div><span style="font-size:12px;color:#555">${h(e.year)}</span></div>`).join('');
+  const projHtml = (d.projects||[]).map(p=>`<div style="margin-bottom:10px"><b>${h(p.name)}</b>${p.link?` <span style="font-size:11px;color:#555">— ${h(p.link)}</span>`:''}<p style="margin:2px 0 0">${h(p.description)}</p></div>`).join('');
+  return `<div style="font-family:Georgia,serif;max-width:800px;margin:0 auto;padding:40px;font-size:14px;line-height:1.6;color:#1a1a1a">
+    <div style="text-align:center;margin-bottom:20px;border-bottom:1px solid #aaa;padding-bottom:14px">
+      <h1 style="font-size:28px;font-weight:400;margin:0 0 4px;letter-spacing:2px;text-transform:uppercase">${h(d.name)}</h1>
+      <div style="font-size:12px;color:#555">${[d.email,d.phone,d.location,d.linkedin,d.github].filter(Boolean).join(' · ')}</div>
+    </div>
+    ${d.summary?secTitle('Professional Summary','font-family:Georgia')+`<p style="margin:0;text-align:justify">${h(d.summary)}</p>`:''}
+    ${expHtml?secTitle('Work Experience','font-family:Georgia')+expHtml:''}
+    ${eduHtml?secTitle('Education','font-family:Georgia')+eduHtml:''}
+    ${(d.skills||[]).length?secTitle('Skills','font-family:Georgia')+`<p>${(d.skills).join(' | ')}</p>`:''}
+    ${projHtml?secTitle('Projects','font-family:Georgia')+projHtml:''}
+  </div>`;
+}
+
+// ── 3. ATS Compact ──
+function tplATSCompact(d) {
+  const skillHtml = (d.skills||[]).map(s=>`<span style="background:#f5f5f5;padding:2px 6px;font-size:11px;border-radius:2px">${h(s)}</span>`).join(' ');
+  const expHtml = (d.experience||[]).map(e=>`<div style="margin-bottom:10px"><div style="display:flex;justify-content:space-between"><b>${h(e.title)} | ${h(e.company)}</b><span style="font-size:11px;color:#555">${h(e.startDate)} – ${h(e.endDate)}</span></div><div style="font-size:11px;color:#666;margin-bottom:2px">${h(e.location)}</div><ul style="margin:2px 0 0;padding-left:16px;font-size:13px">${(e.bullets||[]).map(b=>`<li>${h(b)}</li>`).join('')}</ul></div>`).join('');
+  const eduHtml = (d.education||[]).map(e=>`<div style="display:flex;justify-content:space-between"><span><b>${h(e.degree)}</b> — ${h(e.school)}${e.gpa?` | GPA ${h(e.gpa)}`:''}</span><span style="font-size:11px;color:#555">${h(e.year)}</span></div>`).join('');
+  const projHtml = (d.projects||[]).map(p=>`<div style="margin-bottom:8px"><b>${h(p.name)}</b>${p.link?` <span style="font-size:11px;color:#555">${h(p.link)}</span>`:''}<div style="font-size:12px">${h(p.description)}</div></div>`).join('');
+  return `<div style="font-family:Calibri,Arial,sans-serif;max-width:800px;margin:0 auto;padding:32px 40px;font-size:13px;line-height:1.45;color:#111">
+    <div style="font-size:22px;font-weight:700;margin-bottom:2px">${h(d.name)}</div>
+    <div style="font-size:12px;color:#444;margin-bottom:14px">${[d.email,d.phone,d.location,d.linkedin,d.github].filter(Boolean).join(' | ')}</div>
+    ${d.summary?`<div style="background:#eee;padding:2px 6px;font-size:12px;font-weight:700;text-transform:uppercase;margin-bottom:6px">Objective</div><p style="margin:0 0 12px">${h(d.summary)}</p>`:''}
+    ${skillHtml?`<div style="background:#eee;padding:2px 6px;font-size:12px;font-weight:700;text-transform:uppercase;margin-bottom:6px">Skills</div><div style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:4px">${skillHtml}</div>`:''}
+    ${expHtml?`<div style="background:#eee;padding:2px 6px;font-size:12px;font-weight:700;text-transform:uppercase;margin-bottom:6px">Experience</div>${expHtml}`:''}
+    ${projHtml?`<div style="background:#eee;padding:2px 6px;font-size:12px;font-weight:700;text-transform:uppercase;margin-bottom:6px">Projects</div>${projHtml}`:''}
+    ${eduHtml?`<div style="background:#eee;padding:2px 6px;font-size:12px;font-weight:700;text-transform:uppercase;margin-bottom:6px">Education</div>${eduHtml}`:''}
+  </div>`;
+}
+
+// ── 4. Professional Classic ──
+function tplProfClassic(d) {
+  const expHtml = (d.experience||[]).map(e=>`<div style="margin-bottom:16px"><div style="display:flex;justify-content:space-between"><span><b style="font-size:15px">${h(e.title)}</b> — ${h(e.company)}, ${h(e.location)}</span><em style="font-size:12px;color:#555">${h(e.startDate)} – ${h(e.endDate)}</em></div><ul style="margin:6px 0 0;padding-left:20px">${(e.bullets||[]).map(b=>`<li>${h(b)}</li>`).join('')}</ul></div>`).join('');
+  const projHtml = (d.projects||[]).map(p=>`<div style="margin-bottom:10px"><b>${h(p.name)}</b>${p.link?` <span style="font-size:11px;color:#555">— ${h(p.link)}</span>`:''}<p style="margin:2px 0 0">${h(p.description)}</p></div>`).join('');
+  const skillHtml = (d.skills||[]).map((s,i)=>`<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span>▸</span>${h(s)}</div>`).join('');
+  return `<div style="font-family:'Times New Roman',serif;max-width:800px;margin:0 auto;padding:48px;font-size:14px;line-height:1.6;color:#1a1a1a">
+    <div style="border-bottom:3px double #1a1a1a;padding-bottom:14px;margin-bottom:18px">
+      <h1 style="font-size:30px;font-weight:700;margin:0 0 4px;text-transform:uppercase;letter-spacing:3px">${h(d.name)}</h1>
+      <div style="font-size:12px;color:#333">${[d.email,d.phone,d.location,d.linkedin,d.github].filter(Boolean).join(' | ')}</div>
+    </div>
+    ${d.summary?`<div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;border-bottom:1px solid #333;padding-bottom:3px;margin-bottom:10px">Professional Summary</div><p style="margin:0 0 16px;text-align:justify">${h(d.summary)}</p>`:''}
+    ${expHtml?`<div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;border-bottom:1px solid #333;padding-bottom:3px;margin-bottom:10px">Professional Experience</div>${expHtml}`:''}
+    ${(d.education||[]).length?`<div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;border-bottom:1px solid #333;padding-bottom:3px;margin-bottom:10px">Education</div>${(d.education||[]).map(e=>`<div style="display:flex;justify-content:space-between;margin-bottom:8px"><div><b>${h(e.degree)}</b> — ${h(e.school)}${e.gpa?`, GPA: ${h(e.gpa)}`:''}</div><em style="font-size:12px;color:#555">${h(e.year)}</em></div>`).join('')}`:''}
+    ${skillHtml?`<div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;border-bottom:1px solid #333;padding-bottom:3px;margin-bottom:10px">Core Competencies</div><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px">${skillHtml}</div>`:''}
+    ${projHtml?`<div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;border-bottom:1px solid #333;padding-bottom:3px;margin:16px 0 10px">Notable Projects</div>${projHtml}`:''}
+  </div>`;
+}
+
+// ── 5. Professional Navy ──
+function tplProfNavy(d) {
+  const expHtml = (d.experience||[]).map(e=>`<div style="margin-bottom:14px"><b style="font-size:14px">${h(e.title)}</b><div style="display:flex;justify-content:space-between;font-size:12px"><span style="color:#4a9eca">${h(e.company)}</span><span style="color:#475569">${h(e.startDate)} – ${h(e.endDate)}</span></div><ul style="margin:4px 0 0;padding-left:16px;font-size:13px;color:#94a3b8">${(e.bullets||[]).map(b=>`<li>${h(b)}</li>`).join('')}</ul></div>`).join('');
+  const skillHtml = (d.skills||[]).map((s,i)=>`<div style="margin-bottom:6px"><div style="font-size:12px">${h(s)}</div><div style="height:4px;background:#0e1f30;border-radius:2px"><div style="height:4px;background:#4a9eca;border-radius:2px;width:${70+(i%4)*7}%"></div></div></div>`).join('');
+  return `<div style="font-family:Arial,sans-serif;max-width:800px;margin:0 auto;display:flex;min-height:900px;font-size:13px">
+    <div style="width:220px;background:#1a2e4a;color:#fff;padding:32px 18px;flex-shrink:0">
+      <div style="font-size:20px;font-weight:700;margin-bottom:4px">${h(d.name)}</div>
+      <div style="font-size:11px;color:#a0b4c8;margin-bottom:20px">${h(d.location)}</div>
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#a0b4c8;border-bottom:1px solid #a0b4c8;padding-bottom:3px;margin-bottom:8px">Contact</div>
+      <div style="font-size:11px;color:#d0dce8;margin-bottom:4px">${h(d.email)}</div>
+      <div style="font-size:11px;color:#d0dce8;margin-bottom:4px">${h(d.phone)}</div>
+      ${d.linkedin?`<div style="font-size:11px;color:#d0dce8;margin-bottom:4px">${h(d.linkedin)}</div>`:''}
+      ${d.github?`<div style="font-size:11px;color:#d0dce8;margin-bottom:16px">${h(d.github)}</div>`:''}
+      ${skillHtml?`<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#a0b4c8;border-bottom:1px solid #a0b4c8;padding-bottom:3px;margin:16px 0 8px">Skills</div>${skillHtml}`:''}
+      ${(d.education||[]).length?`<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#a0b4c8;border-bottom:1px solid #a0b4c8;padding-bottom:3px;margin:16px 0 8px">Education</div>${(d.education||[]).map(e=>`<div style="margin-bottom:10px;font-size:12px"><b style="color:#fff">${h(e.degree)}</b><div style="color:#a0b4c8">${h(e.school)}</div><div style="color:#7090a8">${h(e.year)}</div></div>`).join('')}`:''}
+    </div>
+    <div style="flex:1;padding:32px;background:#fff;color:#1a1a1a">
+      ${d.summary?`<div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#1a2e4a;border-bottom:2px solid #1a2e4a;padding-bottom:4px;margin-bottom:10px">About Me</div><p style="margin:0 0 18px;line-height:1.6;color:#333">${h(d.summary)}</p>`:''}
+      ${expHtml?`<div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#1a2e4a;border-bottom:2px solid #1a2e4a;padding-bottom:4px;margin-bottom:12px">Experience</div>${expHtml}`:''}
+      ${(d.projects||[]).length?`<div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#1a2e4a;border-bottom:2px solid #1a2e4a;padding-bottom:4px;margin-bottom:12px">Projects</div>${(d.projects||[]).map(p=>`<div style="margin-bottom:12px"><b>${h(p.name)}</b>${p.link?` <span style="font-size:11px;color:#555">— ${h(p.link)}</span>`:''}<p style="margin:3px 0 0;color:#333;font-size:12px">${h(p.description)}</p></div>`).join('')}`:''}
+    </div>
+  </div>`;
+}
+
+// ── 6. Professional Two Col ──
+function tplProfTwoCol(d) {
+  const expHtml = (d.experience||[]).map(e=>`<div style="margin-bottom:14px"><b>${h(e.title)}</b><div style="font-size:11px;color:#2c3e50">${h(e.company)} | ${h(e.startDate)} – ${h(e.endDate)}</div><ul style="margin:4px 0 0;padding-left:16px;font-size:12px">${(e.bullets||[]).map(b=>`<li>${h(b)}</li>`).join('')}</ul></div>`).join('');
+  return `<div style="font-family:'Segoe UI',Arial,sans-serif;max-width:800px;margin:0 auto;font-size:13px;color:#222">
+    <div style="background:#2c3e50;color:#fff;padding:28px 36px">
+      <h1 style="margin:0 0 4px;font-size:26px;letter-spacing:1px">${h(d.name)}</h1>
+      <div style="font-size:11px;color:#bdc3c7">${[d.email,d.phone,d.location,d.linkedin,d.github].filter(Boolean).join(' · ')}</div>
+    </div>
+    <div style="display:flex">
+      <div style="flex:1;padding:24px 24px 24px 36px;border-right:1px solid #e0e0e0">
+        ${d.summary?`<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#2c3e50;border-bottom:2px solid #2c3e50;padding-bottom:2px;margin-bottom:10px">Summary</div><p style="margin:0 0 16px;line-height:1.6">${h(d.summary)}</p>`:''}
+        ${expHtml?`<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#2c3e50;border-bottom:2px solid #2c3e50;padding-bottom:2px;margin-bottom:10px">Experience</div>${expHtml}`:''}
+        ${(d.projects||[]).length?`<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#2c3e50;border-bottom:2px solid #2c3e50;padding-bottom:2px;margin-bottom:10px">Projects</div>${(d.projects||[]).map(p=>`<div style="margin-bottom:10px"><b>${h(p.name)}</b>${p.link?`<span style="font-size:11px;color:#555;margin-left:6px">${h(p.link)}</span>`:''}<p style="margin:2px 0 0;font-size:12px">${h(p.description)}</p></div>`).join('')}`:''}
+      </div>
+      <div style="width:220px;padding:24px;background:#f9f9f9;flex-shrink:0">
+        ${(d.skills||[]).length?`<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#2c3e50;border-bottom:2px solid #2c3e50;padding-bottom:2px;margin-bottom:10px">Skills</div>${(d.skills||[]).map(s=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><div style="width:8px;height:8px;border-radius:50%;background:#2c3e50;flex-shrink:0"></div>${h(s)}</div>`).join('')}`:''}
+        ${(d.education||[]).length?`<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#2c3e50;border-bottom:2px solid #2c3e50;padding-bottom:2px;margin:14px 0 10px">Education</div>${(d.education||[]).map(e=>`<div style="margin-bottom:10px"><b style="font-size:13px">${h(e.degree)}</b><div style="color:#555;font-size:12px">${h(e.school)}</div><div style="color:#888;font-size:11px">${h(e.year)}${e.gpa?` | GPA: ${h(e.gpa)}`:''}</div></div>`).join('')}`:''}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── 7. Modern Minimalist ──
+function tplModMinimal(d) {
+  const expHtml = (d.experience||[]).map(e=>`<div style="display:grid;grid-template-columns:130px 1fr;gap:16px;margin-bottom:18px"><div style="font-size:12px;color:#777"><div>${h(e.startDate)} –</div><div>${h(e.endDate)}</div><div style="margin-top:4px;color:#999">${h(e.location)}</div></div><div><div style="font-weight:600">${h(e.title)}</div><div style="color:#555;margin-bottom:5px">${h(e.company)}</div><ul style="margin:0;padding-left:14px;color:#333;font-size:13px">${(e.bullets||[]).map(b=>`<li>${h(b)}</li>`).join('')}</ul></div></div>`).join('');
+  return `<div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:800px;margin:0 auto;padding:48px 56px;font-size:13px;line-height:1.6;color:#111">
+    <div style="margin-bottom:32px">
+      <h1 style="font-size:34px;font-weight:300;margin:0 0 8px;letter-spacing:-0.5px">${h(d.name)}</h1>
+      <div style="display:flex;gap:18px;font-size:12px;color:#777;flex-wrap:wrap">${[d.email,d.phone,d.location,d.linkedin,d.github].filter(Boolean).map(v=>`<span>${h(v)}</span>`).join('')}</div>
+    </div>
+    ${d.summary?`<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#999;margin-bottom:10px">About</div><p style="margin:0 0 24px;color:#444;max-width:580px">${h(d.summary)}</p>`:''}
+    ${expHtml?`<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#999;margin-bottom:12px">Experience</div>${expHtml}`:''}
+    ${(d.projects||[]).length?`<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#999;margin-bottom:12px">Projects</div>${(d.projects||[]).map(p=>`<div style="display:grid;grid-template-columns:130px 1fr;gap:16px;margin-bottom:12px"><div style="font-size:12px;color:#777">${h(p.link||'')}</div><div><div style="font-weight:600">${h(p.name)}</div><div style="color:#444;font-size:12px">${h(p.description)}</div></div></div>`).join('')}`:''}
+    ${(d.education||[]).length?`<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#999;margin-bottom:12px">Education</div>${(d.education||[]).map(e=>`<div style="display:grid;grid-template-columns:130px 1fr;gap:16px;margin-bottom:10px"><div style="font-size:12px;color:#777">${h(e.year)}</div><div><div style="font-weight:600">${h(e.degree)}</div><div style="color:#555">${h(e.school)}${e.gpa?` · GPA ${h(e.gpa)}`:''}</div></div></div>`).join('')}`:''}
+    ${(d.skills||[]).length?`<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#999;margin-bottom:10px">Skills</div><div style="display:flex;flex-wrap:wrap;gap:8px">${(d.skills||[]).map(s=>`<span style="border:1px solid #ddd;padding:3px 12px;border-radius:20px;font-size:12px;color:#333">${h(s)}</span>`).join('')}</div>`:''}
+  </div>`;
+}
+
+// ── 8. Modern Bold ──
+function tplModBold(d) {
+  const expHtml = (d.experience||[]).map(e=>`<div style="margin-bottom:16px;padding-left:12px;border-left:3px solid #111"><div style="font-weight:700;font-size:14px">${h(e.title)}</div><div style="display:flex;justify-content:space-between;font-size:12px;color:#666;margin-bottom:5px"><span>${h(e.company)} · ${h(e.location)}</span><span>${h(e.startDate)} – ${h(e.endDate)}</span></div><ul style="margin:0;padding-left:16px;font-size:13px">${(e.bullets||[]).map(b=>`<li>${h(b)}</li>`).join('')}</ul></div>`).join('');
+  return `<div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:800px;margin:0 auto;font-size:13px;color:#111">
+    <div style="background:#111;color:#fff;padding:32px 40px">
+      <h1 style="font-size:32px;font-weight:800;margin:0 0 6px;letter-spacing:-0.5px">${h(d.name)}</h1>
+      <div style="font-size:12px;color:#aaa;display:flex;gap:14px;flex-wrap:wrap">${[d.email,d.phone,d.location,d.linkedin,d.github].filter(Boolean).map(v=>`<span>${h(v)}</span>`).join('')}</div>
+    </div>
+    <div style="padding:28px 40px;background:#fff">
+      ${d.summary?`<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:2px;margin-bottom:10px">Profile</div><p style="margin:0 0 22px;line-height:1.7;color:#444">${h(d.summary)}</p>`:''}
+      ${expHtml?`<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:2px;margin-bottom:12px">Experience</div>${expHtml}`:''}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:16px">
+        <div>
+          ${(d.education||[]).length?`<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:2px;margin-bottom:10px">Education</div>${(d.education||[]).map(e=>`<div style="margin-bottom:10px;padding-left:12px;border-left:3px solid #111"><div style="font-weight:700">${h(e.degree)}</div><div style="color:#555;font-size:12px">${h(e.school)}</div><div style="color:#888;font-size:12px">${h(e.year)}${e.gpa?` · GPA ${h(e.gpa)}`:''}</div></div>`).join('')}`:''}
+        </div>
+        <div>
+          ${(d.skills||[]).length?`<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:2px;margin-bottom:10px">Skills</div><div style="display:flex;flex-wrap:wrap;gap:6px">${(d.skills||[]).map(s=>`<span style="background:#111;color:#fff;padding:4px 10px;border-radius:4px;font-size:12px">${h(s)}</span>`).join('')}</div>`:''}
+        </div>
+      </div>
+      ${(d.projects||[]).length?`<div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:2px;margin:20px 0 10px">Projects</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">${(d.projects||[]).map(p=>`<div style="border:1px solid #e0e0e0;padding:12px;border-radius:6px"><div style="font-weight:700;margin-bottom:4px">${h(p.name)}</div>${p.link?`<div style="font-size:11px;color:#555;margin-bottom:4px">${h(p.link)}</div>`:''}<div style="font-size:12px;color:#444">${h(p.description)}</div></div>`).join('')}</div>`:''}
+    </div>
+  </div>`;
+}
+
+// ── 9. Creative Teal ──
+function tplCreativeTeal(d) {
+  const teal='#0d9488', tealL='#ccfbf1';
+  const expHtml = (d.experience||[]).map(e=>`<div style="margin-bottom:16px;position:relative;padding-left:16px"><div style="position:absolute;left:0;top:5px;width:8px;height:8px;border-radius:50%;background:${teal}"></div><div style="font-weight:700">${h(e.title)}</div><div style="color:${teal};font-size:12px;font-weight:600">${h(e.company)}</div><div style="font-size:11px;color:#6b7280;margin-bottom:5px">${h(e.startDate)} – ${h(e.endDate)} · ${h(e.location)}</div><ul style="margin:0;padding-left:16px;color:#374151;font-size:12px">${(e.bullets||[]).map(b=>`<li>${h(b)}</li>`).join('')}</ul></div>`).join('');
+  return `<div style="font-family:'Segoe UI',Arial,sans-serif;max-width:800px;margin:0 auto;font-size:13px;color:#1f2937">
+    <div style="background:linear-gradient(135deg,${teal} 0%,#0f766e 100%);padding:36px 40px;color:#fff">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div><h1 style="font-size:28px;font-weight:700;margin:0 0 5px">${h(d.name)}</h1><div style="font-size:12px;opacity:.85;line-height:1.8">${[d.email,d.phone,d.location,d.linkedin,d.github].filter(Boolean).join(' · ')}</div></div>
+        <div style="width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700">${(d.name||'?').charAt(0)}</div>
+      </div>
+    </div>
+    <div style="padding:24px 40px">
+      ${d.summary?`<div style="background:${tealL};border-left:4px solid ${teal};padding:12px 16px;border-radius:0 8px 8px 0;margin-bottom:22px"><div style="font-size:11px;font-weight:700;color:${teal};text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">About Me</div><p style="margin:0;color:#374151;font-size:13px">${h(d.summary)}</p></div>`:''}
+      <div style="display:grid;grid-template-columns:1fr 240px;gap:24px">
+        <div>
+          ${expHtml?`<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:${teal};border-bottom:2px solid ${teal};padding-bottom:3px;margin-bottom:12px">Experience</div>${expHtml}`:''}
+          ${(d.projects||[]).length?`<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:${teal};border-bottom:2px solid ${teal};padding-bottom:3px;margin-bottom:12px">Projects</div>${(d.projects||[]).map(p=>`<div style="margin-bottom:10px;padding:10px;border:1px solid ${tealL};border-radius:8px"><div style="font-weight:700">${h(p.name)}</div>${p.link?`<div style="font-size:11px;color:${teal}">${h(p.link)}</div>`:''}<div style="font-size:12px;color:#4b5563;margin-top:3px">${h(p.description)}</div></div>`).join('')}`:''}
+        </div>
+        <div>
+          ${(d.skills||[]).length?`<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:${teal};border-bottom:2px solid ${teal};padding-bottom:3px;margin-bottom:12px">Skills</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px">${(d.skills||[]).map(s=>`<span style="background:${tealL};color:${teal};padding:4px 10px;border-radius:20px;font-size:12px;font-weight:500">${h(s)}</span>`).join('')}</div>`:''}
+          ${(d.education||[]).length?`<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:${teal};border-bottom:2px solid ${teal};padding-bottom:3px;margin-bottom:12px">Education</div>${(d.education||[]).map(e=>`<div style="margin-bottom:12px"><div style="font-weight:700">${h(e.degree)}</div><div style="color:#555;font-size:12px">${h(e.school)}</div><div style="font-size:12px;color:${teal}">${h(e.year)}${e.gpa?` · GPA ${h(e.gpa)}`:''}</div></div>`).join('')}`:''}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── 10. Creative Purple ──
+function tplCreativePurple(d) {
+  const p1='#7c3aed',p2='#4f46e5',pL='#f5f3ff',pL2='#ddd6fe';
+  const expHtml = (d.experience||[]).map(e=>`<div style="margin-bottom:16px"><div style="font-weight:700;font-size:14px">${h(e.title)}</div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="color:${p1};font-weight:600">${h(e.company)}</span><span style="color:#6b7280">${h(e.startDate)} – ${h(e.endDate)}</span></div><ul style="margin:0;padding-left:16px;color:#374151;font-size:12px">${(e.bullets||[]).map(b=>`<li>${h(b)}</li>`).join('')}</ul></div>`).join('');
+  return `<div style="font-family:'Segoe UI',Arial,sans-serif;max-width:800px;margin:0 auto;font-size:13px;color:#1e1b4b">
+    <div style="background:linear-gradient(135deg,${p1} 0%,${p2} 50%,#2563eb 100%);padding:32px 40px;color:#fff">
+      <h1 style="font-size:30px;font-weight:800;margin:0 0 5px;letter-spacing:-0.5px">${h(d.name)}</h1>
+      <div style="display:flex;flex-wrap:wrap;gap:14px;font-size:12px;opacity:.9">${[d.email,d.phone,d.location,d.linkedin,d.github].filter(Boolean).map(v=>`<span>◆ ${h(v)}</span>`).join('')}</div>
+    </div>
+    <div style="display:flex">
+      <div style="width:220px;background:${pL};padding:24px 18px;flex-shrink:0">
+        ${(d.skills||[]).length?`<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:${p1};border-bottom:1px solid ${pL2};padding-bottom:3px;margin-bottom:10px">Skills</div>${(d.skills||[]).map((s,i)=>`<div style="margin-bottom:8px"><div style="font-size:12px;margin-bottom:2px">${h(s)}</div><div style="height:4px;background:#ddd;border-radius:2px"><div style="height:4px;border-radius:2px;background:linear-gradient(90deg,${p1},${p2});width:${68+(i%4)*8}%"></div></div></div>`).join('')}`:''}
+        ${(d.education||[]).length?`<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:${p1};border-bottom:1px solid ${pL2};padding-bottom:3px;margin:16px 0 10px">Education</div>${(d.education||[]).map(e=>`<div style="margin-bottom:12px"><div style="font-weight:700;font-size:12px">${h(e.degree)}</div><div style="color:#5b21b6;font-size:12px">${h(e.school)}</div><div style="font-size:11px;color:${p1}">${h(e.year)}</div></div>`).join('')}`:''}
+      </div>
+      <div style="flex:1;padding:24px 28px;background:#fff">
+        ${d.summary?`<div style="border-left:4px solid ${p1};padding-left:12px;margin-bottom:20px"><div style="font-size:11px;font-weight:700;color:${p1};text-transform:uppercase;letter-spacing:1px;margin-bottom:3px">Profile</div><p style="margin:0;color:#374151;line-height:1.7;font-size:13px">${h(d.summary)}</p></div>`:''}
+        ${expHtml?`<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:${p2};border-bottom:2px solid ${pL2};padding-bottom:3px;margin-bottom:12px">Experience</div>${expHtml}`:''}
+        ${(d.projects||[]).length?`<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:${p2};border-bottom:2px solid ${pL2};padding-bottom:3px;margin-bottom:12px">Projects</div>${(d.projects||[]).map(p=>`<div style="margin-bottom:10px;padding:10px 12px;border-radius:8px;background:#faf5ff;border:1px solid #e9d5ff"><div style="font-weight:700">${h(p.name)}${p.link?`<span style="font-size:11px;color:${p1};margin-left:8px">${h(p.link)}</span>`:''}</div><p style="margin:3px 0 0;font-size:12px;color:#4b5563">${h(p.description)}</p></div>`).join('')}`:''}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── 11. Premium Glass ──
+function tplPremGlass(d, unlocked) {
+  if (!unlocked) return premiumLock('Modern Glass');
+  const expHtml = (d.experience||[]).map(e=>`<div style="margin-bottom:16px;padding:12px;background:rgba(255,255,255,.04);border-radius:10px;border:1px solid rgba(255,255,255,.07)"><div style="font-weight:700;font-size:14px;color:#e2e8f0">${h(e.title)}</div><div style="display:flex;justify-content:space-between;font-size:12px;margin:3px 0 7px"><span style="color:#6366f1">${h(e.company)}</span><span style="color:#475569">${h(e.startDate)} – ${h(e.endDate)}</span></div><ul style="margin:0;padding-left:14px;color:#94a3b8;font-size:12px">${(e.bullets||[]).map(b=>`<li>${h(b)}</li>`).join('')}</ul></div>`).join('');
+  return `<div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:800px;margin:0 auto;background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);min-height:900px;color:#fff;font-size:13px">
+    <div style="padding:40px 40px 24px;border-bottom:1px solid rgba(255,255,255,.1)">
+      <h1 style="font-size:34px;font-weight:800;margin:0 0 7px">${h(d.name)}</h1>
+      <div style="display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:#94a3b8">${[d.email,d.phone,d.location,d.linkedin,d.github].filter(Boolean).map(v=>`<span>• ${h(v)}</span>`).join('')}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 240px;gap:0">
+      <div style="padding:24px 32px 24px 40px;border-right:1px solid rgba(255,255,255,.08)">
+        ${d.summary?`<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#6366f1;margin-bottom:10px">About</div><p style="margin:0 0 20px;color:#94a3b8;line-height:1.7">${h(d.summary)}</p>`:''}
+        ${expHtml?`<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#6366f1;margin-bottom:12px">Experience</div>${expHtml}`:''}
+        ${(d.projects||[]).length?`<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#6366f1;margin-bottom:12px">Projects</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${(d.projects||[]).map(p=>`<div style="padding:12px;background:rgba(99,102,241,.08);border-radius:8px;border:1px solid rgba(99,102,241,.2)"><div style="font-weight:600;color:#e2e8f0;margin-bottom:2px">${h(p.name)}</div>${p.link?`<div style="font-size:11px;color:#6366f1;margin-bottom:3px">${h(p.link)}</div>`:''}<div style="font-size:12px;color:#94a3b8">${h(p.description)}</div></div>`).join('')}</div>`:''}
+      </div>
+      <div style="padding:24px">
+        ${(d.skills||[]).length?`<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#6366f1;margin-bottom:12px">Skills</div>${(d.skills||[]).map((s,i)=>`<div style="margin-bottom:8px"><div style="font-size:12px;color:#94a3b8;margin-bottom:2px">${h(s)}</div><div style="height:4px;background:rgba(255,255,255,.08);border-radius:2px"><div style="height:4px;border-radius:2px;background:linear-gradient(90deg,#6366f1,#10b981);width:${65+(i%4)*8}%"></div></div></div>`).join('')}`:''}
+        ${(d.education||[]).length?`<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:#6366f1;margin:18px 0 12px">Education</div>${(d.education||[]).map(e=>`<div style="margin-bottom:12px;padding:10px;background:rgba(255,255,255,.04);border-radius:8px"><div style="font-weight:600;color:#e2e8f0;font-size:13px">${h(e.degree)}</div><div style="color:#64748b;font-size:12px">${h(e.school)}</div><div style="color:#6366f1;font-size:12px">${h(e.year)}</div></div>`).join('')}`:''}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── 12. Premium Executive Gold ──
+function tplPremExec(d, unlocked) {
+  if (!unlocked) return premiumLock('Executive Gold');
+  const gold='#b8860b';
+  const expHtml=(d.experience||[]).map(e=>`<div style="margin-bottom:18px;padding-bottom:18px;border-bottom:1px solid #e8e0d0"><div style="display:flex;justify-content:space-between;align-items:baseline"><div><div style="font-size:15px;font-weight:700">${h(e.title)}</div><div style="color:${gold};font-size:13px;font-weight:600">${h(e.company)} · ${h(e.location)}</div></div><em style="font-size:12px;color:#666">${h(e.startDate)} – ${h(e.endDate)}</em></div><ul style="margin-top:8px;padding-left:20px;color:#333;font-size:13px">${(e.bullets||[]).map(b=>`<li style="margin-bottom:3px">${h(b)}</li>`).join('')}</ul></div>`).join('');
+  return `<div style="font-family:'Palatino Linotype',Georgia,serif;max-width:800px;margin:0 auto;background:#fdfbf7;font-size:13.5px;line-height:1.65;color:#1a1a1a">
+    <div style="height:4px;background:linear-gradient(90deg,${gold},#f0c040,${gold})"></div>
+    <div style="background:#1a1a1a;padding:36px 48px;color:#fff;position:relative">
+      <h1 style="font-size:32px;font-weight:400;margin:0 0 4px;letter-spacing:3px;text-transform:uppercase;color:#f5f5f5">${h(d.name)}</h1>
+      <div style="display:flex;gap:18px;font-size:12px;color:#a0a0a0;flex-wrap:wrap;margin-top:7px">${[d.email,d.phone,d.location,d.linkedin,d.github].filter(Boolean).map(v=>`<span>${h(v)}</span>`).join('')}</div>
+    </div>
+    <div style="padding:32px 48px">
+      ${d.summary?`<div style="border-left:4px solid ${gold};padding-left:18px;margin-bottom:24px"><div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:${gold};margin-bottom:6px">Executive Summary</div><p style="margin:0;font-size:14px;line-height:1.8;color:#333;font-style:italic">${h(d.summary)}</p></div>`:''}
+      ${expHtml?`<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:${gold}">Career History</div><div style="flex:1;height:1px;background:linear-gradient(90deg,${gold},transparent)"></div></div>${expHtml}`:''}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px">
+        <div>${(d.education||[]).length?`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:${gold}">Education</div><div style="flex:1;height:1px;background:linear-gradient(90deg,${gold},transparent)"></div></div>${(d.education||[]).map(e=>`<div style="margin-bottom:12px"><div style="font-weight:700">${h(e.degree)}</div><div style="color:#555">${h(e.school)}</div><div style="font-size:12px;color:${gold}">${h(e.year)}${e.gpa?` · GPA: ${h(e.gpa)}`:''}</div></div>`).join('')}`:''}
+        ${(d.projects||[]).length?`<div style="display:flex;align-items:center;gap:10px;margin:16px 0 10px"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:${gold}">Key Projects</div><div style="flex:1;height:1px;background:linear-gradient(90deg,${gold},transparent)"></div></div>${(d.projects||[]).map(p=>`<div style="margin-bottom:10px"><b>${h(p.name)}</b>${p.link?`<span style="font-size:11px;color:#777;margin-left:6px">${h(p.link)}</span>`:''}<p style="margin:2px 0 0;color:#444;font-size:12px">${h(p.description)}</p></div>`).join('')}`:''}
+        </div>
+        <div>${(d.skills||[]).length?`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:${gold}">Expertise</div><div style="flex:1;height:1px;background:linear-gradient(90deg,${gold},transparent)"></div></div>${(d.skills||[]).map(s=>`<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px"><span style="color:${gold}">◆</span><span>${h(s)}</span></div>`).join('')}`:''}
+        </div>
+      </div>
+    </div>
+    <div style="height:4px;background:linear-gradient(90deg,${gold},#f0c040,${gold})"></div>
+  </div>`;
+}
+
+// ── 13. Premium Neon ──
+function tplPremNeon(d, unlocked) {
+  if (!unlocked) return premiumLock('Creative Neon');
+  const cyan='#00d4ff', purple='#bf00ff';
+  const expHtml=(d.experience||[]).map(e=>`<div style="margin-bottom:16px;padding:12px;background:rgba(0,212,255,.03);border:1px solid rgba(0,212,255,.1);border-radius:8px"><div style="font-weight:700;font-size:14px;color:#e2e8f0">${h(e.title)}</div><div style="display:flex;justify-content:space-between;font-size:12px;margin:4px 0 7px"><span style="color:${cyan}">${h(e.company)}</span><span style="color:#475569">${h(e.startDate)} – ${h(e.endDate)}</span></div><ul style="margin:0;padding-left:14px;color:#94a3b8;font-size:12px">${(e.bullets||[]).map(b=>`<li>${h(b)}</li>`).join('')}</ul></div>`).join('');
+  return `<div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:800px;margin:0 auto;background:#0a0a0f;color:#e2e8f0;font-size:13px;line-height:1.6">
+    <div style="height:2px;background:linear-gradient(90deg,transparent,${cyan},${purple},transparent)"></div>
+    <div style="padding:40px 44px 24px">
+      <h1 style="font-size:34px;font-weight:800;margin:0 0 8px;background:linear-gradient(90deg,${cyan},${purple});-webkit-background-clip:text;-webkit-text-fill-color:transparent">${h(d.name)}</h1>
+      <div style="display:flex;flex-wrap:wrap;gap:14px;font-size:12px">${[d.email,d.phone,d.location,d.linkedin,d.github].filter(Boolean).map(v=>`<span style="color:#64748b;border-left:2px solid ${cyan};padding-left:8px">${h(v)}</span>`).join('')}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 220px;gap:0;padding:0 44px 40px">
+      <div style="padding-right:28px;border-right:1px solid rgba(0,212,255,.15)">
+        ${d.summary?`<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2.5px;color:${cyan};margin-bottom:10px">Profile</div><p style="margin:0 0 20px;color:#94a3b8">${h(d.summary)}</p>`:''}
+        ${expHtml?`<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2.5px;color:${cyan};margin-bottom:12px">Experience</div>${expHtml}`:''}
+        ${(d.projects||[]).length?`<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2.5px;color:${cyan};margin-bottom:12px">Projects</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">${(d.projects||[]).map(p=>`<div style="padding:12px;background:rgba(191,0,255,.05);border:1px solid rgba(191,0,255,.15);border-radius:8px"><div style="font-weight:700;color:#e2e8f0;margin-bottom:2px">${h(p.name)}</div>${p.link?`<div style="font-size:11px;color:${purple};margin-bottom:3px">${h(p.link)}</div>`:''}<div style="font-size:12px;color:#94a3b8">${h(p.description)}</div></div>`).join('')}</div>`:''}
+      </div>
+      <div style="padding-left:24px">
+        ${(d.skills||[]).length?`<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2.5px;color:${purple};margin-bottom:12px">Skills</div><div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px">${(d.skills||[]).map(s=>`<span style="padding:4px 10px;border-radius:4px;font-size:11px;background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.2);color:${cyan}">${h(s)}</span>`).join('')}</div>`:''}
+        ${(d.education||[]).length?`<div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:2.5px;color:${purple};margin-bottom:12px">Education</div>${(d.education||[]).map(e=>`<div style="margin-bottom:12px;padding:10px;background:rgba(191,0,255,.04);border:1px solid rgba(191,0,255,.12);border-radius:6px"><div style="font-weight:600;color:#e2e8f0;font-size:12px">${h(e.degree)}</div><div style="color:#64748b;font-size:12px">${h(e.school)}</div><div style="color:${purple};font-size:12px">${h(e.year)}</div></div>`).join('')}`:''}
+      </div>
+    </div>
+    <div style="height:2px;background:linear-gradient(90deg,transparent,${purple},${cyan},transparent)"></div>
+  </div>`;
+}
+
+// ── 14. Premium Elegant Serif ──
+function tplPremElegant(d, unlocked) {
+  if (!unlocked) return premiumLock('Elegant Serif');
+  const red='#8b0000', red2='#c41e3a';
+  const expHtml=(d.experience||[]).map(e=>`<div style="margin-bottom:18px"><div style="display:flex;justify-content:space-between;align-items:baseline"><div><div style="font-size:15px;font-weight:700">${h(e.title)}</div><div style="color:${red};font-weight:600;font-size:13px;margin-bottom:5px">${h(e.company)} · ${h(e.location)}</div></div><em style="font-size:12px;color:#555">${h(e.startDate)} – ${h(e.endDate)}</em></div><ul style="margin:0;padding-left:20px;color:#333;font-size:13px">${(e.bullets||[]).map(b=>`<li style="margin-bottom:3px">${h(b)}</li>`).join('')}</ul></div>`).join('');
+  return `<div style="font-family:'Palatino Linotype','Book Antiqua',Palatino,serif;max-width:800px;margin:0 auto;background:#fffef9;font-size:13.5px;line-height:1.7;color:#1c1c1c">
+    <div style="height:6px;background:linear-gradient(90deg,${red},${red2},${red})"></div>
+    <div style="text-align:center;padding:36px 52px 20px;border-bottom:3px double ${red2}">
+      <h1 style="font-size:36px;font-weight:400;margin:0 0 6px;letter-spacing:4px;text-transform:uppercase">${h(d.name)}</h1>
+      <div style="width:50px;height:1px;background:${red2};margin:0 auto 8px"></div>
+      <div style="font-size:12px;color:#5a5a5a;letter-spacing:1px">${[d.email,d.phone,d.location,d.linkedin,d.github].filter(Boolean).join(' · ')}</div>
+    </div>
+    <div style="padding:24px 52px">
+      ${d.summary?`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:${red}">Profile</div><div style="flex:1;height:1px;background:linear-gradient(90deg,${red2},transparent)"></div></div><p style="margin:0 0 18px;text-align:justify;font-style:italic;color:#3a3a3a;font-size:14px">${h(d.summary)}</p>`:''}
+      ${expHtml?`<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:${red}">Professional Experience</div><div style="flex:1;height:1px;background:linear-gradient(90deg,${red2},transparent)"></div></div>${expHtml}`:''}
+      <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:32px">
+        <div>
+          ${(d.education||[]).length?`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:${red}">Education</div><div style="flex:1;height:1px;background:linear-gradient(90deg,${red2},transparent)"></div></div>${(d.education||[]).map(e=>`<div style="margin-bottom:12px"><div style="font-weight:700;font-size:14px">${h(e.degree)}</div><div style="color:#555">${h(e.school)}</div><div style="font-size:12px;color:${red};font-style:italic">${h(e.year)}${e.gpa?` | GPA: ${h(e.gpa)}`:''}</div></div>`).join('')}`:''}
+          ${(d.projects||[]).length?`<div style="display:flex;align-items:center;gap:10px;margin:14px 0 10px"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:${red}">Projects</div><div style="flex:1;height:1px;background:linear-gradient(90deg,${red2},transparent)"></div></div>${(d.projects||[]).map(p=>`<div style="margin-bottom:10px"><div style="font-weight:700">${h(p.name)}</div>${p.link?`<div style="font-size:11px;color:${red};font-style:italic">${h(p.link)}</div>`:''}<p style="margin:2px 0 0;color:#444;font-size:13px">${h(p.description)}</p></div>`).join('')}`:''}
+        </div>
+        <div>
+          ${(d.skills||[]).length?`<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:${red}">Competencies</div><div style="flex:1;height:1px;background:linear-gradient(90deg,${red2},transparent)"></div></div>${(d.skills||[]).map(s=>`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="color:${red};font-size:14px">✦</span><span>${h(s)}</span></div>`).join('')}`:''}
+        </div>
+      </div>
+    </div>
+    <div style="height:6px;background:linear-gradient(90deg,${red},${red2},${red})"></div>
+  </div>`;
+}
+
+// ── 15. Premium Creative Gradient ──
+function tplPremGradient(d, unlocked) {
+  if (!unlocked) return premiumLock('Creative Gradient');
+  const expHtml=(d.experience||[]).map(e=>`<div style="margin-bottom:16px;padding-left:14px;border-left:3px solid #f97316"><div style="font-weight:700;font-size:14px">${h(e.title)}</div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px"><span style="background:linear-gradient(90deg,#f97316,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:600">${h(e.company)}</span><span style="color:#6b7280">${h(e.startDate)} – ${h(e.endDate)}</span></div><ul style="margin:0;padding-left:14px;color:#374151;font-size:12px">${(e.bullets||[]).map(b=>`<li>${h(b)}</li>`).join('')}</ul></div>`).join('');
+  const skillHtml=(d.skills||[]).slice(0,9).map((s,i)=>{const cs=[['#fff7ed','#f97316'],['#fdf2f8','#ec4899'],['#f5f3ff','#8b5cf6']];const[bg,t]=cs[i%3];return `<div style="background:${bg};border:2px solid ${t}22;border-radius:8px;padding:7px 12px;text-align:center;font-size:12px;font-weight:600;color:${t}">${h(s)}</div>`;}).join('');
+  return `<div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:800px;margin:0 auto;background:#fff;font-size:13px;line-height:1.6;color:#1f2937">
+    <div style="background:linear-gradient(135deg,#f97316 0%,#ec4899 50%,#8b5cf6 100%);padding:40px 44px 52px;color:#fff;position:relative">
+      <h1 style="font-size:34px;font-weight:800;margin:0 0 7px;text-shadow:0 2px 10px rgba(0,0,0,.15)">${h(d.name)}</h1>
+      <div style="display:flex;flex-wrap:wrap;gap:12px;font-size:12px;opacity:.9">${[d.email,d.phone,d.location,d.linkedin,d.github].filter(Boolean).map(v=>`<span style="background:rgba(255,255,255,.2);padding:3px 10px;border-radius:20px">${h(v)}</span>`).join('')}</div>
+      <div style="position:absolute;bottom:0;left:0;right:0;height:26px;background:#fff;clip-path:ellipse(55% 100% at 50% 100%)"></div>
+    </div>
+    <div style="padding:16px 44px 36px">
+      ${d.summary?`<p style="text-align:center;max-width:560px;margin:0 auto 22px;color:#4b5563;font-style:italic;line-height:1.8">${h(d.summary)}</p>`:''}
+      ${skillHtml?`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px">${skillHtml}</div>`:''}
+      ${expHtml?`<div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;background:linear-gradient(90deg,#f97316,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:12px">Experience</div>${expHtml}`:''}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:16px">
+        <div>${(d.education||[]).length?`<div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;background:linear-gradient(90deg,#ec4899,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:12px">Education</div>${(d.education||[]).map(e=>`<div style="margin-bottom:12px;padding-left:12px;border-left:3px solid #ec4899"><div style="font-weight:700">${h(e.degree)}</div><div style="color:#555;font-size:12px">${h(e.school)}</div><div style="font-size:12px;font-weight:600;color:#ec4899">${h(e.year)}${e.gpa?` · GPA ${h(e.gpa)}`:''}</div></div>`).join('')}`:''}
+        </div>
+        <div>${(d.projects||[]).length?`<div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;background:linear-gradient(90deg,#8b5cf6,#f97316);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:12px">Projects</div>${(d.projects||[]).map(p=>`<div style="margin-bottom:12px;padding-left:12px;border-left:3px solid #8b5cf6"><div style="font-weight:700">${h(p.name)}</div>${p.link?`<div style="font-size:11px;color:#8b5cf6">${h(p.link)}</div>`:''}<div style="font-size:12px;color:#4b5563;margin-top:2px">${h(p.description)}</div></div>`).join('')}`:''}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── Premium Lock Screen ──
+function premiumLock(name) {
+  return `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:400px;background:linear-gradient(135deg,#f8fafc,#f0f4ff);border:2px dashed #cbd5e1;border-radius:12px;font-family:sans-serif;text-align:center;padding:32px">
+    <div style="font-size:48px;margin-bottom:14px">🔒</div>
+    <div style="font-size:20px;font-weight:700;color:#111;margin-bottom:6px">${name}</div>
+    <div style="font-size:14px;color:#64748b;margin-bottom:20px">This is a Premium template. Upgrade to unlock.</div>
+    <div style="background:linear-gradient(135deg,#f59e0b,#f97316);color:#fff;padding:10px 24px;border-radius:8px;font-weight:700;font-size:14px">⭐ Upgrade to Premium</div>
+  </div>`;
+}
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+buildGrid();
+window.addEventListener('load', reportParentHeight);
+window.addEventListener('resize', queueResizeReport);
+
+const rootObserver = new MutationObserver(queueResizeReport);
+rootObserver.observe(document.body, { childList: true, subtree: true, attributes: true });
+
+if ('ResizeObserver' in window) {
+  const sizeObserver = new ResizeObserver(queueResizeReport);
+  sizeObserver.observe(document.body);
+}
+</script>
+</body>
+</html>

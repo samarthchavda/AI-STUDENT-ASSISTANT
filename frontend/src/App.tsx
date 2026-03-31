@@ -1,27 +1,32 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import LandingPage from './pages/LandingPage'
-import AuthPage from './pages/AuthPage'
-import ChatPage from './pages/ChatPage'
-import ExamPrepPage from './pages/ExamPrepPage'
-import ExamSimulationPage from './pages/ExamSimulationPage'
-import ExamResultPage from './pages/ExamResultPage'
-import AptitudeHistoryPage from './pages/AptitudeHistoryPage'
-import AptitudePracticePage from './pages/AptitudePracticePage'
-import DSAPracticeDashboardPage from './pages/DSAPracticeDashboardPage'
-import DSAEditorDemoPage from './pages/DSAEditorDemoPage'
-import DSADashboardPage from './pages/DSADashboardPage'
-import DSAProblemPage from './pages/DSAProblemPage'
-import DSAUserPerformancePage from './pages/DSAUserPerformancePage'
-import CareerPage from './pages/CareerPage'
-import ResumeTemplateGalleryPage from './pages/ResumeTemplateGalleryPage'
-import ResumeBuilderFormPage from './pages/ResumeBuilderFormPage'
-import CompanyPrepPage from './pages/CompanyPrepPage'
-import PricingPage from './pages/PricingPage'
-import DashboardPage from './pages/DashboardPage'
-import AdminPage from './pages/AdminPage'
-import ServicesPage from './pages/ServicesPage'
-import AboutPage from './pages/AboutPage'
-import ProfilePage from './pages/ProfilePage'
+import LandingPage from './pages/marketing/LandingPage'
+import AuthPage from './pages/auth/AuthPage'
+import ChatPage from './pages/chat/ChatPage'
+import ExamPrepPage from './pages/aptitude/ExamPrepPage'
+import ExamSimulationPage from './pages/aptitude/ExamSimulationPage'
+import ExamResultPage from './pages/aptitude/ExamResultPage'
+import AptitudeHistoryPage from './pages/aptitude/AptitudeHistoryPage'
+import AptitudePracticePage from './pages/aptitude/AptitudePracticePage'
+import DSAPracticeDashboardPage from './pages/dsa/DSAPracticeDashboardPage'
+import DSAEditorDemoPage from './pages/dsa/DSAEditorDemoPage'
+import DSADashboardPage from './pages/dsa/DSADashboardPage'
+import DSAProblemPage from './pages/dsa/DSAProblemPage'
+import DSAUserPerformancePage from './pages/dsa/DSAUserPerformancePage'
+import SystemHealthPage from './pages/admin/SystemHealthPage'
+import BroadcastSystemPage from './pages/admin/BroadcastSystemPage'
+import AuditLogsPage from './pages/admin/AuditLogsPage'
+import LeaderboardManagementPage from './pages/admin/LeaderboardManagementPage'
+import TransactionLogsPage from './pages/admin/TransactionLogsPage'
+import ReferralTrackingPage from './pages/admin/ReferralTrackingPage'
+import CareerPage from './pages/resume/CareerPage'
+import ResumeTemplateGalleryPage from './pages/resume/ResumeTemplateGalleryPage'
+import CompanyPrepPage from './pages/aptitude/CompanyPrepPage'
+import PricingPage from './pages/marketing/PricingPage'
+import DashboardPage from './pages/dashboard/DashboardPage'
+import AdminPage from './pages/admin/AdminPage'
+import ServicesPage from './pages/marketing/ServicesPage'
+import AboutPage from './pages/marketing/AboutPage'
+import ProfilePage from './pages/profile/ProfilePage'
 import ProtectedRoute from './components/ProtectedRoute'
 import ScrollToTop from './components/ScrollToTop'
 import { useAutoLogout } from './hooks/useAutoLogout'
@@ -57,7 +62,7 @@ function AppRoutes() {
       <Route path="/career" element={<ProtectedRoute><CareerPage /></ProtectedRoute>} />
       <Route path="/career/resume-analysis" element={<ProtectedRoute><CareerPage /></ProtectedRoute>} />
       <Route path="/career/resume-builder" element={<ProtectedRoute><ResumeTemplateGalleryPage /></ProtectedRoute>} />
-      <Route path="/career/resume-form" element={<ProtectedRoute><ResumeBuilderFormPage /></ProtectedRoute>} />
+      <Route path="/career/resume-form" element={<ProtectedRoute><ResumeTemplateGalleryPage /></ProtectedRoute>} />
       <Route path="/company-prep" element={<ProtectedRoute><CompanyPrepPage /></ProtectedRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
@@ -65,6 +70,12 @@ function AppRoutes() {
       {/* Admin Routes - Require Login + Admin */}
       <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminPage /></ProtectedRoute>} />
       <Route path="/admin/dsa/user-performance" element={<ProtectedRoute requireAdmin><DSAUserPerformancePage /></ProtectedRoute>} />
+      <Route path="/admin/system-health" element={<ProtectedRoute requireAdmin><SystemHealthPage /></ProtectedRoute>} />
+      <Route path="/admin/broadcast" element={<ProtectedRoute requireAdmin><BroadcastSystemPage /></ProtectedRoute>} />
+      <Route path="/admin/audit-logs" element={<ProtectedRoute requireAdmin><AuditLogsPage /></ProtectedRoute>} />
+      <Route path="/admin/leaderboard" element={<ProtectedRoute requireAdmin><LeaderboardManagementPage /></ProtectedRoute>} />
+      <Route path="/admin/transactions" element={<ProtectedRoute requireAdmin><TransactionLogsPage /></ProtectedRoute>} />
+      <Route path="/admin/referrals" element={<ProtectedRoute requireAdmin><ReferralTrackingPage /></ProtectedRoute>} />
     </Routes>
   )
 }

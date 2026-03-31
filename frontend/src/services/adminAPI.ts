@@ -282,4 +282,112 @@ export const adminAPI = {
     return response.data;
   },
 
+  // System Health APIs
+  getSystemHealth: async (): Promise<any> => {
+    const response = await api.get('/admin/system-health');
+    return response.data;
+  },
+
+  getSystemHealthHistory: async (metricType: string, hours: number = 24): Promise<any> => {
+    const response = await api.get(`/admin/system-health/history?metric_type=${metricType}&hours=${hours}`);
+    return response.data;
+  },
+
+  // Broadcast System APIs
+  createBroadcast: async (data: { title: string; message: string; target_audience: string }): Promise<any> => {
+    const response = await api.post('/admin/broadcast', data);
+    return response.data;
+  },
+
+  getBroadcasts: async (limit: number = 50): Promise<any> => {
+    const response = await api.get(`/admin/broadcasts?limit=${limit}`);
+    return response.data;
+  },
+
+  deactivateBroadcast: async (broadcastId: number): Promise<any> => {
+    const response = await api.delete(`/admin/broadcast/${broadcastId}`);
+    return response.data;
+  },
+
+  // Audit Logs APIs
+  getAuditLogs: async (limit: number = 100, actionType?: string): Promise<any> => {
+    const params = new URLSearchParams({ limit: limit.toString() });
+    if (actionType) params.append('action_type', actionType);
+    const response = await api.get(`/admin/audit-logs?${params.toString()}`);
+    return response.data;
+  },
+
+  getAuditStats: async (): Promise<any> => {
+    const response = await api.get('/admin/audit-logs/stats');
+    return response.data;
+  },
+
+  // User Sessions APIs
+  getUserSessions: async (): Promise<any> => {
+    const response = await api.get('/admin/users/sessions');
+    return response.data;
+  },
+
+  // Growth Features APIs
+  
+  // Leaderboard Management
+  getLeaderboardManagement: async (limit: number = 100): Promise<any> => {
+    const response = await api.get(`/admin/growth/leaderboard?limit=${limit}`);
+    return response.data;
+  },
+
+  updateLeaderboardEntry: async (userId: number, data: { custom_rank?: number; is_visible: boolean; featured: boolean }): Promise<any> => {
+    const response = await api.put(`/admin/growth/leaderboard/${userId}`, data);
+    return response.data;
+  },
+
+  getLeaderboardHistory: async (userId: number, days: number = 30): Promise<any> => {
+    const response = await api.get(`/admin/growth/leaderboard/history/${userId}?days=${days}`);
+    return response.data;
+  },
+
+  // Transaction Logs
+  getTransactionLogs: async (params?: { limit?: number; status?: string; start_date?: string; end_date?: string }): Promise<any> => {
+    const response = await api.get('/admin/growth/transactions', { params });
+    return response.data;
+  },
+
+  updateTransaction: async (paymentId: number, data: { notes?: string; refund_status?: string; refund_amount?: number }): Promise<any> => {
+    const response = await api.put(`/admin/growth/transactions/${paymentId}`, data);
+    return response.data;
+  },
+
+  // Smart Notifications (Nudge System)
+  getInactiveUsers: async (days: number = 7, limit: number = 100): Promise<any> => {
+    const response = await api.get(`/admin/growth/inactive-users?days=${days}&limit=${limit}`);
+    return response.data;
+  },
+
+  sendNudgeEmail: async (data: { user_ids: number[]; subject: string; message: string }): Promise<any> => {
+    const response = await api.post('/admin/growth/nudge', data);
+    return response.data;
+  },
+
+  // Referral Tracking
+  getReferralStats: async (): Promise<any> => {
+    const response = await api.get('/admin/growth/referrals');
+    return response.data;
+  },
+
+  getUserReferrals: async (userId: number): Promise<any> => {
+    const response = await api.get(`/admin/growth/referrals/${userId}`);
+    return response.data;
+  },
+
+  getUsersWithReferrals: async (limit: number = 100): Promise<any> => {
+    const response = await api.get(`/admin/growth/users-with-referrals?limit=${limit}`);
+    return response.data;
+  },
+
+  // Revenue Analytics
+  getRevenueAnalytics: async (days: number = 30): Promise<any> => {
+    const response = await api.get(`/admin/growth/revenue?days=${days}`);
+    return response.data;
+  },
+
 };

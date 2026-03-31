@@ -10,6 +10,7 @@ from app.core.middleware import (
     RequestLoggingMiddleware,
     IPBlockingMiddleware,
     RateLimitMiddleware,
+    SystemHealthTrackingMiddleware,
     limiter,
     rate_limit
 )
@@ -142,10 +143,13 @@ app.add_middleware(RequestValidationMiddleware)
 # 3. Request Logging
 app.add_middleware(RequestLoggingMiddleware)
 
-# 4. Rate Limiting
+# 4. System Health Tracking
+app.add_middleware(SystemHealthTrackingMiddleware)
+
+# 5. Rate Limiting
 app.add_middleware(RateLimitMiddleware, requests_per_minute=100)
 
-# 5. CORS Middleware (Added LAST so it wraps all middleware and handles preflight early)
+# 6. CORS Middleware (Added LAST so it wraps all middleware and handles preflight early)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_build_allowed_origins(),
@@ -174,6 +178,14 @@ app.include_router(dsa_routes.router, prefix="/api", tags=["DSA Practice"])  # D
 # Import DSA admin routes
 from app.routes import dsa_admin_routes
 app.include_router(dsa_admin_routes.router, prefix="/api/admin", tags=["DSA Admin"])
+
+# Import admin enhancements routes
+from app.routes import admin_enhancements_routes
+app.include_router(admin_enhancements_routes.router, tags=["Admin Enhancements"])
+
+# Import growth features routes
+from app.routes import growth_routes
+app.include_router(growth_routes.router, tags=["Growth Features"])
 
 @app.get("/")
 @rate_limit("10/minute")  # Rate limit: 10 requests per minute

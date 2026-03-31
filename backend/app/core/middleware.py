@@ -220,3 +220,60 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         
         return response
 
+
+
+
+class SystemHealthTrackingMiddleware(BaseHTTPMiddleware):
+    """Track API endpoint response times for system health monitoring"""
+    
+    async def dispatch(self, request: Request, call_next: Callable):
+        start_time = time.time()
+        
+        try:
+            response = await call_next(request)
+            process_time_ms = int((time.time() - start_time) * 1000)
+            
+            # Log to database (async to not block response)
+            if request.url.path.startswith("/api/"):
+                try:
+                    from app.core.database import SessionLocal
+                    from app.models import SystemHealthLog
+                    
+                    db = SessionLocal()
+                    health_log = SystemHealthLog(
+                        metric_type="api_endpoint",
+                        endpoint=request.url.path,
+                        response_time_ms=process_time_ms,
+                        status="success" if response.status_code < 400 else "error"
+                    )
+                    db.add(health_log)
+                    db.commit()
+                    db.close()
+                except Exception as e:
+                    print(f"[HEALTH] Failed to log: {e}")
+            
+            return response
+            
+        except Exception as e:
+            process_time_ms = int((time.time() - start_time) * 1000)
+            
+            # Log error
+            try:
+                from app.core.database import SessionLocal
+                from app.models import SystemHealthLog
+                
+                db = SessionLocal()
+                health_log = SystemHealthLog(
+                    metric_type="api_endpoint",
+                    endpoint=request.url.path,
+                    response_time_ms=process_time_ms,
+                    status="error",
+                    error_message=str(e)
+                )
+                db.add(health_log)
+                db.commit()
+                db.close()
+            except:
+                pass
+            
+            raise
