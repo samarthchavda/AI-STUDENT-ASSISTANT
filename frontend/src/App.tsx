@@ -18,6 +18,11 @@ import AuditLogsPage from './pages/admin/AuditLogsPage'
 import LeaderboardManagementPage from './pages/admin/LeaderboardManagementPage'
 import TransactionLogsPage from './pages/admin/TransactionLogsPage'
 import ReferralTrackingPage from './pages/admin/ReferralTrackingPage'
+import ResumeAnalyticsPage from './pages/admin/ResumeAnalyticsPage'
+import ResumeTemplatesPage from './pages/admin/ResumeTemplatesPage'
+import UserResumesPage from './pages/admin/UserResumesPage'
+import AIResumeMonitorPage from './pages/admin/AIResumeMonitorPage'
+import AISettingsPage from './pages/admin/AISettingsPage'
 import CareerPage from './pages/resume/CareerPage'
 import ResumeTemplateGalleryPage from './pages/resume/ResumeTemplateGalleryPage'
 import CompanyPrepPage from './pages/aptitude/CompanyPrepPage'
@@ -61,7 +66,9 @@ function AppRoutes() {
       <Route path="/roadmap" element={<ProtectedRoute><DSAPracticeDashboardPage /></ProtectedRoute>} />
       <Route path="/career" element={<ProtectedRoute><CareerPage /></ProtectedRoute>} />
       <Route path="/career/resume-analysis" element={<ProtectedRoute><CareerPage /></ProtectedRoute>} />
+      <Route path="/career/resume-templates" element={<ProtectedRoute><ResumeTemplateGalleryPage /></ProtectedRoute>} />
       <Route path="/career/resume-builder" element={<ProtectedRoute><ResumeTemplateGalleryPage /></ProtectedRoute>} />
+      <Route path="/career/resume-editor" element={<ProtectedRoute><ResumeTemplateGalleryPage /></ProtectedRoute>} />
       <Route path="/career/resume-form" element={<ProtectedRoute><ResumeTemplateGalleryPage /></ProtectedRoute>} />
       <Route path="/company-prep" element={<ProtectedRoute><CompanyPrepPage /></ProtectedRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
@@ -76,6 +83,11 @@ function AppRoutes() {
       <Route path="/admin/leaderboard" element={<ProtectedRoute requireAdmin><LeaderboardManagementPage /></ProtectedRoute>} />
       <Route path="/admin/transactions" element={<ProtectedRoute requireAdmin><TransactionLogsPage /></ProtectedRoute>} />
       <Route path="/admin/referrals" element={<ProtectedRoute requireAdmin><ReferralTrackingPage /></ProtectedRoute>} />
+      <Route path="/admin/resume-analytics" element={<ProtectedRoute requireAdmin><ResumeAnalyticsPage /></ProtectedRoute>} />
+      <Route path="/admin/resume-templates" element={<ProtectedRoute requireAdmin><ResumeTemplatesPage /></ProtectedRoute>} />
+      <Route path="/admin/user-resumes" element={<ProtectedRoute requireAdmin><UserResumesPage /></ProtectedRoute>} />
+      <Route path="/admin/ai-resume-monitor" element={<ProtectedRoute requireAdmin><AIResumeMonitorPage /></ProtectedRoute>} />
+      <Route path="/admin/ai-settings" element={<ProtectedRoute requireAdmin><AISettingsPage /></ProtectedRoute>} />
     </Routes>
   )
 }

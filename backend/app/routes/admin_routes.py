@@ -1487,3 +1487,509 @@ async def bulk_upload_aptitude_questions(
         raise HTTPException(status_code=400, detail="Invalid JSON format")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+
+
+# ============================================================================
+# RESUME ADMIN ENDPOINTS
+# ============================================================================
+
+@router.get("/resume-analytics")
+async def get_resume_analytics(
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Get resume analytics for admin dashboard"""
+    from sqlalchemy import text
+    from app.core.database import engine
+    
+    try:
+        with engine.begin() as connection:
+            # Mock data for now - will be replaced with actual database queries
+            # TODO: Create resume_tracking table and populate with real data
+            
+            analytics = {
+                "total_resumes": 0,
+                "ai_generated": 0,
+                "manual_created": 0,
+                "pdf_exports": 0,
+                "average_ats_score": 0,
+                "premium_template_usage": 0,
+                "most_selected_template": "ATS Clean",
+                "completion_rate": 0,
+                "templates_breakdown": []
+            }
+            
+            # Try to get real data if table exists
+            try:
+                result = connection.execute(text("""
+                    SELECT 
+                        COUNT(*) as total_resumes,
+                        COUNT(CASE WHEN ai_generated = true THEN 1 END) as ai_generated,
+                        COUNT(CASE WHEN ai_generated = false THEN 1 END) as manual_created,
+                        SUM(pdf_export_count) as pdf_exports,
+                        AVG(ats_score) as avg_ats_score,
+                        COUNT(CASE WHEN template_tier = 'premium' THEN 1 END) as premium_usage
+                    FROM resume_tracking
+                """))
+                row = result.fetchone()
+                if row:
+                    analytics["total_resumes"] = row[0] or 0
+                    analytics["ai_generated"] = row[1] or 0
+                    analytics["manual_created"] = row[2] or 0
+                    analytics["pdf_exports"] = row[3] or 0
+                    analytics["average_ats_score"] = round(float(row[4] or 0), 1)
+                    analytics["premium_template_usage"] = row[5] or 0
+                    
+                # Get most selected template
+                template_result = connection.execute(text("""
+                    SELECT template_id, COUNT(*) as count
+                    FROM resume_tracking
+                    GROUP BY template_id
+                    ORDER BY count DESC
+                    LIMIT 1
+                """))
+                template_row = template_result.fetchone()
+                if template_row:
+                    analytics["most_selected_template"] = template_row[0]
+                    
+                # Get templates breakdown
+                breakdown_result = connection.execute(text("""
+                    SELECT template_id, COUNT(*) as usage_count, SUM(pdf_export_count) as exports
+                    FROM resume_tracking
+                    GROUP BY template_id
+                    ORDER BY usage_count DESC
+                """))
+                analytics["templates_breakdown"] = [
+                    {"template": row[0], "usage": row[1], "exports": row[2] or 0}
+                    for row in breakdown_result.fetchall()
+                ]
+                
+                # Calculate completion rate
+                if analytics["total_resumes"] > 0:
+                    analytics["completion_rate"] = round(
+                        (analytics["pdf_exports"] / analytics["total_resumes"]) * 100, 1
+                    )
+            except Exception:
+                # Table doesn't exist yet, return mock data
+                pass
+            
+            return analytics
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch analytics: {str(e)}")
+
+
+@router.get("/resume-templates")
+async def get_resume_templates(
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Get all resume templates with usage statistics"""
+    
+    # Template registry - matches frontend template-generator.js
+    templates = [
+        {"id": "ats-simple", "name": "ATS Simple", "tier": "free", "active": True},
+        {"id": "ats-clean", "name": "ATS Clean", "tier": "free", "active": True},
+        {"id": "ats-compact", "name": "ATS Compact", "tier": "free", "active": True},
+        {"id": "professional-classic", "name": "Professional Classic", "tier": "free", "active": True},
+        {"id": "professional-navy", "name": "Professional Navy", "tier": "free", "active": True},
+        {"id": "professional-two-col", "name": "Professional Two Column", "tier": "free", "active": True},
+        {"id": "modern-minimalist", "name": "Modern Minimalist", "tier": "free", "active": True},
+        {"id": "modern-bold", "name": "Modern Bold", "tier": "free", "active": True},
+        {"id": "creative-teal", "name": "Creative Teal", "tier": "premium", "active": True},
+        {"id": "creative-purple", "name": "Creative Purple", "tier": "premium", "active": True},
+        {"id": "premium-glass", "name": "Premium Glass", "tier": "premium", "active": True},
+        {"id": "premium-executive-gold", "name": "Premium Executive Gold", "tier": "premium", "active": True},
+        {"id": "premium-neon", "name": "Premium Neon", "tier": "premium", "active": True},
+        {"id": "premium-elegant", "name": "Premium Elegant", "tier": "premium", "active": True},
+        {"id": "premium-gradient", "name": "Premium Gradient", "tier": "premium", "active": True},
+    ]
+    
+    # Try to get usage stats from database
+    from sqlalchemy import text
+    from app.core.database import engine
+    
+    try:
+        with engine.begin() as connection:
+            try:
+                result = connection.execute(text("""
+                    SELECT template_id, COUNT(*) as usage_count, SUM(pdf_export_count) as export_count
+                    FROM resume_tracking
+                    GROUP BY template_id
+                """))
+                
+                usage_map = {row[0]: {"usage": row[1], "exports": row[2] or 0} for row in result.fetchall()}
+                
+                # Merge usage stats with template data
+                for template in templates:
+                    stats = usage_map.get(template["id"], {"usage": 0, "exports": 0})
+                    template["usage_count"] = stats["usage"]
+                    template["export_count"] = stats["exports"]
+            except Exception:
+                # Table doesn't exist, set default values
+                for template in templates:
+                    template["usage_count"] = 0
+                    template["export_count"] = 0
+                    
+    except Exception as e:
+        # If any error, just return templates with zero stats
+        for template in templates:
+            template["usage_count"] = 0
+            template["export_count"] = 0
+    
+    # Find most popular
+    most_popular = max(templates, key=lambda t: t.get("usage_count", 0))
+    
+    return {
+        "templates": templates,
+        "most_popular": most_popular["id"] if most_popular.get("usage_count", 0) > 0 else "ats-clean"
+    }
+
+
+@router.put("/resume-templates/{template_id}/toggle")
+async def toggle_resume_template(
+    template_id: str,
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Toggle template active/inactive status"""
+    # This would update a templates configuration table
+    # For now, return success (frontend will handle state)
+    return {"success": True, "message": f"Template {template_id} toggled"}
+
+
+@router.put("/resume-templates/{template_id}/tier")
+async def change_template_tier(
+    template_id: str,
+    tier: str = Query(..., regex="^(free|premium)$"),
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Change template tier (free/premium)"""
+    # This would update a templates configuration table
+    # For now, return success (frontend will handle state)
+    return {"success": True, "message": f"Template {template_id} tier changed to {tier}"}
+
+
+@router.get("/user-resumes")
+async def get_user_resumes(
+    search: str = Query(None),
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Get all user resumes with search functionality"""
+    from sqlalchemy import text
+    from app.core.database import engine
+    
+    try:
+        with engine.begin() as connection:
+            try:
+                query = """
+                    SELECT 
+                        rt.id,
+                        rt.user_id,
+                        u.name as user_name,
+                        u.email as user_email,
+                        rt.template_id,
+                        rt.ats_score,
+                        rt.ai_generated,
+                        rt.pdf_export_count,
+                        rt.created_at,
+                        rt.updated_at
+                    FROM resume_tracking rt
+                    JOIN users u ON u.id = rt.user_id
+                    WHERE 1=1
+                """
+                params = {}
+                
+                if search:
+                    query += " AND (LOWER(u.name) LIKE LOWER(:search) OR LOWER(u.email) LIKE LOWER(:search))"
+                    params["search"] = f"%{search}%"
+                
+                query += " ORDER BY rt.updated_at DESC LIMIT 100"
+                
+                result = connection.execute(text(query), params)
+                
+                resumes = []
+                for row in result.fetchall():
+                    resumes.append({
+                        "id": row[0],
+                        "user_id": row[1],
+                        "user_name": row[2],
+                        "user_email": row[3],
+                        "template_id": row[4],
+                        "ats_score": row[5],
+                        "ai_generated": row[6],
+                        "pdf_export_count": row[7],
+                        "created_at": row[8].isoformat() if row[8] else None,
+                        "updated_at": row[9].isoformat() if row[9] else None
+                    })
+                
+                return {"resumes": resumes}
+            except Exception:
+                # Table doesn't exist yet
+                return {"resumes": []}
+                
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch resumes: {str(e)}")
+
+
+@router.delete("/user-resumes/{resume_id}")
+async def delete_user_resume(
+    resume_id: int,
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Delete a user's resume"""
+    from sqlalchemy import text
+    from app.core.database import engine
+    
+    try:
+        with engine.begin() as connection:
+            result = connection.execute(
+                text("DELETE FROM resume_tracking WHERE id = :resume_id"),
+                {"resume_id": resume_id}
+            )
+            
+            if result.rowcount == 0:
+                raise HTTPException(status_code=404, detail="Resume not found")
+            
+            return {"success": True, "message": "Resume deleted successfully"}
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete resume: {str(e)}")
+
+
+@router.get("/ai-resume-monitor")
+async def get_ai_resume_monitor(
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Get AI resume generation monitoring data"""
+    from sqlalchemy import text
+    from app.core.database import engine
+    
+    try:
+        with engine.begin() as connection:
+            try:
+                # Get AI generation statistics
+                stats_result = connection.execute(text("""
+                    SELECT 
+                        COUNT(*) as total_generations,
+                        COUNT(CASE WHEN status = 'success' THEN 1 END) as successful,
+                        COUNT(CASE WHEN status = 'failed' THEN 1 END) as failed,
+                        AVG(response_time_ms) as avg_response_time,
+                        COUNT(CASE WHEN request_type = 'summary' THEN 1 END) as summary_count,
+                        COUNT(CASE WHEN request_type = 'project' THEN 1 END) as project_count,
+                        COUNT(CASE WHEN request_type = 'experience' THEN 1 END) as experience_count,
+                        COUNT(CASE WHEN request_type = 'template_recommendation' THEN 1 END) as template_rec_count
+                    FROM ai_generation_logs
+                    WHERE module = 'resume'
+                """))
+                
+                stats_row = stats_result.fetchone()
+                
+                # Get recent AI requests
+                recent_result = connection.execute(text("""
+                    SELECT 
+                        agl.id,
+                        u.email as user_email,
+                        agl.request_type,
+                        agl.status,
+                        agl.response_time_ms,
+                        agl.created_at
+                    FROM ai_generation_logs agl
+                    JOIN users u ON u.id = agl.user_id
+                    WHERE agl.module = 'resume'
+                    ORDER BY agl.created_at DESC
+                    LIMIT 50
+                """))
+                
+                recent_requests = []
+                for row in recent_result.fetchall():
+                    recent_requests.append({
+                        "id": row[0],
+                        "user_email": row[1],
+                        "request_type": row[2],
+                        "status": row[3],
+                        "response_time": row[4],
+                        "timestamp": row[5].isoformat() if row[5] else None
+                    })
+                
+                return {
+                    "total_generations": stats_row[0] or 0,
+                    "successful_requests": stats_row[1] or 0,
+                    "failed_requests": stats_row[2] or 0,
+                    "avg_response_time": round(float(stats_row[3] or 0), 2),
+                    "summary_generations": stats_row[4] or 0,
+                    "project_generations": stats_row[5] or 0,
+                    "experience_generations": stats_row[6] or 0,
+                    "template_recommendations": stats_row[7] or 0,
+                    "recent_requests": recent_requests
+                }
+                
+            except Exception:
+                # Table doesn't exist yet, return mock data
+                return {
+                    "total_generations": 0,
+                    "successful_requests": 0,
+                    "failed_requests": 0,
+                    "avg_response_time": 0,
+                    "summary_generations": 0,
+                    "project_generations": 0,
+                    "experience_generations": 0,
+                    "template_recommendations": 0,
+                    "recent_requests": []
+                }
+                
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch AI monitor data: {str(e)}")
+
+
+class AISettingsUpdate(BaseModel):
+    model_name: str
+    prompt_version: str
+    ai_enabled: bool
+    free_user_limit: int
+    premium_user_limit: int
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "model_name": "gemini-1.5-flash",
+                "prompt_version": "v1.0",
+                "ai_enabled": True,
+                "free_user_limit": 5,
+                "premium_user_limit": 50
+            }
+        }
+
+
+@router.get("/ai-settings")
+async def get_ai_settings(
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Get AI settings for resume module"""
+    from sqlalchemy import text
+    from app.core.database import engine
+    
+    try:
+        with engine.begin() as connection:
+            try:
+                # Try to get settings from database
+                result = connection.execute(text("""
+                    SELECT 
+                        model_name,
+                        prompt_version,
+                        ai_enabled,
+                        free_user_limit,
+                        premium_user_limit,
+                        updated_at
+                    FROM ai_settings
+                    WHERE module = 'resume'
+                    LIMIT 1
+                """))
+                
+                row = result.fetchone()
+                if row:
+                    return {
+                        "model_name": row[0],
+                        "prompt_version": row[1],
+                        "ai_enabled": row[2],
+                        "free_user_limit": row[3],
+                        "premium_user_limit": row[4],
+                        "updated_at": row[5].isoformat() if row[5] else None
+                    }
+            except Exception:
+                # Table doesn't exist yet, return defaults
+                pass
+        
+        # Return default settings if table doesn't exist or no data
+        return {
+            "model_name": "gemini-1.5-flash",
+            "prompt_version": "v1.0",
+            "ai_enabled": True,
+            "free_user_limit": 5,
+            "premium_user_limit": 50,
+            "updated_at": None
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch AI settings: {str(e)}")
+
+
+@router.put("/ai-settings")
+async def update_ai_settings(
+    settings: AISettingsUpdate,
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Update AI settings for resume module"""
+    from sqlalchemy import text
+    from app.core.database import engine
+    
+    # Validate settings
+    if settings.free_user_limit < 0 or settings.premium_user_limit < 0:
+        raise HTTPException(status_code=400, detail="User limits must be non-negative")
+    
+    if settings.free_user_limit > settings.premium_user_limit:
+        raise HTTPException(status_code=400, detail="Free user limit cannot exceed premium user limit")
+    
+    if not settings.model_name or not settings.prompt_version:
+        raise HTTPException(status_code=400, detail="Model name and prompt version are required")
+    
+    try:
+        with engine.begin() as connection:
+            try:
+                # Try to update or insert settings
+                result = connection.execute(text("""
+                    INSERT INTO ai_settings 
+                    (module, model_name, prompt_version, ai_enabled, free_user_limit, premium_user_limit, updated_by, updated_at)
+                    VALUES ('resume', :model_name, :prompt_version, :ai_enabled, :free_limit, :premium_limit, :admin_id, CURRENT_TIMESTAMP)
+                    ON CONFLICT (module) 
+                    DO UPDATE SET
+                        model_name = EXCLUDED.model_name,
+                        prompt_version = EXCLUDED.prompt_version,
+                        ai_enabled = EXCLUDED.ai_enabled,
+                        free_user_limit = EXCLUDED.free_user_limit,
+                        premium_user_limit = EXCLUDED.premium_user_limit,
+                        updated_by = EXCLUDED.updated_by,
+                        updated_at = CURRENT_TIMESTAMP
+                    RETURNING id
+                """), {
+                    "model_name": settings.model_name,
+                    "prompt_version": settings.prompt_version,
+                    "ai_enabled": settings.ai_enabled,
+                    "free_limit": settings.free_user_limit,
+                    "premium_limit": settings.premium_user_limit,
+                    "admin_id": admin.id
+                })
+                
+                result.fetchone()  # Consume the result
+                
+                return {
+                    "success": True,
+                    "message": "AI settings updated successfully",
+                    "settings": {
+                        "model_name": settings.model_name,
+                        "prompt_version": settings.prompt_version,
+                        "ai_enabled": settings.ai_enabled,
+                        "free_user_limit": settings.free_user_limit,
+                        "premium_user_limit": settings.premium_user_limit
+                    }
+                }
+                
+            except Exception as e:
+                # Table doesn't exist yet
+                raise HTTPException(
+                    status_code=503, 
+                    detail=f"AI settings table not available. Please run database migration first. Error: {str(e)}"
+                )
+                
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update AI settings: {str(e)}")

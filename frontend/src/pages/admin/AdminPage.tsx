@@ -29,7 +29,11 @@ import {
   CheckCircle,
   Database,
   Edit3,
-  Trophy
+  Trophy,
+  Briefcase,
+  Layout,
+  Brain,
+  Settings
 } from 'lucide-react';
 
 interface AptitudeUserSummary {
@@ -699,6 +703,51 @@ const AdminPage = () => {
             >
               <Users className="w-5 h-5" />
               <span className="text-sm">Referrals</span>
+            </button>
+            
+            {/* Divider */}
+            <div className="my-4 border-t border-gray-200"></div>
+            
+            {/* Resume Admin */}
+            <p className="px-4 text-xs font-semibold text-gray-400 uppercase mb-2">Resume Admin</p>
+            <button
+              onClick={() => handleNavigateToPage('/admin/resume-analytics')}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+            >
+              <BarChart3 className="w-5 h-5" />
+              <span className="text-sm">Resume Analytics</span>
+            </button>
+            
+            <button
+              onClick={() => handleNavigateToPage('/admin/resume-templates')}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+            >
+              <Layout className="w-5 h-5" />
+              <span className="text-sm">Resume Templates</span>
+            </button>
+            
+            <button
+              onClick={() => handleNavigateToPage('/admin/user-resumes')}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+            >
+              <Briefcase className="w-5 h-5" />
+              <span className="text-sm">User Resumes</span>
+            </button>
+            
+            <button
+              onClick={() => handleNavigateToPage('/admin/ai-resume-monitor')}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+            >
+              <Brain className="w-5 h-5" />
+              <span className="text-sm">AI Resume Monitor</span>
+            </button>
+            
+            <button
+              onClick={() => handleNavigateToPage('/admin/ai-settings')}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+            >
+              <Settings className="w-5 h-5" />
+              <span className="text-sm">AI Settings</span>
             </button>
           </nav>
         </aside>
