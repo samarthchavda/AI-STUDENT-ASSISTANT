@@ -557,6 +557,9 @@
         <div>
           <div class="section-header">Choose Your Template</div>
           <div class="section-sub">Pick a design, compare styles instantly, and launch with an ATS-ready resume layout.</div>
+          <div id="guest-mode-note" style="display:none;margin-top:8px;border:1px solid #fde68a;background:#fffbeb;color:#92400e;border-radius:10px;padding:10px 12px;font-size:12px;font-weight:600;">
+            Preview mode: templates can be viewed without login. Click on any template to continue with sign in.
+          </div>
         </div>
         <div class="templates-stat">15 Templates • ATS Optimized</div>
       </div>
@@ -645,6 +648,7 @@ function getTemplateMeta(template) {
 
 const params = new URLSearchParams(window.location.search);
 const USER_PLAN = (params.get('plan') || 'free').toLowerCase();
+const IS_GUEST_MODE = (params.get('guest') || '0') === '1';
 // Premium template access is granted to PRO plan users.
 // Keep 'premium' as a legacy alias if older data sends it.
 const IS_PREMIUM_USER = USER_PLAN === 'pro' || USER_PLAN === 'premium';
@@ -741,6 +745,12 @@ function escHtml(s){ return s.replace(/"/g,'&quot;'); }
 function wrapHtml(body){ return `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>*{box-sizing:border-box;margin:0;padding:0}body{background:#fff}</style></head><body>${body}</body></html>`; }
 
 function selectTemplate(t, cardEl) {
+  if (IS_GUEST_MODE) {
+    alert('Please sign in to use this template.');
+    window.parent?.postMessage({ type: 'resume-builder-login-required' }, window.location.origin);
+    return;
+  }
+
   if (t.tier === 'premium' && !IS_PREMIUM_USER) {
     alert('This Professional template is available for Premium users. Please upgrade to continue.');
     return;
@@ -1284,6 +1294,13 @@ function premiumLock(name) {
 // ─────────────────────────────────────────────
 //  INIT
 // ─────────────────────────────────────────────
+if (IS_GUEST_MODE) {
+  const guestNote = document.getElementById('guest-mode-note');
+  if (guestNote) {
+    guestNote.style.display = 'block';
+  }
+}
+
 buildGrid();
 window.addEventListener('load', reportParentHeight);
 window.addEventListener('resize', queueResizeReport);

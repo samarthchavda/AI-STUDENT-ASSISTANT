@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import Header from '../../components/Header';
 import { useAppStore } from '../../store/useAppStore';
 
 export default function ResumeTemplateGalleryPage() {
+  const navigate = useNavigate();
   const [builderHeight, setBuilderHeight] = useState(1280);
   const user = useAppStore((state) => state.user);
+  const isAuthenticated = useAppStore((state) => state.isAuthenticated);
   const userPlan = (user?.plan || 'free').toLowerCase();
 
   useEffect(() => {
@@ -15,6 +18,11 @@ export default function ResumeTemplateGalleryPage() {
       }
 
       const data = event.data as { type?: string; height?: number };
+      if (data?.type === 'resume-builder-login-required') {
+        navigate('/auth');
+        return;
+      }
+
       if (data?.type !== 'resume-builder-height' || typeof data.height !== 'number') {
         return;
       }
@@ -53,7 +61,7 @@ export default function ResumeTemplateGalleryPage() {
         <div className="rounded-3xl border border-emerald-100/70 bg-white/90 p-2 shadow-[0_16px_36px_rgba(15,23,42,0.08)] backdrop-blur-sm sm:p-3 lg:p-4">
           <iframe
             title="Code Campus AI Resume Builder"
-            src={`/resume-builder/index.html?plan=${encodeURIComponent(userPlan)}`}
+            src={`/resume-builder/index.html?plan=${encodeURIComponent(userPlan)}&guest=${isAuthenticated ? '0' : '1'}`}
             className="w-full rounded-xl border border-gray-100 bg-white"
             style={{ height: `${builderHeight}px` }}
           />
