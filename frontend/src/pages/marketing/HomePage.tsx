@@ -36,7 +36,7 @@ export default function HomePage() {
               Start Prep
             </button>
             <button
-              onClick={() => navigate("/career/resume-builder")}
+              onClick={() => navigate("/career/resume-templates")}
               className="bg-white/10 border border-emerald-200 text-emerald-100 font-bold px-8 py-4 rounded-xl shadow hover:bg-white/20 transition text-lg backdrop-blur"
             >
               Try Resume Builder

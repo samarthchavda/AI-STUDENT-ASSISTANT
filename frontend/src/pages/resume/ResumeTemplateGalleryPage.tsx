@@ -10,6 +10,11 @@ export default function ResumeTemplateGalleryPage() {
   const user = useAppStore((state) => state.user);
   const isAuthenticated = useAppStore((state) => state.isAuthenticated);
   const userPlan = (user?.plan || 'free').toLowerCase();
+  
+  // Determine which page to show based on URL
+  const currentPath = window.location.pathname;
+  const isEditorPage = currentPath.includes('/resume-editor');
+  const htmlFile = isEditorPage ? 'editor.html' : 'gallery.html';
 
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
@@ -41,7 +46,7 @@ export default function ResumeTemplateGalleryPage() {
       <div className="w-full pt-20">
         <iframe
           title="Code Campus AI Resume Builder"
-          src={`/resume-builder/index.html?plan=${encodeURIComponent(userPlan)}&guest=${isAuthenticated ? '0' : '1'}`}
+          src={`/resume-builder/${htmlFile}${window.location.search ? window.location.search + '&' : '?'}plan=${encodeURIComponent(userPlan)}&guest=${isAuthenticated ? '0' : '1'}`}
           className="block w-full border-0 bg-transparent"
           style={{ height: `${builderHeight}px` }}
         />

@@ -34,14 +34,28 @@ api.interceptors.request.use((config) => {
   return config
 })
 
-// Add retry logic for failed requests
+// Add retry logic for failed requests and handle 401 errors
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const config = error.config
     
-    // Don't retry if already retried or if it's an auth error
-    if (config._retry || error.response?.status === 401 || error.response?.status === 403) {
+    // Handle 401 Unauthorized - Token expired or invalid
+    if (error.response?.status === 401) {
+      // Clear authentication data
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      
+      // Redirect to login page
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login'
+      }
+      
+      return Promise.reject(error)
+    }
+    
+    // Don't retry if already retried or if it's a 403 error
+    if (config._retry || error.response?.status === 403) {
       return Promise.reject(error)
     }
     

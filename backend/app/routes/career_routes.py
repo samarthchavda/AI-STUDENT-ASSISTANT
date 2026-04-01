@@ -501,3 +501,43 @@ async def generate_resume_from_upload(
         media_type="application/pdf",
         headers={"Content-Disposition": "attachment; filename=updated_resume.pdf"}
     )
+
+
+@router.post("/resume-optimize-ats")
+@rate_limit("10/minute")
+async def optimize_resume_for_ats(request: Request):
+    """
+    Optimize resume content for ATS using Gemini AI
+    - Rewrites summary with industry keywords
+    - Enhances experience with action verbs and quantification
+    - Optimizes project descriptions
+    - Returns ATS score
+    """
+    try:
+        data = await request.json()
+        
+        summary = data.get("summary", "")
+        experience = data.get("experience", [])
+        projects = data.get("projects", [])
+        
+        # Validate input
+        if not summary and not experience and not projects:
+            raise HTTPException(
+                status_code=400,
+                detail="Please provide at least summary, experience, or projects to optimize"
+            )
+        
+        # Call AI service for optimization
+        result = ai_service.optimize_resume_for_ats(
+            summary=summary,
+            experience=experience,
+            projects=projects
+        )
+        
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Optimization failed: {str(e)}")
+

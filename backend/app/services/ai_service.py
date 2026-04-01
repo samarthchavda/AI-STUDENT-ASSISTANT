@@ -486,6 +486,135 @@ Return ONLY the 3-sentence summary."""
         result = self._generate_response(prompt)
         return result.replace('**', '').replace('```', '').strip()
 
+    def optimize_resume_for_ats(self, summary: str, experience: list, projects: list) -> Dict:
+        """Optimize resume content for ATS with action verbs, keywords, and quantification."""
+        
+        optimized_summary = ""
+        optimized_experience = []
+        optimized_projects = []
+        
+        # Optimize Summary
+        if summary and summary.strip():
+            summary_prompt = f"""You are an expert ATS resume optimizer.
+
+Rewrite this professional summary to be more ATS-friendly and impactful:
+
+ORIGINAL SUMMARY:
+{summary}
+
+Rules:
+1. Make it punchy with 2-3 sentences
+2. Include industry keywords (e.g., "Full-Stack Developer", "React", "Node.js", "Cloud", "Agile")
+3. Highlight key achievements or expertise
+4. Use strong, confident language
+5. Keep it under 100 words
+6. Return plain text only, no markdown
+
+Return ONLY the optimized summary."""
+            
+            optimized_summary = self._generate_response(summary_prompt)
+            optimized_summary = optimized_summary.replace('**', '').replace('```', '').strip()
+        
+        # Optimize Experience
+        if experience and len(experience) > 0:
+            for exp in experience[:5]:  # Limit to 5 experiences
+                exp_prompt = f"""You are an expert ATS resume optimizer.
+
+Rewrite this work experience description using action verbs and quantification:
+
+TITLE: {exp.get('title', 'Software Engineer')}
+COMPANY: {exp.get('company', 'Tech Company')}
+ORIGINAL DESCRIPTION:
+{exp.get('description', '')}
+
+Rules:
+1. Start with strong action verbs (Led, Developed, Optimized, Architected, Implemented, Reduced, Increased)
+2. Add quantifiable metrics where possible (e.g., "Improved performance by 25%", "Reduced load time by 40%", "Managed team of 5")
+3. Include specific technologies and tools
+4. Keep it concise (2-4 bullet points)
+5. Make it ATS-friendly with keywords
+6. Return plain text only, no markdown
+
+Return ONLY the optimized description."""
+                
+                optimized_desc = self._generate_response(exp_prompt)
+                optimized_desc = optimized_desc.replace('**', '').replace('```', '').strip()
+                
+                optimized_experience.append({
+                    'title': exp.get('title', ''),
+                    'company': exp.get('company', ''),
+                    'duration': exp.get('duration', ''),
+                    'description': optimized_desc
+                })
+        
+        # Optimize Projects
+        if projects and len(projects) > 0:
+            for proj in projects[:5]:  # Limit to 5 projects
+                proj_prompt = f"""You are an expert ATS resume optimizer.
+
+Rewrite this project description to be more impactful and ATS-friendly:
+
+PROJECT: {proj.get('name', 'Project')}
+TECH STACK: {proj.get('tech', '')}
+ORIGINAL DESCRIPTION:
+{proj.get('description', '')}
+
+Rules:
+1. Start with action verbs (Built, Developed, Designed, Implemented, Created)
+2. Add quantifiable impact (e.g., "Supports 10k+ users", "Reduced API calls by 30%")
+3. Highlight key features and technologies
+4. Keep it concise (2-3 sentences)
+5. Make it ATS-friendly with technical keywords
+6. Return plain text only, no markdown
+
+Return ONLY the optimized description."""
+                
+                optimized_desc = self._generate_response(proj_prompt)
+                optimized_desc = optimized_desc.replace('**', '').replace('```', '').strip()
+                
+                optimized_projects.append({
+                    'name': proj.get('name', ''),
+                    'tech': proj.get('tech', ''),
+                    'description': optimized_desc,
+                    'github': proj.get('github', ''),
+                    'demo': proj.get('demo', '')
+                })
+        
+        # Calculate ATS Score (simple heuristic)
+        ats_score = 75  # Base score
+        
+        # Bonus for action verbs
+        action_verbs = ['led', 'developed', 'optimized', 'architected', 'implemented', 'reduced', 'increased', 'built', 'designed', 'created']
+        combined_text = f"{optimized_summary} {' '.join([e.get('description', '') for e in optimized_experience])} {' '.join([p.get('description', '') for p in optimized_projects])}"
+        combined_lower = combined_text.lower()
+        
+        action_verb_count = sum(1 for verb in action_verbs if verb in combined_lower)
+        ats_score += min(action_verb_count * 2, 10)  # Max +10
+        
+        # Bonus for quantification
+        if any(char.isdigit() for char in combined_text):
+            ats_score += 5
+        
+        # Bonus for keywords
+        keywords = ['react', 'node', 'python', 'javascript', 'aws', 'docker', 'api', 'database', 'agile', 'cloud']
+        keyword_count = sum(1 for keyword in keywords if keyword in combined_lower)
+        ats_score += min(keyword_count, 10)  # Max +10
+        
+        ats_score = min(ats_score, 95)  # Cap at 95
+        
+        return {
+            'optimized_summary': optimized_summary,
+            'optimized_experience': optimized_experience,
+            'optimized_projects': optimized_projects,
+            'ats_score': ats_score,
+            'improvements': [
+                'Added action verbs for stronger impact',
+                'Included quantifiable metrics',
+                'Enhanced with industry keywords',
+                'Optimized for ATS scanning'
+            ]
+        }
+
         def generate_demo_resume_data(self, role: str = "Full Stack Developer") -> Dict:
                 """Generate high-quality demo resume data in strict JSON format."""
                 prompt = f"""You are an expert resume writer.

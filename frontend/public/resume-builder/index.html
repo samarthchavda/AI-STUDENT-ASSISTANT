@@ -78,7 +78,14 @@
     box-shadow: 0 8px 18px rgba(37, 99, 235, 0.14);
   }
 
-  .section-header { font-family: 'Syne', sans-serif; font-size: 34px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 6px; line-height: 1.08; }
+  .section-header { 
+    font-family: 'Syne', 'Inter', sans-serif; 
+    font-size: 42px; 
+    font-weight: 800; 
+    letter-spacing: -0.03em; 
+    margin-bottom: 10px; 
+    line-height: 1.1; 
+  }
   .section-header {
     letter-spacing: -0.03em;
     background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 56%, #0ea5e9 100%);
@@ -86,9 +93,16 @@
     background-clip: text;
     color: transparent;
   }
-  .section-sub { color: #64748b; font-size: 15px; margin-bottom: 10px; max-width: 880px; }
+  .section-sub { 
+    color: #64748b; 
+    font-size: 16px; 
+    margin-bottom: 12px; 
+    max-width: 880px; 
+    line-height: 1.6;
+    font-weight: 500;
+  }
 
-  .filter-bar { display: flex; gap: 10px; margin: 12px 0 20px; flex-wrap: wrap; }
+  .filter-bar { display: flex; gap: 10px; margin: 12px 0 16px; flex-wrap: wrap; }
   .filter-btn {
     padding: 8px 14px;
     border-radius: 999px;
@@ -114,16 +128,22 @@
     box-shadow: 0 8px 22px rgba(37, 99, 235, 0.3);
   }
 
-  .template-grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+  .template-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
 
   @media (min-width: 768px) {
     .template-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
 
-  @media (min-width: 1280px) {
+  @media (min-width: 1200px) {
     .template-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   }
+  @media (min-width: 1536px) {
+    .template-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  }
   .template-card {
+    width: 100%;
+    max-width: 360px;
+    margin: 0 auto;
     border-radius: 18px;
     border: 1px solid #dbe4f0;
     overflow: hidden;
@@ -163,7 +183,7 @@
   }
   .template-thumb {
     width: 100%;
-    aspect-ratio: 3 / 4;
+    aspect-ratio: 4 / 5;
     overflow: hidden;
     background: #f1f5f9;
     position: relative;
@@ -251,13 +271,13 @@
     z-index: 1;
   }
   .template-info {
-    padding: 10px 12px 12px;
+    padding: 9px 11px 10px;
     background: #ffffff;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
   }
-  .template-name { font-weight: 700; font-size: 15px; margin-bottom: 1px; color: #0f172a; }
+  .template-name { font-weight: 700; font-size: 14px; margin-bottom: 1px; color: #0f172a; }
   .template-cat { font-size: 11px; color: #64748b; font-weight: 600; margin-bottom: 0; text-transform: uppercase; letter-spacing: 0.06em; }
   .template-footer {
     display: flex;
@@ -338,6 +358,85 @@
   }
   .template-card.selected .selected-check { display: flex; }
 
+  .templates-cta {
+    margin-top: 32px;
+    padding: 32px 40px;
+    border: 1px solid #dbeafe;
+    border-radius: 20px;
+    background: linear-gradient(135deg, #f8fbff, #f1f7ff);
+    box-shadow: 0 8px 24px rgba(37, 99, 235, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+  .templates-cta-content {
+    flex: 1;
+    min-width: 300px;
+  }
+  .templates-cta h3 {
+    font-family: 'Syne', 'Inter', sans-serif;
+    font-size: 32px;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+  .templates-cta p {
+    color: #64748b;
+    font-size: 15px;
+    max-width: 600px;
+    line-height: 1.6;
+    font-weight: 500;
+  }
+  .templates-cta-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 240px;
+  }
+  .templates-cta-primary,
+  .templates-cta-secondary {
+    border-radius: 12px;
+    padding: 14px 24px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .25s ease;
+    white-space: nowrap;
+    text-align: center;
+  }
+  .templates-cta-primary {
+    border: 1px solid #10b981;
+    color: #ffffff;
+    background: linear-gradient(135deg, #10b981, #059669);
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+  }
+  .templates-cta-primary:hover { 
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(16, 185, 129, 0.4);
+  }
+  .templates-cta-secondary {
+    border: 2px solid #cbd5e1;
+    color: #475569;
+    background: #ffffff;
+    font-weight: 600;
+  }
+  .templates-cta-secondary:hover {
+    border-color: #10b981;
+    color: #059669;
+    background: #f0fdf4;
+  }
+  .templates-cta-trust {
+    margin-top: 12px;
+    font-size: 13px;
+    color: #94a3b8;
+    font-weight: 600;
+    text-align: center;
+  }
+
   @keyframes shimmer {
     0% { background-position: 210% 0; }
     100% { background-position: -210% 0; }
@@ -360,8 +459,8 @@
   .form-group { margin-bottom: 12px; }
   label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px; }
   input, textarea {
-    width: 100%; background: #101425; border: 1px solid var(--border);
-    border-radius: 8px; padding: 8px 12px; color: var(--text);
+    width: 100%; background: #ffffff; border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 12px; color: #0f172a;
     font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; font-size: 13px; outline: none;
     transition: border-color .2s;
   }
@@ -376,7 +475,7 @@
   .add-btn:hover { border-color: var(--accent); color: var(--accent); background: rgba(108,99,255,0.08); }
 
   .entry-card {
-    background: #101425; border: 1px solid var(--border); border-radius: 8px;
+    background: #f8fafc; border: 1px solid var(--border); border-radius: 8px;
     padding: 12px; margin-bottom: 8px; position: relative;
   }
   .entry-card .remove-btn {
@@ -385,7 +484,7 @@
     line-height: 1; padding: 0;
   }
   .entry-card .remove-btn:hover { color: #ef4444; }
-  .entry-card input { margin-bottom: 6px; background: #0d1020; color: var(--text); }
+  .entry-card input { margin-bottom: 6px; background: #ffffff; color: #0f172a; }
 
   .skills-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
   .skill-tag {
@@ -405,9 +504,16 @@
   /* ── ACTION BUTTONS ── */
   .action-bar {
     padding: 16px 20px; position: sticky; bottom: 0;
-    background: rgba(21, 23, 34, 0.96); border-top: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.98); border-top: 1px solid var(--border);
     backdrop-filter: blur(8px);
   }
+  .demo-btn {
+    width: 100%; padding: 10px; border-radius: 10px;
+    border: 1px solid #10b981; background: #f0fdf4;
+    color: #059669; font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; font-size: 14px;
+    cursor: pointer; margin-bottom: 8px; transition: all .2s; font-weight: 600;
+  }
+  .demo-btn:hover { background: #dcfce7; border-color: #059669; }
   .btn-primary {
     width: 100%; padding: 12px; border-radius: 10px; border: none;
     background: linear-gradient(135deg, #6c63ff, #23c4ff);
@@ -443,24 +549,24 @@
   .preview-actions .btn-dl:hover { opacity: 0.9; }
   .preview-actions .btn-back {
     padding: 12px 24px; border-radius: 10px; border: 1px solid var(--border);
-    background: #101425; color: #c6cceb; font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    background: #ffffff; color: #475569; font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
     font-size: 14px; cursor: pointer; transition: all .2s;
   }
-  .preview-actions .btn-back:hover { border-color: #6c63ff; color: #eceaff; background: #171c32; }
+  .preview-actions .btn-back:hover { border-color: #6c63ff; color: #6c63ff; background: #f8fafc; }
 
   /* ── SCROLLBAR ── */
   ::-webkit-scrollbar { width: 6px; }
-  ::-webkit-scrollbar-track { background: #0c0c10; }
-  ::-webkit-scrollbar-thumb { background: #2b2f45; border-radius: 3px; }
+  ::-webkit-scrollbar-track { background: #f8fafc; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
   ::-webkit-scrollbar-thumb:hover { background: #6c63ff; }
 
   /* ── TEMPLATE SELECTED INDICATOR ── */
   .selected-template-bar {
-    padding: 12px 20px; background: #141a2c;
-    border-bottom: 1px solid #2e3351;
+    padding: 12px 20px; background: #f8fafc;
+    border-bottom: 1px solid var(--border);
     font-size: 13px; color: var(--muted); display: none;
   }
-  .selected-template-bar strong { color: #ddd9ff; }
+  .selected-template-bar strong { color: #0f172a; }
 
   @media print { .sidebar, .preview-actions { display: none !important; } .main { padding: 0; } }
 
@@ -477,19 +583,37 @@
     #step-templates { padding: 0; border-radius: 0; }
     .templates-head { display: block; margin-bottom: 10px; }
     .templates-stat { margin-top: 10px; }
-    .section-header { font-size: 30px; }
+    .section-header { font-size: 36px; }
     .section-sub { font-size: 15px; }
     .template-thumb iframe { --frame-scale: 0.43; }
+    .templates-cta {
+      flex-direction: column;
+      align-items: stretch;
+      padding: 28px 32px;
+      gap: 24px;
+    }
+    .templates-cta-content {
+      min-width: auto;
+    }
+    .templates-cta-actions {
+      min-width: auto;
+    }
   }
 
   @media (max-width: 640px) {
     .main { padding: 18px 14px; }
     #step-templates { padding: 0; }
-    .section-header { font-size: 24px; }
+    .section-header { font-size: 28px; }
     .section-sub { font-size: 14px; margin-bottom: 18px; }
     .filter-bar { margin-bottom: 18px; gap: 8px; }
     .template-thumb iframe { --frame-scale: 0.45; }
     .card-actions { flex-direction: column; }
+    .templates-cta { 
+      padding: 20px 18px; 
+      gap: 20px;
+    }
+    .templates-cta h3 { font-size: 24px; }
+    .templates-cta p { font-size: 14px; }
   }
 </style>
 </head>
@@ -498,8 +622,8 @@
 <div class="app">
 
   <!-- SIDEBAR (form) -->
-  <aside class="sidebar" id="sidebar" style="display:none;">
-    <div class="selected-template-bar" id="sel-bar">
+  <aside class="sidebar" id="sidebar" style="display:flex;flex-direction:column;">
+    <div class="selected-template-bar" id="sel-bar" style="display:block;">
       Template: <strong id="sel-name">—</strong>
     </div>
 
@@ -547,6 +671,7 @@
     </div>
 
     <div class="action-bar">
+      <button class="demo-btn" onclick="loadDemoData()">✨ Load Sample Data</button>
       <button class="btn-primary" onclick="goStep(3)">Preview Resume →</button>
       <button class="btn-secondary" onclick="goStep(1)">← Back to Templates</button>
     </div>
@@ -574,6 +699,18 @@
         <button class="filter-btn" onclick="filterTemplates('premium', this)">Premium</button>
       </div>
       <div class="template-grid" id="template-grid"></div>
+
+      <section class="templates-cta">
+        <div class="templates-cta-content">
+          <h3>Ready to Build Your Professional Resume?</h3>
+          <p>Choose a template, customize your details, and download a polished ATS-ready resume in minutes. Join thousands of successful job seekers.</p>
+        </div>
+        <div class="templates-cta-actions">
+          <button class="templates-cta-primary" type="button" onclick="goStep(2)">Use Selected Template →</button>
+          <button class="templates-cta-secondary" type="button" onclick="window.location.href='/career/resume-analysis'">← Back to Resume Analysis</button>
+          <div class="templates-cta-trust">✓ 10 free templates • ATS-optimized • Instant download</div>
+        </div>
+      </section>
     </div>
 
     <!-- STEP 2: Fill Form -->
@@ -587,7 +724,7 @@
     </div>
 
     <!-- STEP 3: Preview -->
-    <div id="step-preview" style="display:none;">
+    <div id="step-preview" style="display:block;">
       <div class="section-header">Preview & Download</div>
       <div class="section-sub">Your resume is ready. Download as PDF or go back to edit.</div>
       <div class="preview-actions">
@@ -654,12 +791,14 @@ const IS_GUEST_MODE = (params.get('guest') || '0') === '1';
 // Keep 'premium' as a legacy alias if older data sends it.
 const IS_PREMIUM_USER = USER_PLAN === 'pro' || USER_PLAN === 'premium';
 
+// Start with no template selected at step 1
 let selectedTemplate = null;
-let currentStep = 1;
+let currentStep = 1; // Start at template selection
 let skills = [];
 let experiences = [];
 let educations = [];
 let projects = [];
+
 
 // ─────────────────────────────────────────────
 //  NAV
@@ -673,7 +812,49 @@ function goStep(n) {
   document.getElementById('step-preview').style.display   = n === 3 ? 'block' : 'none';
   document.getElementById('sidebar').style.display        = n === 1 ? 'none'  : 'flex';
   document.getElementById('sidebar').style.flexDirection  = 'column';
+  
+  // Update selected template bar
+  if (selectedTemplate) {
+    document.getElementById('sel-bar').style.display = 'block';
+    document.getElementById('sel-name').textContent = selectedTemplate.name;
+  }
+  
   queueResizeReport();
+}
+
+// Load demo data function
+function loadDemoData() {
+  const demo = getSampleData();
+  
+  // Fill form fields
+  document.getElementById('f-name').value = demo.name;
+  document.getElementById('f-email').value = demo.email;
+  document.getElementById('f-phone').value = demo.phone;
+  document.getElementById('f-location').value = demo.location;
+  document.getElementById('f-linkedin').value = demo.linkedin;
+  document.getElementById('f-github').value = demo.github;
+  document.getElementById('f-summary').value = demo.summary;
+  
+  // Load skills
+  skills = [...demo.skills];
+  renderSkills();
+  
+  // Load experiences
+  experiences = demo.experience.map((e, i) => ({ ...e, id: i + 1 }));
+  expCount = experiences.length;
+  renderExp();
+  
+  // Load educations
+  educations = demo.education.map((e, i) => ({ ...e, id: i + 1 }));
+  eduCount = educations.length;
+  renderEdu();
+  
+  // Load projects
+  projects = demo.projects.map((p, i) => ({ ...p, id: i + 1 }));
+  projCount = projects.length;
+  renderProj();
+  
+  alert('✨ Sample data loaded! You can now edit or preview your resume.');
 }
 
 // ─────────────────────────────────────────────
@@ -1313,7 +1494,36 @@ function premiumLock(name) {
 //  INIT
 // ─────────────────────────────────────────────
 buildGrid();
-window.addEventListener('load', reportParentHeight);
+
+// Initialize with sample data and preview
+window.addEventListener('load', () => {
+  // Load sample data into form fields
+  const demo = getSampleData();
+  document.getElementById('f-name').value = demo.name;
+  document.getElementById('f-email').value = demo.email;
+  document.getElementById('f-phone').value = demo.phone;
+  document.getElementById('f-location').value = demo.location;
+  document.getElementById('f-linkedin').value = demo.linkedin;
+  document.getElementById('f-github').value = demo.github;
+  document.getElementById('f-summary').value = demo.summary;
+  
+  renderSkills();
+  renderExp();
+  renderEdu();
+  renderProj();
+  
+  // Show preview with sample data
+  if (selectedTemplate) {
+    document.getElementById('sel-bar').style.display = 'block';
+    document.getElementById('sel-name').textContent = selectedTemplate.name;
+    document.getElementById('sidebar').style.display = 'flex';
+    document.getElementById('sidebar').style.flexDirection = 'column';
+    renderPreview();
+  }
+  
+  reportParentHeight();
+});
+
 window.addEventListener('resize', fitTemplateFrameScales);
 window.addEventListener('resize', queueResizeReport);
 

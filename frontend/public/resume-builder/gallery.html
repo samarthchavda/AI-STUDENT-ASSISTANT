@@ -1,0 +1,1426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Resume Templates - Code Campus AI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f8fafc;
+    --surface: #ffffff;
+    --surface2: #f8fafc;
+    --border: #e2e8f0;
+    --accent: #2563eb;
+    --accent2: #ef4444;
+    --accent3: #1d4ed8;
+    --text: #0f172a;
+    --muted: #64748b;
+    --card: #ffffff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #ffffff;
+    color: var(--text);
+    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 32px 24px;
+  }
+
+  .section-header { 
+    font-family: 'Syne', 'Inter', sans-serif; 
+    font-size: 42px; 
+    font-weight: 800; 
+    letter-spacing: -0.03em; 
+    margin-bottom: 10px; 
+    line-height: 1.1;
+    text-align: center;
+  }
+  .section-header {
+    letter-spacing: -0.03em;
+    background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 56%, #0ea5e9 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .section-sub { 
+    color: #64748b; 
+    font-size: 16px; 
+    margin-bottom: 24px; 
+    max-width: 880px; 
+    line-height: 1.6;
+    font-weight: 500;
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .templates-head {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    margin-bottom: 24px;
+  }
+
+  .templates-stat {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    border: 1px solid #bfdbfe;
+    background: linear-gradient(135deg, #eff6ff, #e0f2fe);
+    color: #1e3a8a;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    padding: 8px 14px;
+    white-space: nowrap;
+    box-shadow: 0 8px 18px rgba(37, 99, 235, 0.14);
+  }
+
+  .filter-bar { 
+    display: flex; 
+    gap: 10px; 
+    margin: 12px 0 24px; 
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .filter-btn {
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #334155;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+    cursor: pointer;
+    transition: all .25s ease;
+    box-shadow: 0 5px 14px rgba(15, 23, 42, 0.04);
+  }
+  .filter-btn:hover:not(.active) {
+    border-color: #93c5fd;
+    color: #1e3a8a;
+    background: #eff6ff;
+  }
+  .filter-btn.active {
+    color: #ffffff;
+    border-color: #2563eb;
+    background: linear-gradient(135deg, #2563eb, #0ea5e9);
+    box-shadow: 0 8px 22px rgba(37, 99, 235, 0.3);
+  }
+
+  .template-grid { 
+    display: grid; 
+    grid-template-columns: 1fr; 
+    gap: 12px; 
+  }
+
+  @media (min-width: 768px) {
+    .template-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+
+  @media (min-width: 1200px) {
+    .template-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  }
+  @media (min-width: 1536px) {
+    .template-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  }
+
+  .template-card {
+    width: 100%;
+    max-width: 360px;
+    margin: 0 auto;
+    border-radius: 18px;
+    border: 1px solid #dbe4f0;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: linear-gradient(180deg, #ffffff, #f8fbff);
+    position: relative;
+    isolation: isolate;
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.09);
+  }
+  .template-card::before {
+    content: '';
+    position: absolute;
+    inset: -14px;
+    z-index: -1;
+    border-radius: 22px;
+    background: radial-gradient(circle at top, var(--card-glow, rgba(37, 99, 235, 0.24)), transparent 65%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  .template-card:hover {
+    border-color: #2563eb;
+    transform: translateY(-4px);
+    box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.5), 0 0 20px rgba(37, 99, 235, 0.2), 0 18px 30px rgba(15, 23, 42, 0.16);
+  }
+  .template-card:hover::before {
+    opacity: 1;
+  }
+
+  .template-thumb {
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    overflow: hidden;
+    background: #f1f5f9;
+    position: relative;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .template-thumb iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+    background: white;
+  }
+
+  /* Loading shimmer effect */
+  .template-thumb::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      rgba(241, 245, 249, 0) 0%,
+      rgba(241, 245, 249, 0.5) 50%,
+      rgba(241, 245, 249, 0) 100%
+    );
+    animation: shimmer 2s infinite;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  .template-thumb.loaded::before {
+    display: none;
+  }
+
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  .template-info {
+    padding: 9px 11px 10px;
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .template-name { 
+    font-weight: 700; 
+    font-size: 14px; 
+    margin-bottom: 1px; 
+    color: #0f172a; 
+  }
+  .template-cat { 
+    font-size: 11px; 
+    color: #64748b; 
+    font-weight: 600; 
+    margin-bottom: 0; 
+    text-transform: uppercase; 
+    letter-spacing: 0.06em; 
+  }
+  .template-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .tier-badge {
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 5px 9px;
+    border: 1px solid;
+  }
+  .tier-badge.free {
+    background: #dbeafe;
+    color: #1e40af;
+    border-color: #93c5fd;
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.16);
+  }
+  .tier-badge.premium {
+    background: rgba(108, 99, 255, 0.2);
+    color: #6c63ff;
+    border-color: rgba(108, 99, 255, 0.5);
+  }
+
+  .use-template-btn {
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: none;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  }
+  .use-template-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+  }
+
+  .premium-badge {
+    position: absolute; 
+    top: 8px; 
+    right: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fdf4ff;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 999px;
+    letter-spacing: 0.02em;
+    border: 1px solid rgba(99, 102, 241, 0.5);
+    box-shadow: 0 8px 18px rgba(99, 102, 241, 0.34);
+  }
+  .free-badge {
+    position: absolute; 
+    top: 8px; 
+    right: 8px;
+    background: linear-gradient(135deg, #2563eb, #0ea5e9);
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 999px;
+    letter-spacing: 0.02em;
+    border: 1px solid rgba(37, 99, 235, 0.45);
+    box-shadow: 0 8px 16px rgba(37, 99, 235, 0.28);
+  }
+
+  .lock-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(15, 23, 42, 0.84);
+    color: #f8fafc;
+    border: 1px solid rgba(148, 163, 184, 0.65);
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    padding: 4px 8px;
+    z-index: 4;
+  }
+
+  .template-card.is-locked {
+    border-color: rgba(99, 102, 241, 0.42);
+    opacity: 0.7;
+  }
+
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: #f8fafc; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #6c63ff; }
+
+  @media (max-width: 640px) {
+    .container { padding: 18px 14px; }
+    .section-header { font-size: 28px; }
+    .section-sub { font-size: 14px; margin-bottom: 18px; }
+    .filter-bar { margin-bottom: 18px; gap: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="templates-head">
+    <div>
+      <div class="section-header">Choose Your Template</div>
+      <div class="section-sub">Pick a design, compare styles instantly, and launch with an ATS-ready resume layout.</div>
+    </div>
+    <div class="templates-stat">15 Templates • ATS Optimized</div>
+  </div>
+
+  <div class="filter-bar" id="filter-bar">
+    <button class="filter-btn active" onclick="filterTemplates('All', this)">All (15)</button>
+    <button class="filter-btn" onclick="filterTemplates('ATS-Friendly', this)">ATS-Friendly</button>
+    <button class="filter-btn" onclick="filterTemplates('Professional', this)">Professional</button>
+    <button class="filter-btn" onclick="filterTemplates('Modern', this)">Modern</button>
+    <button class="filter-btn" onclick="filterTemplates('Creative', this)">Creative</button>
+    <button class="filter-btn" onclick="filterTemplates('free', this)">Free Only</button>
+    <button class="filter-btn" onclick="filterTemplates('premium', this)">Premium</button>
+  </div>
+
+  <div class="template-grid" id="template-grid"></div>
+</div>
+
+<script>
+const TEMPLATES = [
+  { id:'ats-simple',      name:'ATS Simple',           category:'ATS-Friendly', tier:'free' },
+  { id:'ats-clean',       name:'ATS Clean',            category:'ATS-Friendly', tier:'free' },
+  { id:'ats-compact',     name:'ATS Compact',          category:'ATS-Friendly', tier:'free' },
+  { id:'prof-classic',    name:'Professional Classic', category:'Professional', tier:'free' },
+  { id:'prof-navy',       name:'Professional Navy',    category:'Professional', tier:'free' },
+  { id:'prof-twocol',     name:'Professional Two Col', category:'Professional', tier:'free' },
+  { id:'mod-minimal',     name:'Modern Minimalist',    category:'Modern',       tier:'free' },
+  { id:'mod-bold',        name:'Modern Bold',          category:'Modern',       tier:'free' },
+  { id:'creative-teal',   name:'Creative Teal',        category:'Creative',     tier:'free' },
+  { id:'creative-purple', name:'Creative Purple',      category:'Creative',     tier:'free' },
+  { id:'prem-glass',      name:'Modern Glass',         category:'Modern',       tier:'premium' },
+  { id:'prem-exec',       name:'Executive Gold',       category:'Professional', tier:'premium' },
+  { id:'prem-neon',       name:'Creative Neon',        category:'Creative',     tier:'premium' },
+  { id:'prem-elegant',    name:'Elegant Serif',        category:'Professional', tier:'premium' },
+  { id:'prem-gradient',   name:'Creative Gradient',    category:'Creative',     tier:'premium' },
+];
+
+const params = new URLSearchParams(window.location.search);
+const USER_PLAN = (params.get('plan') || 'free').toLowerCase();
+const IS_PREMIUM_USER = USER_PLAN === 'pro' || USER_PLAN === 'premium';
+
+function useTemplate(templateId) {
+  const template = TEMPLATES.find(t => t.id === templateId);
+  if (!template) return;
+  
+  if (template.tier === 'premium' && !IS_PREMIUM_USER) {
+    alert('This is a premium template. Please upgrade to PRO plan to use it.');
+    return;
+  }
+  
+  // Redirect to editor page with template ID
+  window.location.href = `/resume-builder/editor.html?templateId=${templateId}&plan=${USER_PLAN}`;
+}
+
+function getTemplatePreviewHTML(templateId) {
+  // Sample data for preview
+  const sampleData = {
+    name: 'John Doe',
+    email: 'john@email.com',
+    phone: '+1 234 567 8900',
+    location: 'San Francisco, CA',
+    summary: 'Experienced software engineer with 5+ years in full-stack development.',
+    skills: ['JavaScript', 'React', 'Node.js', 'Python', 'AWS', 'Docker'],
+    experience: [{
+      title: 'Senior Developer',
+      company: 'Tech Corp',
+      duration: '2020 - Present',
+      description: 'Led development of key features and mentored junior developers.'
+    }],
+    education: [{
+      degree: 'B.S. Computer Science',
+      school: 'University Name',
+      year: '2015 - 2019'
+    }],
+    projects: [{
+      name: 'E-Commerce Platform',
+      tech: 'React, Node.js, MongoDB',
+      description: 'Built full-stack platform with 10k+ users'
+    }]
+  };
+
+  // Different template designs
+  const templates = {
+    'ats-simple': `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: Arial, sans-serif; padding: 15px; background: white; font-size: 7px; line-height: 1.3; }
+          h1 { font-size: 13px; margin-bottom: 3px; color: #000; }
+          h2 { font-size: 8px; margin: 6px 0 3px; color: #000; text-transform: uppercase; border-bottom: 1px solid #000; padding-bottom: 1px; }
+          h3 { font-size: 7px; margin-bottom: 1px; color: #000; font-weight: bold; }
+          p { font-size: 6px; color: #333; }
+          .header { margin-bottom: 8px; }
+          .contact { font-size: 6px; color: #333; margin-top: 2px; }
+          .section { margin-bottom: 6px; }
+          .exp-header { display: flex; justify-content: space-between; margin-bottom: 1px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>${sampleData.name}</h1>
+          <div class="contact">${sampleData.email} | ${sampleData.phone} | ${sampleData.location}</div>
+        </div>
+        <div class="section">
+          <h2>Professional Summary</h2>
+          <p>${sampleData.summary}</p>
+        </div>
+        <div class="section">
+          <h2>Skills</h2>
+          <p>${sampleData.skills.join(' • ')}</p>
+        </div>
+        <div class="section">
+          <h2>Experience</h2>
+          <div class="exp-header">
+            <h3>${sampleData.experience[0].title}</h3>
+            <span style="font-size: 6px;">${sampleData.experience[0].duration}</span>
+          </div>
+          <p style="margin-bottom: 1px;">${sampleData.experience[0].company}</p>
+          <p>${sampleData.experience[0].description}</p>
+        </div>
+        <div class="section">
+          <h2>Education</h2>
+          <div style="display: flex; justify-content: space-between;">
+            <h3>${sampleData.education[0].degree}</h3>
+            <span style="font-size: 6px;">${sampleData.education[0].year}</span>
+          </div>
+          <p>${sampleData.education[0].school}</p>
+        </div>
+      </body>
+      </html>
+    `,
+    
+    'ats-clean': `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: 'Calibri', sans-serif; padding: 15px; background: white; font-size: 7px; line-height: 1.4; }
+          h1 { font-size: 14px; margin-bottom: 3px; color: #1a1a1a; text-align: center; }
+          h2 { font-size: 8px; margin: 7px 0 3px; color: #2563eb; font-weight: 600; border-bottom: 1.5px solid #2563eb; padding-bottom: 1px; }
+          h3 { font-size: 7px; margin-bottom: 1px; color: #1a1a1a; }
+          .header { text-align: center; margin-bottom: 8px; padding-bottom: 5px; border-bottom: 2px solid #e5e7eb; }
+          .contact { font-size: 6px; color: #666; margin-top: 2px; }
+          .section { margin-bottom: 7px; }
+          .skills { display: flex; gap: 3px; flex-wrap: wrap; }
+          .skill { background: #eff6ff; padding: 1px 4px; border-radius: 2px; font-size: 6px; color: #1e40af; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>${sampleData.name}</h1>
+          <div class="contact">${sampleData.email} • ${sampleData.phone} • ${sampleData.location}</div>
+        </div>
+        <div class="section">
+          <h2>SUMMARY</h2>
+          <p style="font-size: 6px; color: #444;">${sampleData.summary}</p>
+        </div>
+        <div class="section">
+          <h2>SKILLS</h2>
+          <div class="skills">
+            ${sampleData.skills.map(s => `<span class="skill">${s}</span>`).join('')}
+          </div>
+        </div>
+        <div class="section">
+          <h2>EXPERIENCE</h2>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 1px;">
+            <h3>${sampleData.experience[0].title}</h3>
+            <span style="font-size: 6px; color: #666;">${sampleData.experience[0].duration}</span>
+          </div>
+          <p style="font-size: 6px; color: #2563eb; margin-bottom: 1px;">${sampleData.experience[0].company}</p>
+          <p style="font-size: 6px; color: #444;">${sampleData.experience[0].description}</p>
+        </div>
+        <div class="section">
+          <h2>EDUCATION</h2>
+          <div style="display: flex; justify-content: space-between;">
+            <h3>${sampleData.education[0].degree}</h3>
+            <span style="font-size: 6px; color: #666;">${sampleData.education[0].year}</span>
+          </div>
+          <p style="font-size: 6px; color: #444;">${sampleData.education[0].school}</p>
+        </div>
+      </body>
+      </html>
+    `,
+    
+    'ats-compact': `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: 'Times New Roman', serif; padding: 12px; background: white; font-size: 6px; line-height: 1.2; }
+          h1 { font-size: 12px; margin-bottom: 2px; color: #000; }
+          h2 { font-size: 7px; margin: 5px 0 2px; color: #000; font-weight: bold; }
+          h3 { font-size: 6px; margin-bottom: 1px; color: #000; font-weight: bold; }
+          .header { margin-bottom: 6px; }
+          .contact { font-size: 5px; color: #333; }
+          .section { margin-bottom: 5px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>${sampleData.name}</h1>
+          <div class="contact">${sampleData.email} | ${sampleData.phone} | ${sampleData.location}</div>
+        </div>
+        <div class="section">
+          <h2>SUMMARY</h2>
+          <p style="font-size: 5px;">${sampleData.summary}</p>
+        </div>
+        <div class="section">
+          <h2>SKILLS</h2>
+          <p style="font-size: 5px;">${sampleData.skills.join(', ')}</p>
+        </div>
+        <div class="section">
+          <h2>EXPERIENCE</h2>
+          <h3>${sampleData.experience[0].title} - ${sampleData.experience[0].company}</h3>
+          <p style="font-size: 5px; margin-bottom: 1px;">${sampleData.experience[0].duration}</p>
+          <p style="font-size: 5px;">${sampleData.experience[0].description}</p>
+        </div>
+        <div class="section">
+          <h2>EDUCATION</h2>
+          <h3>${sampleData.education[0].degree}</h3>
+          <p style="font-size: 5px;">${sampleData.education[0].school} | ${sampleData.education[0].year}</p>
+        </div>
+      </body>
+      </html>
+    `,
+    
+    'prof-classic': `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: 'Georgia', serif; padding: 15px; background: white; font-size: 7px; line-height: 1.4; }
+          h1 { font-size: 15px; margin-bottom: 3px; color: #1a1a1a; text-align: center; font-weight: normal; }
+          h2 { font-size: 9px; margin: 8px 0 4px; color: #1a1a1a; font-weight: 600; border-bottom: 2px solid #1a1a1a; padding-bottom: 2px; }
+          h3 { font-size: 7px; margin-bottom: 1px; color: #1a1a1a; font-weight: 600; }
+          .header { text-align: center; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 3px double #1a1a1a; }
+          .contact { font-size: 6px; color: #444; margin-top: 3px; }
+          .section { margin-bottom: 8px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>${sampleData.name}</h1>
+          <div class="contact">${sampleData.email} | ${sampleData.phone}</div>
+          <div class="contact">${sampleData.location}</div>
+        </div>
+        <div class="section">
+          <h2>Professional Summary</h2>
+          <p style="font-size: 6px; color: #333; text-align: justify;">${sampleData.summary}</p>
+        </div>
+        <div class="section">
+          <h2>Core Competencies</h2>
+          <p style="font-size: 6px; color: #333;">${sampleData.skills.join(' • ')}</p>
+        </div>
+        <div class="section">
+          <h2>Professional Experience</h2>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 1px;">
+            <h3>${sampleData.experience[0].title}</h3>
+            <span style="font-size: 6px; font-style: italic;">${sampleData.experience[0].duration}</span>
+          </div>
+          <p style="font-size: 6px; color: #333; margin-bottom: 2px; font-style: italic;">${sampleData.experience[0].company}</p>
+          <p style="font-size: 6px; color: #333;">${sampleData.experience[0].description}</p>
+        </div>
+        <div class="section">
+          <h2>Education</h2>
+          <div style="display: flex; justify-content: space-between;">
+            <h3>${sampleData.education[0].degree}</h3>
+            <span style="font-size: 6px; font-style: italic;">${sampleData.education[0].year}</span>
+          </div>
+          <p style="font-size: 6px; color: #333; font-style: italic;">${sampleData.education[0].school}</p>
+        </div>
+      </body>
+      </html>
+    `,
+    
+    'prof-navy': `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: Arial, sans-serif; background: white; font-size: 7px; line-height: 1.3; display: flex; }
+          .sidebar { width: 35%; background: #1e3a8a; color: white; padding: 12px 8px; }
+          .main { width: 65%; padding: 12px 10px; }
+          h1 { font-size: 13px; margin-bottom: 3px; color: white; }
+          h2 { font-size: 8px; margin: 6px 0 3px; font-weight: 600; }
+          h3 { font-size: 7px; margin-bottom: 1px; font-weight: 600; }
+          .sidebar h2 { color: #93c5fd; border-bottom: 1px solid #93c5fd; padding-bottom: 1px; }
+          .main h2 { color: #1e3a8a; border-bottom: 1px solid #1e3a8a; padding-bottom: 1px; }
+          .contact-item { font-size: 5px; margin: 2px 0; }
+          .skill { background: #3b82f6; padding: 1px 3px; border-radius: 2px; font-size: 5px; margin: 1px; display: inline-block; }
+          .section { margin-bottom: 6px; }
+        </style>
+      </head>
+      <body>
+        <div class="sidebar">
+          <h1>${sampleData.name}</h1>
+          <div style="margin: 6px 0;">
+            <div class="contact-item">📧 ${sampleData.email}</div>
+            <div class="contact-item">📱 ${sampleData.phone}</div>
+            <div class="contact-item">📍 ${sampleData.location}</div>
+          </div>
+          <div class="section">
+            <h2>SKILLS</h2>
+            ${sampleData.skills.map(s => `<span class="skill">${s}</span>`).join('')}
+          </div>
+          <div class="section">
+            <h2>EDUCATION</h2>
+            <h3 style="color: white; font-size: 6px;">${sampleData.education[0].degree}</h3>
+            <p style="font-size: 5px; margin-top: 1px;">${sampleData.education[0].school}</p>
+            <p style="font-size: 5px;">${sampleData.education[0].year}</p>
+          </div>
+        </div>
+        <div class="main">
+          <div class="section">
+            <h2>SUMMARY</h2>
+            <p style="font-size: 6px; color: #333;">${sampleData.summary}</p>
+          </div>
+          <div class="section">
+            <h2>EXPERIENCE</h2>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 1px;">
+              <h3>${sampleData.experience[0].title}</h3>
+              <span style="font-size: 5px; color: #666;">${sampleData.experience[0].duration}</span>
+            </div>
+            <p style="font-size: 6px; color: #1e3a8a; margin-bottom: 1px;">${sampleData.experience[0].company}</p>
+            <p style="font-size: 6px; color: #333;">${sampleData.experience[0].description}</p>
+          </div>
+          <div class="section">
+            <h2>PROJECTS</h2>
+            <h3>${sampleData.projects[0].name}</h3>
+            <p style="font-size: 5px; color: #666; margin-bottom: 1px;">${sampleData.projects[0].tech}</p>
+            <p style="font-size: 6px; color: #333;">${sampleData.projects[0].description}</p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `
+    ,
+    
+    'prof-twocol': `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: 'Segoe UI', Arial, sans-serif; background: white; font-size: 7px; line-height: 1.3; }
+          h1 { font-size: 13px; margin-bottom: 2px; color: #2c3e50; }
+          h2 { font-size: 8px; margin: 6px 0 3px; color: #2c3e50; font-weight: 700; border-bottom: 1px solid #2c3e50; padding-bottom: 1px; }
+          h3 { font-size: 7px; margin-bottom: 1px; color: #2c3e50; font-weight: 600; }
+          .header { background: #2c3e50; color: white; padding: 12px 15px; }
+          .contact { font-size: 5px; color: #bdc3c7; margin-top: 2px; }
+          .content { display: flex; }
+          .left { flex: 1; padding: 10px 12px; border-right: 1px solid #e0e0e0; }
+          .right { width: 90px; padding: 10px; background: #f9f9f9; }
+          .section { margin-bottom: 6px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>${sampleData.name}</h1>
+          <div class="contact">${sampleData.email} · ${sampleData.phone} · ${sampleData.location}</div>
+        </div>
+        <div class="content">
+          <div class="left">
+            <div class="section">
+              <h2>SUMMARY</h2>
+              <p style="font-size: 6px; color: #333;">${sampleData.summary}</p>
+            </div>
+            <div class="section">
+              <h2>EXPERIENCE</h2>
+              <div style="margin-bottom: 5px;">
+                <h3>${sampleData.experience[0].title}</h3>
+                <p style="font-size: 5px; color: #2c3e50;">${sampleData.experience[0].company} | ${sampleData.experience[0].duration}</p>
+                <p style="font-size: 6px; color: #333;">${sampleData.experience[0].description}</p>
+              </div>
+            </div>
+          </div>
+          <div class="right">
+            <div class="section">
+              <h2 style="font-size: 7px;">SKILLS</h2>
+              ${sampleData.skills.slice(0,4).map(s => `<div style="margin: 3px 0; font-size: 6px;">• ${s}</div>`).join('')}
+            </div>
+            <div class="section">
+              <h2 style="font-size: 7px;">EDUCATION</h2>
+              <h3 style="font-size: 6px;">${sampleData.education[0].degree}</h3>
+              <p style="font-size: 5px; color: #555;">${sampleData.education[0].school}</p>
+              <p style="font-size: 5px; color: #888;">${sampleData.education[0].year}</p>
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+    
+    'mod-minimal': `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: 'Helvetica Neue', Arial, sans-serif; padding: 18px; background: white; font-size: 6px; line-height: 1.4; color: #111; }
+          h1 { font-size: 16px; font-weight: 300; margin-bottom: 3px; letter-spacing: -0.3px; }
+          h2 { font-size: 7px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #999; margin: 8px 0 4px; }
+          h3 { font-size: 7px; font-weight: 600; margin-bottom: 1px; }
+          .header { margin-bottom: 12px; }
+          .contact { display: flex; gap: 8px; font-size: 5px; color: #777; flex-wrap: wrap; }
+          .section { margin-bottom: 8px; }
+          .timeline { display: grid; grid-template-columns: 50px 1fr; gap: 6px; margin-bottom: 6px; }
+          .date { font-size: 5px; color: #777; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>${sampleData.name}</h1>
+          <div class="contact">
+            <span>${sampleData.email}</span>
+            <span>${sampleData.phone}</span>
+            <span>${sampleData.location}</span>
+          </div>
+        </div>
+        <div class="section">
+          <h2>About</h2>
+          <p style="font-size: 6px; color: #444;">${sampleData.summary}</p>
+        </div>
+        <div class="section">
+          <h2>Experience</h2>
+          <div class="timeline">
+            <div class="date">${sampleData.experience[0].duration}</div>
+            <div>
+              <h3>${sampleData.experience[0].title}</h3>
+              <p style="color: #555; font-size: 6px; margin-bottom: 2px;">${sampleData.experience[0].company}</p>
+              <p style="font-size: 5px; color: #333;">${sampleData.experience[0].description}</p>
+            </div>
+          </div>
+        </div>
+        <div class="section">
+          <h2>Education</h2>
+          <div class="timeline">
+            <div class="date">${sampleData.education[0].year}</div>
+            <div>
+              <h3>${sampleData.education[0].degree}</h3>
+              <p style="color: #555; font-size: 6px;">${sampleData.education[0].school}</p>
+            </div>
+          </div>
+        </div>
+        <div class="section">
+          <h2>Skills</h2>
+          <div style="display: flex; flex-wrap: wrap; gap: 3px;">
+            ${sampleData.skills.map(s => `<span style="border: 1px solid #ddd; padding: 2px 6px; border-radius: 10px; font-size: 5px;">${s}</span>`).join('')}
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+    
+    'mod-bold': `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: 'Helvetica Neue', Arial, sans-serif; background: white; font-size: 6px; line-height: 1.3; }
+          h1 { font-size: 15px; font-weight: 800; margin-bottom: 2px; letter-spacing: -0.3px; }
+          h2 { font-size: 7px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; margin: 7px 0 4px; }
+          h3 { font-size: 7px; font-weight: 700; margin-bottom: 1px; }
+          .header { background: #111; color: white; padding: 14px 16px; }
+          .contact { font-size: 5px; color: #aaa; display: flex; gap: 6px; margin-top: 2px; }
+          .content { padding: 12px 16px; }
+          .section { margin-bottom: 7px; padding-left: 5px; border-left: 2px solid #111; }
+          .skills { display: flex; flex-wrap: wrap; gap: 3px; }
+          .skill { background: #111; color: white; padding: 2px 5px; border-radius: 3px; font-size: 5px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>${sampleData.name}</h1>
+          <div class="contact">
+            <span>${sampleData.email}</span>
+            <span>${sampleData.phone}</span>
+            <span>${sampleData.location}</span>
+          </div>
+        </div>
+        <div class="content">
+          <div class="section">
+            <h2>Profile</h2>
+            <p style="font-size: 6px; color: #444;">${sampleData.summary}</p>
+          </div>
+          <div class="section">
+            <h2>Experience</h2>
+            <div style="margin-bottom: 5px;">
+              <h3>${sampleData.experience[0].title}</h3>
+              <p style="font-size: 5px; color: #666; margin-bottom: 2px;">${sampleData.experience[0].company} · ${sampleData.experience[0].duration}</p>
+              <p style="font-size: 6px; color: #333;">${sampleData.experience[0].description}</p>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div class="section">
+              <h2>Education</h2>
+              <h3 style="font-size: 6px;">${sampleData.education[0].degree}</h3>
+              <p style="font-size: 5px; color: #555;">${sampleData.education[0].school}</p>
+              <p style="font-size: 5px; color: #888;">${sampleData.education[0].year}</p>
+            </div>
+            <div class="section">
+              <h2>Skills</h2>
+              <div class="skills">
+                ${sampleData.skills.slice(0,4).map(s => `<span class="skill">${s}</span>`).join('')}
+              </div>
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+    
+    'creative-teal': `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: 'Segoe UI', Arial, sans-serif; background: white; font-size: 6px; line-height: 1.3; }
+          h1 { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+          h2 { font-size: 7px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #0d9488; border-bottom: 1px solid #0d9488; padding-bottom: 1px; margin: 6px 0 3px; }
+          h3 { font-size: 6px; font-weight: 700; margin-bottom: 1px; }
+          .header { background: linear-gradient(135deg, #0d9488, #0f766e); padding: 14px 15px; color: white; }
+          .contact { font-size: 5px; opacity: 0.85; margin-top: 2px; }
+          .content { padding: 10px 15px; }
+          .section { margin-bottom: 6px; }
+          .highlight { background: #ccfbf1; border-left: 3px solid #0d9488; padding: 5px 8px; border-radius: 0 4px 4px 0; margin-bottom: 6px; }
+          .skills { display: flex; flex-wrap: wrap; gap: 3px; }
+          .skill { background: #ccfbf1; color: #0d9488; padding: 2px 5px; border-radius: 8px; font-size: 5px; font-weight: 600; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>${sampleData.name}</h1>
+          <div class="contact">${sampleData.email} · ${sampleData.phone} · ${sampleData.location}</div>
+        </div>
+        <div class="content">
+          <div class="highlight">
+            <p style="font-size: 6px; color: #374151;">${sampleData.summary}</p>
+          </div>
+          <div class="section">
+            <h2>Experience</h2>
+            <div style="margin-bottom: 5px;">
+              <h3>${sampleData.experience[0].title}</h3>
+              <p style="font-size: 5px; color: #0d9488; margin-bottom: 1px;">${sampleData.experience[0].company}</p>
+              <p style="font-size: 5px; color: #6b7280;">${sampleData.experience[0].duration}</p>
+              <p style="font-size: 6px; color: #374151; margin-top: 2px;">${sampleData.experience[0].description}</p>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 90px; gap: 8px;">
+            <div class="section">
+              <h2>Projects</h2>
+              <h3>${sampleData.projects[0].name}</h3>
+              <p style="font-size: 5px; color: #4b5563;">${sampleData.projects[0].description}</p>
+            </div>
+            <div>
+              <div class="section">
+                <h2 style="font-size: 6px;">Skills</h2>
+                <div class="skills">
+                  ${sampleData.skills.slice(0,4).map(s => `<span class="skill">${s}</span>`).join('')}
+                </div>
+              </div>
+              <div class="section">
+                <h2 style="font-size: 6px;">Education</h2>
+                <h3 style="font-size: 6px;">${sampleData.education[0].degree}</h3>
+                <p style="font-size: 5px; color: #555;">${sampleData.education[0].school}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+    
+    'creative-purple': `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: 'Segoe UI', Arial, sans-serif; background: white; font-size: 6px; line-height: 1.3; }
+          h1 { font-size: 14px; font-weight: 800; margin-bottom: 2px; letter-spacing: -0.3px; }
+          h2 { font-size: 7px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #7c3aed; border-bottom: 1px solid #ddd6fe; padding-bottom: 1px; margin: 6px 0 3px; }
+          h3 { font-size: 6px; font-weight: 700; margin-bottom: 1px; }
+          .header { background: linear-gradient(135deg, #7c3aed, #4f46e5); padding: 14px 15px; color: white; }
+          .contact { font-size: 5px; opacity: 0.9; display: flex; gap: 6px; margin-top: 2px; }
+          .sidebar { width: 85px; background: #f5f3ff; padding: 10px 8px; float: left; }
+          .main { margin-left: 95px; padding: 10px 12px; }
+          .section { margin-bottom: 6px; }
+          .skill-bar { margin-bottom: 4px; }
+          .skill-name { font-size: 5px; margin-bottom: 1px; }
+          .bar { height: 2px; background: #ddd; border-radius: 1px; }
+          .bar-fill { height: 2px; background: linear-gradient(90deg, #7c3aed, #4f46e5); border-radius: 1px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>${sampleData.name}</h1>
+          <div class="contact">
+            ${sampleData.email} · ${sampleData.phone} · ${sampleData.location}
+          </div>
+        </div>
+        <div class="sidebar">
+          <div class="section">
+            <h2 style="font-size: 6px;">Skills</h2>
+            ${sampleData.skills.slice(0,4).map((s, i) => `
+              <div class="skill-bar">
+                <div class="skill-name">${s}</div>
+                <div class="bar"><div class="bar-fill" style="width: ${70 + (i % 4) * 7}%"></div></div>
+              </div>
+            `).join('')}
+          </div>
+          <div class="section">
+            <h2 style="font-size: 6px;">Education</h2>
+            <h3 style="font-size: 6px;">${sampleData.education[0].degree}</h3>
+            <p style="font-size: 5px; color: #5b21b6;">${sampleData.education[0].school}</p>
+            <p style="font-size: 5px; color: #7c3aed;">${sampleData.education[0].year}</p>
+          </div>
+        </div>
+        <div class="main">
+          <div class="section">
+            <div style="border-left: 3px solid #7c3aed; padding-left: 6px; margin-bottom: 6px;">
+              <p style="font-size: 6px; color: #374151;">${sampleData.summary}</p>
+            </div>
+          </div>
+          <div class="section">
+            <h2>Experience</h2>
+            <div style="margin-bottom: 5px;">
+              <h3>${sampleData.experience[0].title}</h3>
+              <p style="font-size: 5px; color: #7c3aed; margin-bottom: 1px;">${sampleData.experience[0].company}</p>
+              <p style="font-size: 5px; color: #6b7280;">${sampleData.experience[0].duration}</p>
+              <p style="font-size: 6px; color: #374151; margin-top: 2px;">${sampleData.experience[0].description}</p>
+            </div>
+          </div>
+          <div class="section">
+            <h2>Projects</h2>
+            <div style="background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 4px; padding: 5px;">
+              <h3>${sampleData.projects[0].name}</h3>
+              <p style="font-size: 5px; color: #4b5563; margin-top: 1px;">${sampleData.projects[0].description}</p>
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+    
+    'prem-glass': `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: 'Helvetica Neue', Arial, sans-serif; background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #fff; font-size: 6px; line-height: 1.3; }
+          h1 { font-size: 14px; font-weight: 800; margin-bottom: 2px; }
+          h2 { font-size: 6px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #6366f1; margin: 6px 0 3px; }
+          h3 { font-size: 6px; font-weight: 700; margin-bottom: 1px; color: #e2e8f0; }
+          .header { padding: 14px 15px; border-bottom: 1px solid rgba(255,255,255,.1); }
+          .contact { font-size: 5px; color: #94a3b8; display: flex; gap: 5px; margin-top: 2px; }
+          .content { display: grid; grid-template-columns: 1fr 85px; gap: 0; }
+          .main { padding: 10px 12px; border-right: 1px solid rgba(255,255,255,.08); }
+          .sidebar { padding: 10px 8px; }
+          .section { margin-bottom: 6px; }
+          .glass-card { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07); border-radius: 4px; padding: 5px; margin-bottom: 4px; }
+          .skill-bar { margin-bottom: 4px; }
+          .bar { height: 2px; background: rgba(255,255,255,.08); border-radius: 1px; }
+          .bar-fill { height: 2px; background: linear-gradient(90deg, #6366f1, #10b981); border-radius: 1px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>${sampleData.name}</h1>
+          <div class="contact">${sampleData.email} · ${sampleData.phone} · ${sampleData.location}</div>
+        </div>
+        <div class="content">
+          <div class="main">
+            <div class="section">
+              <h2>About</h2>
+              <p style="font-size: 6px; color: #94a3b8;">${sampleData.summary}</p>
+            </div>
+            <div class="section">
+              <h2>Experience</h2>
+              <div class="glass-card">
+                <h3>${sampleData.experience[0].title}</h3>
+                <p style="font-size: 5px; color: #6366f1; margin: 1px 0;">${sampleData.experience[0].company}</p>
+                <p style="font-size: 5px; color: #475569;">${sampleData.experience[0].duration}</p>
+                <p style="font-size: 5px; color: #94a3b8; margin-top: 2px;">${sampleData.experience[0].description}</p>
+              </div>
+            </div>
+          </div>
+          <div class="sidebar">
+            <div class="section">
+              <h2 style="font-size: 6px;">Skills</h2>
+              ${sampleData.skills.slice(0,4).map((s, i) => `
+                <div class="skill-bar">
+                  <div style="font-size: 5px; color: #94a3b8; margin-bottom: 1px;">${s}</div>
+                  <div class="bar"><div class="bar-fill" style="width: ${65 + (i % 4) * 8}%"></div></div>
+                </div>
+              `).join('')}
+            </div>
+            <div class="section">
+              <h2 style="font-size: 6px;">Education</h2>
+              <div class="glass-card">
+                <h3 style="font-size: 6px;">${sampleData.education[0].degree}</h3>
+                <p style="font-size: 5px; color: #64748b;">${sampleData.education[0].school}</p>
+                <p style="font-size: 5px; color: #6366f1;">${sampleData.education[0].year}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `,
+    
+    'prem-exec': `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: 'Palatino Linotype', Georgia, serif; background: #fdfbf7; font-size: 6px; line-height: 1.4; color: #1a1a1a; }
+          h1 { font-size: 13px; font-weight: 400; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 2px; }
+          h2 { font-size: 6px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #b8860b; margin: 6px 0 3px; }
+          h3 { font-size: 6px; font-weight: 700; margin-bottom: 1px; }
+          .gold-bar { height: 2px; background: linear-gradient(90deg, #b8860b, #f0c040, #b8860b); }
+          .header { background: #1a1a1a; color: #fff; padding: 12px 15px; }
+          .contact { font-size: 5px; color: #a0a0a0; display: flex; gap: 6px; margin-top: 2px; }
+          .content { padding: 10px 15px; }
+          .section { margin-bottom: 6px; }
+          .accent-border { border-left: 2px solid #b8860b; padding-left: 6px; }
+          .divider { height: 1px; background: linear-gradient(90deg, #b8860b, transparent); margin: 4px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="gold-bar"></div>
+        <div class="header">
+          <h1>${sampleData.name}</h1>
+          <div class="contact">${sampleData.email} · ${sampleData.phone} · ${sampleData.location}</div>
+        </div>
+        <div class="content">
+          <div class="section accent-border">
+            <h2 style="font-size: 5px;">Executive Summary</h2>
+            <p style="font-size: 6px; color: #333; font-style: italic;">${sampleData.summary}</p>
+          </div>
+          <div class="section">
+            <h2>Career History</h2>
+            <div class="divider"></div>
+            <div style="margin-bottom: 5px;">
+              <h3>${sampleData.experience[0].title}</h3>
+              <p style="font-size: 5px; color: #b8860b; font-weight: 600;">${sampleData.experience[0].company}</p>
+              <p style="font-size: 5px; color: #666;">${sampleData.experience[0].duration}</p>
+              <p style="font-size: 5px; color: #333; margin-top: 2px;">${sampleData.experience[0].description}</p>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <div class="section">
+              <h2>Education</h2>
+              <div class="divider"></div>
+              <h3 style="font-size: 6px;">${sampleData.education[0].degree}</h3>
+              <p style="font-size: 5px; color: #555;">${sampleData.education[0].school}</p>
+              <p style="font-size: 5px; color: #b8860b;">${sampleData.education[0].year}</p>
+            </div>
+            <div class="section">
+              <h2>Expertise</h2>
+              <div class="divider"></div>
+              ${sampleData.skills.slice(0,4).map(s => `<div style="margin: 2px 0; font-size: 5px;"><span style="color: #b8860b;">◆</span> ${s}</div>`).join('')}
+            </div>
+          </div>
+        </div>
+        <div class="gold-bar"></div>
+      </body>
+      </html>
+    `,
+    
+    'prem-neon': `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #0a0a0f; color: #e2e8f0; font-size: 6px; line-height: 1.3; }
+          h1 { font-size: 14px; font-weight: 800; background: linear-gradient(90deg, #00d4ff, #bf00ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 2px; }
+          h2 { font-size: 6px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #00d4ff; margin: 6px 0 3px; }
+          h3 { font-size: 6px; font-weight: 700; margin-bottom: 1px; }
+          .neon-line { height: 1px; background: linear-gradient(90deg, transparent, #00d4ff, #bf00ff, transparent); }
+          .header { padding: 14px 15px; }
+          .contact { font-size: 5px; color: #64748b; display: flex; gap: 5px; margin-top: 2px; }
+          .content { display: grid; grid-template-columns: 1fr 80px; gap: 0; padding: 0 15px 14px; }
+          .main { padding-right: 10px; border-right: 1px solid rgba(0,212,255,.15); }
+          .sidebar { padding-left: 8px; }
+          .section { margin-bottom: 6px; }
+          .neon-card { background: rgba(0,212,255,.03); border: 1px solid rgba(0,212,255,.1); border-radius: 4px; padding: 5px; margin-bottom: 4px; }
+          .skill-tag { background: rgba(0,212,255,.06); border: 1px solid rgba(0,212,255,.2); color: #00d4ff; padding: 2px 5px; border-radius: 3px; font-size: 5px; display: inline-block; margin: 2px; }
+        </style>
+      </head>
+      <body>
+        <div class="neon-line"></div>
+        <div class="header">
+          <h1>${sampleData.name}</h1>
+          <div class="contact">${sampleData.email} · ${sampleData.phone} · ${sampleData.location}</div>
+        </div>
+        <div class="content">
+          <div class="main">
+            <div class="section">
+              <h2>Profile</h2>
+              <p style="font-size: 6px; color: #94a3b8;">${sampleData.summary}</p>
+            </div>
+            <div class="section">
+              <h2>Experience</h2>
+              <div class="neon-card">
+                <h3>${sampleData.experience[0].title}</h3>
+                <p style="font-size: 5px; color: #00d4ff; margin: 1px 0;">${sampleData.experience[0].company}</p>
+                <p style="font-size: 5px; color: #475569;">${sampleData.experience[0].duration}</p>
+                <p style="font-size: 5px; color: #94a3b8; margin-top: 2px;">${sampleData.experience[0].description}</p>
+              </div>
+            </div>
+          </div>
+          <div class="sidebar">
+            <div class="section">
+              <h2 style="font-size: 6px; color: #bf00ff;">Skills</h2>
+              <div>
+                ${sampleData.skills.slice(0,4).map(s => `<span class="skill-tag">${s}</span>`).join('')}
+              </div>
+            </div>
+            <div class="section">
+              <h2 style="font-size: 6px; color: #bf00ff;">Education</h2>
+              <div style="background: rgba(191,0,255,.04); border: 1px solid rgba(191,0,255,.12); border-radius: 4px; padding: 5px;">
+                <h3 style="font-size: 6px;">${sampleData.education[0].degree}</h3>
+                <p style="font-size: 5px; color: #64748b;">${sampleData.education[0].school}</p>
+                <p style="font-size: 5px; color: #bf00ff;">${sampleData.education[0].year}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="neon-line"></div>
+      </body>
+      </html>
+    `,
+    
+    'prem-elegant': `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, serif; background: #fffef9; font-size: 6px; line-height: 1.4; color: #1c1c1c; }
+          h1 { font-size: 13px; font-weight: 400; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 2px; }
+          h2 { font-size: 6px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #8b0000; margin: 6px 0 3px; }
+          h3 { font-size: 6px; font-weight: 700; margin-bottom: 1px; }
+          .red-bar { height: 3px; background: linear-gradient(90deg, #8b0000, #c41e3a, #8b0000); }
+          .header { text-align: center; padding: 12px 15px; border-bottom: 2px double #c41e3a; }
+          .divider { width: 20px; height: 1px; background: #c41e3a; margin: 2px auto; }
+          .contact { font-size: 5px; color: #5a5a5a; letter-spacing: 0.5px; margin-top: 3px; }
+          .content { padding: 10px 15px; }
+          .section { margin-bottom: 6px; }
+          .accent-border { border-left: 2px solid #8b0000; padding-left: 6px; }
+          .section-divider { height: 1px; background: linear-gradient(90deg, #c41e3a, transparent); margin: 4px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="red-bar"></div>
+        <div class="header">
+          <h1>${sampleData.name}</h1>
+          <div class="divider"></div>
+          <div class="contact">${sampleData.email} · ${sampleData.phone} · ${sampleData.location}</div>
+        </div>
+        <div class="content">
+          <div class="section accent-border">
+            <h2 style="font-size: 5px;">Profile</h2>
+            <p style="font-size: 6px; color: #3a3a3a; font-style: italic; text-align: justify;">${sampleData.summary}</p>
+          </div>
+          <div class="section">
+            <h2>Professional Experience</h2>
+            <div class="section-divider"></div>
+            <div style="margin-bottom: 5px;">
+              <h3>${sampleData.experience[0].title}</h3>
+              <p style="font-size: 5px; color: #8b0000; font-weight: 600;">${sampleData.experience[0].company}</p>
+              <p style="font-size: 5px; color: #555; font-style: italic;">${sampleData.experience[0].duration}</p>
+              <p style="font-size: 5px; color: #333; margin-top: 2px;">${sampleData.experience[0].description}</p>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 10px;">
+            <div class="section">
+              <h2>Education</h2>
+              <div class="section-divider"></div>
+              <h3 style="font-size: 6px;">${sampleData.education[0].degree}</h3>
+              <p style="font-size: 5px; color: #555;">${sampleData.education[0].school}</p>
+              <p style="font-size: 5px; color: #8b0000; font-style: italic;">${sampleData.education[0].year}</p>
+            </div>
+            <div class="section">
+              <h2>Competencies</h2>
+              <div class="section-divider"></div>
+              ${sampleData.skills.slice(0,4).map(s => `<div style="margin: 2px 0; font-size: 5px;"><span style="color: #8b0000; font-size: 7px;">✦</span> ${s}</div>`).join('')}
+            </div>
+          </div>
+        </div>
+        <div class="red-bar"></div>
+      </body>
+      </html>
+    `,
+    
+    'prem-gradient': `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #fff; font-size: 6px; line-height: 1.3; color: #1f2937; }
+          h1 { font-size: 14px; font-weight: 800; margin-bottom: 2px; text-shadow: 0 1px 5px rgba(0,0,0,.1); }
+          h2 { font-size: 6px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; background: linear-gradient(90deg, #f97316, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 6px 0 3px; }
+          h3 { font-size: 6px; font-weight: 700; margin-bottom: 1px; }
+          .header { background: linear-gradient(135deg, #f97316 0%, #ec4899 50%, #8b5cf6 100%); color: #fff; padding: 14px 15px 18px; position: relative; }
+          .header-curve { position: absolute; bottom: 0; left: 0; right: 0; height: 10px; background: #fff; clip-path: ellipse(55% 100% at 50% 100%); }
+          .contact { font-size: 5px; display: flex; gap: 4px; margin-top: 2px; opacity: 0.9; }
+          .contact span { background: rgba(255,255,255,.2); padding: 2px 5px; border-radius: 8px; }
+          .content { padding: 6px 15px 12px; }
+          .section { margin-bottom: 6px; }
+          .skill-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-bottom: 6px; }
+          .skill-box { border: 1px solid; border-radius: 4px; padding: 3px 5px; text-align: center; font-size: 5px; font-weight: 600; }
+          .accent-border { border-left: 2px solid #f97316; padding-left: 6px; margin-bottom: 4px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>${sampleData.name}</h1>
+          <div class="contact">
+            <span>${sampleData.email}</span>
+            <span>${sampleData.phone}</span>
+            <span>${sampleData.location}</span>
+          </div>
+          <div class="header-curve"></div>
+        </div>
+        <div class="content">
+          <p style="text-align: center; color: #4b5563; font-style: italic; margin-bottom: 6px; font-size: 6px;">${sampleData.summary}</p>
+          <div class="skill-grid">
+            ${sampleData.skills.slice(0,6).map((s, i) => {
+              const colors = [
+                ['#fff7ed', '#f97316'],
+                ['#fdf2f8', '#ec4899'],
+                ['#f5f3ff', '#8b5cf6']
+              ];
+              const [bg, border] = colors[i % 3];
+              return `<div class="skill-box" style="background: ${bg}; border-color: ${border}; color: ${border};">${s}</div>`;
+            }).join('')}
+          </div>
+          <div class="section">
+            <h2>Experience</h2>
+            <div class="accent-border">
+              <h3>${sampleData.experience[0].title}</h3>
+              <p style="font-size: 5px; background: linear-gradient(90deg, #f97316, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 600;">${sampleData.experience[0].company}</p>
+              <p style="font-size: 5px; color: #6b7280;">${sampleData.experience[0].duration}</p>
+              <p style="font-size: 5px; color: #374151; margin-top: 2px;">${sampleData.experience[0].description}</p>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <div class="section">
+              <h2 style="background: linear-gradient(90deg, #ec4899, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Education</h2>
+              <div style="border-left: 2px solid #ec4899; padding-left: 6px;">
+                <h3 style="font-size: 6px;">${sampleData.education[0].degree}</h3>
+                <p style="font-size: 5px; color: #555;">${sampleData.education[0].school}</p>
+                <p style="font-size: 5px; color: #ec4899; font-weight: 600;">${sampleData.education[0].year}</p>
+              </div>
+            </div>
+            <div class="section">
+              <h2 style="background: linear-gradient(90deg, #8b5cf6, #f97316); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Projects</h2>
+              <div style="border-left: 2px solid #8b5cf6; padding-left: 6px;">
+                <h3 style="font-size: 6px;">${sampleData.projects[0].name}</h3>
+                <p style="font-size: 5px; color: #4b5563; margin-top: 1px;">${sampleData.projects[0].description}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </body>
+      </html>
+    `
+  };
+
+  // Return specific template or default
+  return templates[templateId] || templates['ats-simple'];
+}
+
+function buildGrid(filter='All') {
+  const grid = document.getElementById('template-grid');
+  grid.innerHTML = '';
+  
+  TEMPLATES.forEach(t => {
+    const show = filter==='All' || t.category===filter || t.tier===filter;
+    if (!show) return;
+    
+    const isLocked = t.tier === 'premium' && !IS_PREMIUM_USER;
+    
+    const card = document.createElement('div');
+    card.className = `template-card ${isLocked ? 'is-locked' : ''}`;
+    
+    // Create iframe for preview
+    const previewHTML = getTemplatePreviewHTML(t.id);
+    const escapedHTML = previewHTML.replace(/"/g, '&quot;');
+    
+    card.innerHTML = `
+      ${isLocked ? '<div class="lock-badge">🔒 PRO</div>' : 
+        (t.tier === 'premium' ? '<div class="premium-badge">✨ PRO</div>' : '<div class="free-badge">FREE</div>')}
+      <div class="template-thumb" id="thumb-${t.id}">
+        <iframe 
+          srcdoc="${escapedHTML}"
+          style="width: 100%; height: 100%; border: none; transform: scale(1); transform-origin: top left;"
+          sandbox="allow-same-origin"
+          onload="document.getElementById('thumb-${t.id}').classList.add('loaded')"
+          onerror="handleIframeError('${t.id}')"
+        ></iframe>
+      </div>
+      <div class="template-info">
+        <div class="template-name">${t.name}</div>
+        <div class="template-cat">${t.category}</div>
+        <div class="template-footer">
+          <span class="tier-badge ${t.tier}">${t.tier.toUpperCase()}</span>
+          <button class="use-template-btn" onclick="useTemplate('${t.id}')">
+            ${isLocked ? '🔒 Upgrade' : 'Use Template →'}
+          </button>
+        </div>
+      </div>
+    `;
+    grid.appendChild(card);
+    
+    // Fallback: mark as loaded after 1 second if onload doesn't fire
+    setTimeout(() => {
+      const thumb = document.getElementById(`thumb-${t.id}`);
+      if (thumb && !thumb.classList.contains('loaded')) {
+        thumb.classList.add('loaded');
+      }
+    }, 1000);
+  });
+  
+  reportParentHeight();
+}
+
+function handleIframeError(templateId) {
+  const thumb = document.getElementById(`thumb-${templateId}`);
+  if (thumb) {
+    thumb.classList.add('loaded');
+    thumb.innerHTML = `
+      <div style="display: flex; align-items: center; justify-content: center; height: 100%; padding: 20px; text-align: center;">
+        <div>
+          <div style="font-size: 32px; margin-bottom: 8px;">📄</div>
+          <div style="font-size: 11px; color: #64748b; font-weight: 600;">Resume Template</div>
+        </div>
+      </div>
+    `;
+  }
+}
+
+function filterTemplates(filter, btn) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  buildGrid(filter);
+}
+
+function reportParentHeight() {
+  const height = document.documentElement.scrollHeight;
+  window.parent.postMessage({ type: 'resume-builder-height', height }, window.location.origin);
+}
+
+window.addEventListener('load', () => {
+  buildGrid();
+  reportParentHeight();
+});
+
+window.addEventListener('resize', () => {
+  reportParentHeight();
+});
+</script>
+</body>
+</html>
