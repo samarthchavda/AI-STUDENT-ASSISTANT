@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, TrendingUp, Award, Link as LinkIcon, Copy, CheckCircle } from 'lucide-react';
+import { Users, TrendingUp, Award, Copy, CheckCircle } from 'lucide-react';
 import { adminAPI } from '../../services/adminAPI';
 
 export default function ReferralTrackingPage() {

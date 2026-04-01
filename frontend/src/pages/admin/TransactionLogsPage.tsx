@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { DollarSign, CreditCard, TrendingUp, RefreshCw, Filter, Search, FileText } from 'lucide-react';
+import { DollarSign, CreditCard, TrendingUp, RefreshCw, Search, FileText } from 'lucide-react';
 import { adminAPI } from '../../services/adminAPI';
 
 export default function TransactionLogsPage() {
