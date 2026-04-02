@@ -650,699 +650,253 @@ Format as JSON:
     
     @staticmethod
     def _execute_python_code(code: str, test_cases: List[Dict]) -> Dict[str, Any]:
-        """
-        Execute Python code in isolated environment with proper output validation
-        """
-        import subprocess
-        import tempfile
-        import os
-        
+        import subprocess, tempfile, os
         passed = 0
         total = len(test_cases)
         test_results = []
-        error_message = None
-        
         try:
-            # Clean the code - remove example usage at the bottom
-            code_lines = code.split('\n')
-            cleaned_lines = []
-            skip_rest = False
-            
-            for line in code_lines:
-                # Stop at common example usage markers
-                if any(marker in line.lower() for marker in [
-                    '# example usage', '# test', '# example', 
-                    'if __name__', '# usage:', '# demo'
-                ]):
-                    skip_rest = True
-                    continue
-                
-                if not skip_rest:
-                    cleaned_lines.append(line)
-            
-            cleaned_code = '\n'.join(cleaned_lines)
-            
-            # Extract function name from code
-            function_name = None
-            for line in cleaned_lines:
-                if line.strip().startswith('def '):
-                    function_name = line.strip().split('def ')[1].split('(')[0].strip()
-                    break
-            
-            if not function_name:
-                return {
-                    'passed': 0,
-                    'total': total,
-                    'error_message': 'No function definition found in code',
-                    'test_results': []
-                }
-            
-            # Run each test case in isolated environment
-            for idx, test_case in enumerate(test_cases):
+            lines = code.split('\n')
+            clean = []
+            skip = False
+            for l in lines:
+                if any(m in l.lower() for m in ['# example usage','# test','# example','if __name__','# usage:','# demo']):
+                    skip = True; continue
+                if not skip: clean.append(l)
+            cleaned = '\n'.join(clean)
+            is_class = 'class Solution' in cleaned
+            fn = None
+            if is_class:
+                for l in clean:
+                    s = l.strip()
+                    if s.startswith('def ') and 'self' in s:
+                        fn = s.split('def ')[1].split('(')[0].strip(); break
+            else:
+                for l in clean:
+                    s = l.strip()
+                    if s.startswith('def '):
+                        fn = s.split('def ')[1].split('(')[0].strip(); break
+            if not fn:
+                return {'passed':0,'total':total,'error_message':'No function definition found.','test_results':[]}
+            for idx, tc in enumerate(test_cases):
+                inp = tc.get('input',''); exp = tc.get('expected_output','')
                 try:
-                    # Create temporary file for this test case
                     with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
-                        # Write the user's code
-                        f.write(cleaned_code)
-                        f.write('\n\n')
-                        
-                        # Write test execution code
-                        f.write('import json\n')
-                        f.write('import sys\n\n')
-                        
-                        # Parse input and call function
-                        test_input = test_case.get('input', '')
-                        expected_output = test_case.get('expected_output', '')
-                        
-                        # Parse the input string to extract actual values
-                        # Handle formats like: "n = 1", "[2,7,11,15], 9", "nums = [1,2,3]"
-                        parsed_args = DSAService._parse_test_input(test_input)
-                        
-                        # Write execution code that captures only the return value
-                        f.write(f'try:\n')
-                        f.write(f'    # Execute function with parsed input\n')
-                        f.write(f'    result = {function_name}({parsed_args})\n')
-                        f.write(f'    \n')
-                        f.write(f'    # Print only the result as JSON\n')
-                        f.write(f'    print(json.dumps({{"result": result, "success": True}}))\n')
-                        f.write(f'except Exception as e:\n')
-                        f.write(f'    print(json.dumps({{"error": str(e), "success": False}}))\n')
-                        
-                        temp_file = f.name
-                    
-                    # Execute in isolated subprocess with timeout
-                    result = subprocess.run(
-                        ['python3', temp_file],
-                        capture_output=True,
-                        text=True,
-                        timeout=5  # 5 second timeout
-                    )
-                    
-                    # Clean up temp file
-                    os.unlink(temp_file)
-                    
-                    # Parse output
-                    if result.returncode != 0:
-                        test_results.append({
-                            'test_case': idx + 1,
-                            'passed': False,
-                            'input': test_input,
-                            'expected': expected_output,
-                            'actual': None,
-                            'error': result.stderr or 'Runtime error'
-                        })
+                        f.write(cleaned + '\n\nimport json\n')
+                        args = DSAService._parse_test_input(inp)
+                        if is_class:
+                            f.write(f'try:\n    sol=Solution()\n    r=sol.{fn}({args})\n    print(json.dumps({{"result":r,"success":True}}))\nexcept Exception as e:\n    print(json.dumps({{"error":str(e),"success":False}}))\n')
+                        else:
+                            f.write(f'try:\n    r={fn}({args})\n    print(json.dumps({{"result":r,"success":True}}))\nexcept Exception as e:\n    print(json.dumps({{"error":str(e),"success":False}}))\n')
+                        tmp = f.name
+                    proc = subprocess.run(['python3', tmp], capture_output=True, text=True, timeout=5)
+                    os.unlink(tmp)
+                    jout = None
+                    for line in reversed(proc.stdout.strip().split('\n')):
+                        try: jout = json.loads(line); break
+                        except: continue
+                    if not jout or not jout.get('success'):
+                        err = jout.get('error','Execution failed') if jout else proc.stderr.strip() or 'No output'
+                        test_results.append({'test_case':idx+1,'passed':False,'input':inp,'expected':exp,'actual':None,'error':err})
                         continue
-                    
-                    # Extract only the JSON output (ignore print statements)
-                    output_lines = result.stdout.strip().split('\n')
-                    json_output = None
-                    
-                    for line in reversed(output_lines):  # Start from last line
-                        try:
-                            json_output = json.loads(line)
-                            break
-                        except:
-                            continue
-                    
-                    if not json_output or not json_output.get('success'):
-                        test_results.append({
-                            'test_case': idx + 1,
-                            'passed': False,
-                            'input': test_input,
-                            'expected': expected_output,
-                            'actual': None,
-                            'error': json_output.get('error', 'Execution failed') if json_output else 'No output'
-                        })
-                        continue
-                    
-                    actual_result = json_output.get('result')
-                    
-                    # Strict comparison - normalize both values
-                    expected_normalized = DSAService._normalize_output(expected_output)
-                    actual_normalized = DSAService._normalize_output(actual_result)
-                    
-                    is_passed = expected_normalized == actual_normalized
-                    
-                    if is_passed:
-                        passed += 1
-                    
-                    test_results.append({
-                        'test_case': idx + 1,
-                        'passed': is_passed,
-                        'input': test_input,
-                        'expected': expected_output,
-                        'actual': actual_result,
-                        'error': None
-                    })
-                    
+                    actual = jout.get('result')
+                    ok = DSAService._normalize_output(exp) == DSAService._normalize_output(actual)
+                    if ok: passed += 1
+                    test_results.append({'test_case':idx+1,'passed':ok,'input':inp,'expected':exp,'actual':actual,'error':None})
                 except subprocess.TimeoutExpired:
-                    test_results.append({
-                        'test_case': idx + 1,
-                        'passed': False,
-                        'input': test_input,
-                        'expected': expected_output,
-                        'actual': None,
-                        'error': 'Time Limit Exceeded (5s)'
-                    })
+                    test_results.append({'test_case':idx+1,'passed':False,'input':inp,'expected':exp,'actual':None,'error':'Time Limit Exceeded (5s)'})
                 except Exception as e:
-                    test_results.append({
-                        'test_case': idx + 1,
-                        'passed': False,
-                        'input': test_input,
-                        'expected': expected_output,
-                        'actual': None,
-                        'error': str(e)
-                    })
-            
-            message = f"Passed {passed}/{total} test cases"
-            if passed == total:
-                message = "✅ All test cases passed!"
-            elif passed == 0:
-                message = "❌ No test cases passed"
-            
-            return {
-                'passed': passed,
-                'total': total,
-                'message': message,
-                'test_results': test_results,
-                'error_message': error_message
-            }
-            
+                    test_results.append({'test_case':idx+1,'passed':False,'input':inp,'expected':exp,'actual':None,'error':str(e)})
+            msg = f"Passed {passed}/{total} test cases"
+            if passed==total: msg="All test cases passed!"
+            elif passed==0: msg="No test cases passed"
+            return {'passed':passed,'total':total,'message':msg,'test_results':test_results,'error_message':None}
         except Exception as e:
-            logger.error(f"Code execution failed: {e}")
-            return {
-                'passed': 0,
-                'total': total,
-                'error_message': str(e),
-                'test_results': []
-            }
-    
-    @staticmethod
-    def _parse_test_input(input_str: str) -> str:
-        """
-        Parse test input string into valid Python function arguments
-        
-        Examples:
-            "n = 1" -> "1"
-            "[2,7,11,15], 9" -> "[2,7,11,15], 9"
-            "nums = [1,2,3], target = 5" -> "[1,2,3], 5"
-            "s = 'hello'" -> "'hello'"
-        """
-        if not input_str:
-            return ""
-        
-        # Remove quotes around the entire string if present
-        input_str = input_str.strip()
-        if (input_str.startswith('"') and input_str.endswith('"')) or \
-           (input_str.startswith("'") and input_str.endswith("'")):
-            input_str = input_str[1:-1]
-        
-        # Check if it contains '=' (parameter assignment format)
-        if '=' in input_str:
-            # Split by comma to handle multiple parameters
-            parts = []
-            current = ""
-            bracket_depth = 0
-            in_string = False
-            string_char = None
-            
-            for char in input_str:
-                if char in ['"', "'"]:
-                    if not in_string:
-                        in_string = True
-                        string_char = char
-                    elif char == string_char:
-                        in_string = False
-                        string_char = None
-                
-                if not in_string:
-                    if char in ['[', '(', '{']:
-                        bracket_depth += 1
-                    elif char in [']', ')', '}']:
-                        bracket_depth -= 1
-                    elif char == ',' and bracket_depth == 0:
-                        parts.append(current.strip())
-                        current = ""
-                        continue
-                
-                current += char
-            
-            if current:
-                parts.append(current.strip())
-            
-            # Extract values from "param = value" format
-            values = []
-            for part in parts:
-                if '=' in part:
-                    # Extract value after '='
-                    value = part.split('=', 1)[1].strip()
-                    values.append(value)
-                else:
-                    values.append(part)
-            
-            return ', '.join(values)
-        else:
-            # No '=' sign, use as-is
-            return input_str
-    
-    @staticmethod
-    def _normalize_output(value: Any) -> str:
-        """
-        Normalize output for strict comparison
-        Handles lists, strings, numbers, etc.
-        """
-        if value is None:
-            return 'null'
-        
-        # Convert to string and normalize
-        if isinstance(value, str):
-            # Try to parse as JSON first
-            try:
-                parsed = json.loads(value)
-                return json.dumps(parsed, sort_keys=True)
-            except:
-                return value.strip()
-        
-        # For lists, dicts, etc., use JSON serialization
-        try:
-            return json.dumps(value, sort_keys=True)
-        except:
-            return str(value).strip()
-    
+            return {'passed':0,'total':total,'error_message':str(e),'test_results':[]}
+
     @staticmethod
     def _execute_javascript_code(code: str, test_cases: List[Dict]) -> Dict[str, Any]:
-        """
-        Execute JavaScript code with Node.js
-        """
-        import subprocess
-        import tempfile
-        import os
-        
-        passed = 0
-        total = len(test_cases)
-        test_results = []
-        
+        import subprocess, tempfile, os, re as _re
+        passed = 0; total = len(test_cases); test_results = []
         try:
-            # Clean code - remove example usage
-            code_lines = code.split('\n')
-            cleaned_lines = []
-            skip_rest = False
-            
-            for line in code_lines:
-                if any(marker in line.lower() for marker in [
-                    '// example', '// test', '// usage', '// demo'
-                ]):
-                    skip_rest = True
-                    continue
-                if not skip_rest:
-                    cleaned_lines.append(line)
-            
-            cleaned_code = '\n'.join(cleaned_lines)
-            
-            # Extract function name
-            function_name = None
-            for line in cleaned_lines:
-                if 'function ' in line:
-                    parts = line.split('function ')[1].split('(')[0].strip()
-                    function_name = parts
-                    break
-            
-            if not function_name:
-                return {
-                    'passed': 0,
-                    'total': total,
-                    'error_message': 'No function definition found',
-                    'test_results': []
-                }
-            
-            # Run each test case
-            for idx, test_case in enumerate(test_cases):
+            subprocess.run(['node','--version'], capture_output=True, timeout=3, check=True)
+        except Exception:
+            return {'passed':0,'total':total,'error_message':'Node.js is not installed on the server.','test_results':[]}
+        try:
+            lines = code.split('\n'); clean = []; skip = False
+            for l in lines:
+                if any(m in l.lower() for m in ['// example','// test','// usage','// demo']): skip=True; continue
+                if not skip: clean.append(l)
+            cleaned = '\n'.join(clean)
+            is_class = 'class Solution' in cleaned
+            fn = None
+            if is_class:
+                for l in clean:
+                    m = _re.search(r'^\s+(\w+)\s*\(', l)
+                    if m and m.group(1) not in ['constructor','class','static']: fn=m.group(1); break
+            else:
+                for l in clean:
+                    m = _re.search(r'function\s+(\w+)\s*\(', l)
+                    if m: fn=m.group(1); break
+                    m = _re.search(r'(?:const|let|var)\s+(\w+)\s*=', l)
+                    if m: fn=m.group(1); break
+            if not fn:
+                return {'passed':0,'total':total,'error_message':'No function definition found in JS code.','test_results':[]}
+            for idx, tc in enumerate(test_cases):
+                inp = tc.get('input',''); exp = tc.get('expected_output','')
                 try:
                     with tempfile.NamedTemporaryFile(mode='w', suffix='.js', delete=False) as f:
-                        # Write user code
-                        f.write(cleaned_code)
-                        f.write('\n\n')
-                        
-                        # Write test execution
-                        test_input = test_case.get('input', '')
-                        expected_output = test_case.get('expected_output', '')
-                        
-                        parsed_args = DSAService._parse_test_input(test_input)
-                        
-                        f.write('try {\n')
-                        f.write(f'    const result = {function_name}({parsed_args});\n')
-                        f.write('    console.log(JSON.stringify({result: result, success: true}));\n')
-                        f.write('} catch (e) {\n')
-                        f.write('    console.log(JSON.stringify({error: e.message, success: false}));\n')
-                        f.write('}\n')
-                        
-                        temp_file = f.name
-                    
-                    # Execute with Node.js
-                    result = subprocess.run(
-                        ['node', temp_file],
-                        capture_output=True,
-                        text=True,
-                        timeout=5
-                    )
-                    
-                    os.unlink(temp_file)
-                    
-                    if result.returncode != 0:
-                        test_results.append({
-                            'test_case': idx + 1,
-                            'passed': False,
-                            'input': test_input,
-                            'expected': expected_output,
-                            'actual': None,
-                            'error': result.stderr or 'Runtime error'
-                        })
+                        args = DSAService._parse_test_input(inp)
+                        f.write(cleaned + '\n\n')
+                        if is_class:
+                            f.write(f'try{{const sol=new Solution();const r=sol.{fn}({args});console.log(JSON.stringify({{result:r,success:true}}));}}catch(e){{console.log(JSON.stringify({{error:e.message,success:false}}));}}\n')
+                        else:
+                            f.write(f'try{{const r={fn}({args});console.log(JSON.stringify({{result:r,success:true}}));}}catch(e){{console.log(JSON.stringify({{error:e.message,success:false}}));}}\n')
+                        tmp = f.name
+                    proc = subprocess.run(['node', tmp], capture_output=True, text=True, timeout=5)
+                    os.unlink(tmp)
+                    jout = None
+                    for line in reversed(proc.stdout.strip().split('\n')):
+                        try: jout = json.loads(line); break
+                        except: continue
+                    if not jout or not jout.get('success'):
+                        err = jout.get('error','Execution failed') if jout else proc.stderr.strip() or 'No output'
+                        test_results.append({'test_case':idx+1,'passed':False,'input':inp,'expected':exp,'actual':None,'error':err})
                         continue
-                    
-                    # Parse output
-                    output_lines = result.stdout.strip().split('\n')
-                    json_output = None
-                    
-                    for line in reversed(output_lines):
-                        try:
-                            json_output = json.loads(line)
-                            break
-                        except:
-                            continue
-                    
-                    if not json_output or not json_output.get('success'):
-                        test_results.append({
-                            'test_case': idx + 1,
-                            'passed': False,
-                            'input': test_input,
-                            'expected': expected_output,
-                            'actual': None,
-                            'error': json_output.get('error', 'Execution failed') if json_output else 'No output'
-                        })
-                        continue
-                    
-                    actual_result = json_output.get('result')
-                    expected_normalized = DSAService._normalize_output(expected_output)
-                    actual_normalized = DSAService._normalize_output(actual_result)
-                    
-                    is_passed = expected_normalized == actual_normalized
-                    
-                    if is_passed:
-                        passed += 1
-                    
-                    test_results.append({
-                        'test_case': idx + 1,
-                        'passed': is_passed,
-                        'input': test_input,
-                        'expected': expected_output,
-                        'actual': actual_result,
-                        'error': None
-                    })
-                    
+                    actual = jout.get('result')
+                    ok = DSAService._normalize_output(exp) == DSAService._normalize_output(actual)
+                    if ok: passed += 1
+                    test_results.append({'test_case':idx+1,'passed':ok,'input':inp,'expected':exp,'actual':actual,'error':None})
                 except subprocess.TimeoutExpired:
-                    test_results.append({
-                        'test_case': idx + 1,
-                        'passed': False,
-                        'input': test_input,
-                        'expected': expected_output,
-                        'actual': None,
-                        'error': 'Time Limit Exceeded (5s)'
-                    })
+                    test_results.append({'test_case':idx+1,'passed':False,'input':inp,'expected':exp,'actual':None,'error':'Time Limit Exceeded (5s)'})
                 except Exception as e:
-                    test_results.append({
-                        'test_case': idx + 1,
-                        'passed': False,
-                        'input': test_input,
-                        'expected': expected_output,
-                        'actual': None,
-                        'error': str(e)
-                    })
-            
-            message = f"Passed {passed}/{total} test cases"
-            if passed == total:
-                message = "✅ All test cases passed!"
-            elif passed == 0:
-                message = "❌ No test cases passed"
-            
-            return {
-                'passed': passed,
-                'total': total,
-                'message': message,
-                'test_results': test_results
-            }
-            
+                    test_results.append({'test_case':idx+1,'passed':False,'input':inp,'expected':exp,'actual':None,'error':str(e)})
+            msg = f"Passed {passed}/{total} test cases"
+            if passed==total: msg="All test cases passed!"
+            elif passed==0: msg="No test cases passed"
+            return {'passed':passed,'total':total,'message':msg,'test_results':test_results}
         except Exception as e:
-            return {
-                'passed': 0,
-                'total': total,
-                'error_message': str(e),
-                'test_results': []
-            }
-    
+            return {'passed':0,'total':total,'error_message':str(e),'test_results':[]}
+
     @staticmethod
     def _execute_cpp_code(code: str, test_cases: List[Dict]) -> Dict[str, Any]:
-        """
-        Execute C++ code with g++
-        """
-        import subprocess
-        import tempfile
-        import os
-        import re
-        
-        passed = 0
-        total = len(test_cases)
-        test_results = []
-        
+        import subprocess, tempfile, os, re as _re
+        passed = 0; total = len(test_cases); test_results = []
         try:
-            # Clean code
-            code_lines = code.split('\n')
-            cleaned_lines = []
-            skip_rest = False
-            
-            for line in code_lines:
-                if any(marker in line.lower() for marker in [
-                    '// example', '// test', '// usage', '// demo', '// main'
-                ]):
-                    skip_rest = True
-                    continue
-                if not skip_rest:
-                    cleaned_lines.append(line)
-            
-            cleaned_code = '\n'.join(cleaned_lines)
-            
-            # Detect if code uses class or standalone function
-            is_class_based = 'class Solution' in cleaned_code or 'class solution' in cleaned_code.lower()
-            
-            # Extract function name
-            function_name = None
-            if is_class_based:
-                # Look for method inside class
-                for line in cleaned_lines:
-                    if 'vector<int>' in line or 'int ' in line or 'bool ' in line or 'string ' in line:
-                        match = re.search(r'\s+(\w+)\s*\(', line)
-                        if match and match.group(1) not in ['class', 'public', 'private', 'protected']:
-                            function_name = match.group(1)
-                            break
+            subprocess.run(['g++','--version'], capture_output=True, timeout=3, check=True)
+        except Exception:
+            return {'passed':0,'total':total,'error_message':'g++ compiler is not installed on the server.','test_results':[]}
+        try:
+            lines = code.split('\n'); clean = []; skip = False
+            for l in lines:
+                if any(m in l.lower() for m in ['// example','// test','// usage','// demo','int main']): skip=True; continue
+                if not skip: clean.append(l)
+            cleaned = '\n'.join(clean)
+            is_class = 'class Solution' in cleaned
+            fn = None; ret_type = 'auto'
+            pat = r'(int|bool|string|long long|double|void|vector<[^>]+>)\s+(\w+)\s*\('
+            if is_class:
+                for l in clean:
+                    m = _re.search(pat, l)
+                    if m and m.group(2) not in ['Solution','main']: ret_type=m.group(1); fn=m.group(2); break
             else:
-                # Standalone function
-                for line in cleaned_lines:
-                    if 'vector<int>' in line or 'int ' in line or 'bool ' in line or 'string ' in line:
-                        match = re.search(r'(\w+)\s*\(', line)
-                        if match:
-                            function_name = match.group(1)
-                            break
-            
-            if not function_name:
-                return {
-                    'passed': 0,
-                    'total': total,
-                    'error_message': 'No function definition found',
-                    'test_results': []
-                }
-            
-            # Run each test case
-            for idx, test_case in enumerate(test_cases):
+                for l in clean:
+                    m = _re.search(r'^' + pat, l)
+                    if m and m.group(2)!='main': ret_type=m.group(1); fn=m.group(2); break
+            if not fn:
+                return {'passed':0,'total':total,'error_message':'No function definition found in C++ code.','test_results':[]}
+            for idx, tc in enumerate(test_cases):
+                inp = tc.get('input',''); exp = tc.get('expected_output','')
                 try:
+                    args = DSAService._parse_test_input(inp)
+                    if 'vector' in ret_type:
+                        print_stmt = 'cout<<"[";for(int _i=0;_i<_r.size();_i++){if(_i>0)cout<<",";cout<<_r[_i];}cout<<"]"<<endl;'
+                    elif ret_type=='bool':
+                        print_stmt = 'cout<<(_r?"true":"false")<<endl;'
+                    elif ret_type=='string':
+                        print_stmt = 'cout<<"\\"" <<_r<<"\\"" <<endl;'
+                    else:
+                        print_stmt = 'cout<<_r<<endl;'
+                    if is_class:
+                        main_fn = f'\nint main(){{try{{Solution _s;auto _r=_s.{fn}({args});{print_stmt}}}catch(exception& e){{cerr<<"Error:"<<e.what()<<endl;return 1;}}return 0;}}\n'
+                    else:
+                        main_fn = f'\nint main(){{try{{auto _r={fn}({args});{print_stmt}}}catch(exception& e){{cerr<<"Error:"<<e.what()<<endl;return 1;}}return 0;}}\n'
+                    full = '#include <bits/stdc++.h>\nusing namespace std;\n' + cleaned + main_fn
                     with tempfile.NamedTemporaryFile(mode='w', suffix='.cpp', delete=False) as f:
-                        # Write includes
-                        f.write('#include <iostream>\n')
-                        f.write('#include <vector>\n')
-                        f.write('#include <string>\n')
-                        f.write('#include <sstream>\n')
-                        f.write('#include <unordered_map>\n')
-                        f.write('using namespace std;\n\n')
-                        
-                        # Write user code
-                        f.write(cleaned_code)
-                        f.write('\n\n')
-                        
-                        # Write main function for testing
-                        test_input = test_case.get('input', '')
-                        expected_output = test_case.get('expected_output', '')
-                        
-                        # Parse input for C++ (convert Python lists to C++ vectors)
-                        parsed_args = DSAService._parse_test_input(test_input)
-                        
-                        # Smart split arguments (handle nested brackets)
-                        args = []
-                        current = ""
-                        bracket_depth = 0
-                        for char in parsed_args:
-                            if char in ['[', '(', '{']:
-                                bracket_depth += 1
-                            elif char in [']', ')', '}']:
-                                bracket_depth -= 1
-                            elif char == ',' and bracket_depth == 0:
-                                args.append(current.strip())
-                                current = ""
-                                continue
-                            current += char
-                        if current:
-                            args.append(current.strip())
-                        
-                        f.write('int main() {\n')
-                        f.write('    try {\n')
-                        
-                        # Create variables for vector arguments
-                        cpp_call_args = []
-                        for i, arg in enumerate(args):
-                            if arg.startswith('[') and arg.endswith(']'):
-                                # Convert list to vector
-                                vector_content = arg[1:-1]  # Remove [ ]
-                                f.write(f'        vector<int> arg{i} = {{{vector_content}}};\n')
-                                cpp_call_args.append(f'arg{i}')
-                            else:
-                                cpp_call_args.append(arg)
-                        
-                        call_args = ', '.join(cpp_call_args)
-                        
-                        if is_class_based:
-                            f.write('        Solution sol;\n')
-                            f.write(f'        auto result = sol.{function_name}({call_args});\n')
-                        else:
-                            f.write(f'        auto result = {function_name}({call_args});\n')
-                        
-                        # Print result based on type
-                        f.write('        // Print result\n')
-                        f.write('        cout << "[";\n')
-                        f.write('        for (size_t i = 0; i < result.size(); i++) {\n')
-                        f.write('            if (i > 0) cout << ",";\n')
-                        f.write('            cout << result[i];\n')
-                        f.write('        }\n')
-                        f.write('        cout << "]" << endl;\n')
-                        f.write('        return 0;\n')
-                        f.write('    } catch (exception& e) {\n')
-                        f.write('        cerr << "Error: " << e.what() << endl;\n')
-                        f.write('        return 1;\n')
-                        f.write('    }\n')
-                        f.write('}\n')
-                        
-                        cpp_file = f.name
-                    
-                    # Compile
-                    exe_file = cpp_file.replace('.cpp', '')
-                    compile_result = subprocess.run(
-                        ['g++', '-std=c++17', cpp_file, '-o', exe_file],
-                        capture_output=True,
-                        text=True,
-                        timeout=10
-                    )
-                    
-                    if compile_result.returncode != 0:
-                        os.unlink(cpp_file)
-                        test_results.append({
-                            'test_case': idx + 1,
-                            'passed': False,
-                            'input': test_input,
-                            'expected': expected_output,
-                            'actual': None,
-                            'error': f'Compilation error: {compile_result.stderr[:200]}'
-                        })
+                        f.write(full); cpp_f = f.name
+                    exe_f = cpp_f.replace('.cpp','')
+                    comp = subprocess.run(['g++','-O2','-o',exe_f,cpp_f], capture_output=True, text=True, timeout=10)
+                    os.unlink(cpp_f)
+                    if comp.returncode != 0:
+                        test_results.append({'test_case':idx+1,'passed':False,'input':inp,'expected':exp,'actual':None,'error':f'Compile Error: {comp.stderr.strip()}'})
                         continue
-                    
-                    # Execute
-                    run_result = subprocess.run(
-                        [exe_file],
-                        capture_output=True,
-                        text=True,
-                        timeout=5
-                    )
-                    
-                    # Cleanup
-                    os.unlink(cpp_file)
-                    if os.path.exists(exe_file):
-                        os.unlink(exe_file)
-                    
-                    if run_result.returncode != 0:
-                        test_results.append({
-                            'test_case': idx + 1,
-                            'passed': False,
-                            'input': test_input,
-                            'expected': expected_output,
-                            'actual': None,
-                            'error': run_result.stderr or 'Runtime error'
-                        })
+                    run = subprocess.run([exe_f], capture_output=True, text=True, timeout=5)
+                    os.unlink(exe_f)
+                    if run.returncode != 0:
+                        test_results.append({'test_case':idx+1,'passed':False,'input':inp,'expected':exp,'actual':None,'error':run.stderr.strip() or 'Runtime error'})
                         continue
-                    
-                    actual_result = run_result.stdout.strip()
-                    expected_normalized = DSAService._normalize_output(expected_output)
-                    actual_normalized = DSAService._normalize_output(actual_result)
-                    
-                    is_passed = expected_normalized == actual_normalized
-                    
-                    if is_passed:
-                        passed += 1
-                    
-                    test_results.append({
-                        'test_case': idx + 1,
-                        'passed': is_passed,
-                        'input': test_input,
-                        'expected': expected_output,
-                        'actual': actual_result,
-                        'error': None
-                    })
-                    
+                    actual = run.stdout.strip()
+                    ok = DSAService._normalize_output(exp) == DSAService._normalize_output(actual)
+                    if ok: passed += 1
+                    test_results.append({'test_case':idx+1,'passed':ok,'input':inp,'expected':exp,'actual':actual,'error':None})
                 except subprocess.TimeoutExpired:
-                    test_results.append({
-                        'test_case': idx + 1,
-                        'passed': False,
-                        'input': test_input,
-                        'expected': expected_output,
-                        'actual': None,
-                        'error': 'Time Limit Exceeded'
-                    })
+                    test_results.append({'test_case':idx+1,'passed':False,'input':inp,'expected':exp,'actual':None,'error':'Time Limit Exceeded (5s)'})
                 except Exception as e:
-                    test_results.append({
-                        'test_case': idx + 1,
-                        'passed': False,
-                        'input': test_input,
-                        'expected': expected_output,
-                        'actual': None,
-                        'error': str(e)
-                    })
-            
-            message = f"Passed {passed}/{total} test cases"
-            if passed == total:
-                message = "✅ All test cases passed!"
-            elif passed == 0:
-                message = "❌ No test cases passed"
-            
-            return {
-                'passed': passed,
-                'total': total,
-                'message': message,
-                'test_results': test_results
-            }
-            
+                    test_results.append({'test_case':idx+1,'passed':False,'input':inp,'expected':exp,'actual':None,'error':str(e)})
+            msg = f"Passed {passed}/{total} test cases"
+            if passed==total: msg="All test cases passed!"
+            elif passed==0: msg="No test cases passed"
+            return {'passed':passed,'total':total,'message':msg,'test_results':test_results}
         except Exception as e:
-            return {
-                'passed': 0,
-                'total': total,
-                'error_message': str(e),
-                'test_results': []
-            }
-    
-    # ============================================================================
+            return {'passed':0,'total':total,'error_message':str(e),'test_results':[]}
+
+    @staticmethod
+    def _parse_test_input(input_str: str) -> str:
+        if not input_str: return ""
+        s = input_str.strip()
+        if (s.startswith('"') and s.endswith('"')) or (s.startswith("'") and s.endswith("'")): s=s[1:-1]
+        if '=' not in s: return s
+        parts=[]; cur=""; depth=0; in_s=False; sc=None
+        for ch in s:
+            if ch in ('"',"'"):
+                if not in_s: in_s=True; sc=ch
+                elif ch==sc: in_s=False; sc=None
+            if not in_s:
+                if ch in ('[','(','{'): depth+=1
+                elif ch in (']',')','}'):depth-=1
+                elif ch==',' and depth==0: parts.append(cur.strip()); cur=""; continue
+            cur+=ch
+        if cur: parts.append(cur.strip())
+        vals=[]
+        for p in parts:
+            vals.append(p.split('=',1)[1].strip() if '=' in p else p)
+        return ', '.join(vals)
+
+    @staticmethod
+    def _normalize_output(value) -> str:
+        if value is None: return 'null'
+        if isinstance(value, bool): return str(value).lower()
+        if isinstance(value, list):
+            try:
+                if all(isinstance(x,(int,float)) for x in value): return json.dumps(sorted(value))
+            except: pass
+            return json.dumps(value)
+        if isinstance(value, str):
+            s = value.strip()
+            try:
+                p = json.loads(s)
+                if isinstance(p, list):
+                    try:
+                        if all(isinstance(x,(int,float)) for x in p): return json.dumps(sorted(p))
+                    except: pass
+                    return json.dumps(p)
+                return json.dumps(p)
+            except: pass
+            if (s.startswith('"') and s.endswith('"')) or (s.startswith("'") and s.endswith("'")): s=s[1:-1]
+            return s.lower().replace(' ','')
+        return str(value).strip().lower().replace(' ','')
+
+
+        # ============================================================================
     # PROGRESS TRACKING
     # ============================================================================
     
