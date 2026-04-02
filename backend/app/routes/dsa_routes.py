@@ -322,7 +322,7 @@ async def get_daily_challenge(
 
 @router.get("/topics")
 async def get_topics():
-    """Get available DSA topics"""
+    """Get available DSA topics (excluding graphs)"""
     try:
         from app.models import DSATopic
         topics = [
@@ -331,6 +331,7 @@ async def get_topics():
                 "label": topic.value.replace("_", " ").title()
             }
             for topic in DSATopic
+            if topic.value != 'graphs'  # Hide graph questions
         ]
         return {"topics": topics}
     except Exception as e:

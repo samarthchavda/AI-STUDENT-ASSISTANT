@@ -49,6 +49,9 @@ class DSAService:
         """
         query = db.query(DSAProblem)
         
+        # FILTER OUT GRAPH QUESTIONS - Hide from users
+        query = query.filter(DSAProblem.topic != 'graphs')
+        
         # Apply filters
         # Note: Empty string or None for topic means "All Topics"
         if topic and topic.lower() not in ['', 'all', 'all_topics']:
@@ -1075,13 +1078,14 @@ Format as JSON:
             db.add(stats)
             db.commit()
         
-        # Get weak topics
+        # Get weak topics (excluding graphs)
         weak_topics = db.query(
             DSAProgress.topic,
             func.count(DSAProgress.id).label('attempts'),
             func.sum(func.cast(DSAProgress.status == 'solved', Integer)).label('solved')
         ).filter(
-            DSAProgress.user_id == user_id
+            DSAProgress.user_id == user_id,
+            DSAProgress.topic != 'graphs'  # Exclude graph problems
         ).group_by(
             DSAProgress.topic
         ).having(

@@ -77,7 +77,7 @@ export default function DSADashboardPage() {
       'strings': List,
       'linked_lists': GitBranch,
       'trees': Network,
-      'graphs': Network,
+      // 'graphs': Network,  // Hidden - graph questions disabled
       'dynamic_programming': Brain,
       'greedy': Zap,
       'backtracking': Shuffle,
