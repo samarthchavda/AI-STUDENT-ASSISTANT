@@ -19,7 +19,7 @@ from slowapi.errors import RateLimitExceeded
 import logging
 
 # Import routes
-from app.routes import auth_routes, chat_routes, exam_routes, coding_routes, career_routes, payment_routes, admin_routes, company_routes, company_prep_routes, public_routes, aptitude_routes, dsa_routes
+from app.routes import auth_routes, chat_routes, exam_routes, coding_routes, career_routes, payment_routes, admin_routes, company_routes, company_prep_routes, public_routes, aptitude_routes, dsa_ai_routes
 
 logger = logging.getLogger(__name__)
 
@@ -173,11 +173,7 @@ app.include_router(company_prep_routes.router)
 app.include_router(admin_routes.router, prefix="/api/admin", tags=["admin"])
 app.include_router(public_routes.router, prefix="/api", tags=["public"])  # Public company questions API
 app.include_router(aptitude_routes.router)  # Real aptitude questions from database
-app.include_router(dsa_routes.router, prefix="/api", tags=["DSA Practice"])  # DSA Practice Module
-
-# Import DSA admin routes
-from app.routes import dsa_admin_routes
-app.include_router(dsa_admin_routes.router, prefix="/api/admin", tags=["DSA Admin"])
+app.include_router(dsa_ai_routes.router, prefix="/api/dsa/ai", tags=["DSA AI"])  # DSA AI Assistant
 
 # Import admin enhancements routes
 from app.routes import admin_enhancements_routes

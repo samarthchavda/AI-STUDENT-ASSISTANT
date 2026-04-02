@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Clock, Play, Send, ChevronDown, CheckCircle2, XCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, Clock, Play, Send, ChevronDown, CheckCircle2, XCircle, AlertCircle, Loader2, Lightbulb, BookOpen, Code, Sparkles, Copy, Bug } from 'lucide-react';
 import Header from '../../components/Header';
 import DSACodeEditor from './components/DSACodeEditor';
 import DSAProblemStatement from './components/DSAProblemStatement';
 import { runCode, submitCode, ExecutionResult } from '../../services/codeExecutionService';
+import { getHint, explainProblem, generateSolution, explainCode, fixCode, AIResponse } from '../../services/dsaAiService';
 
 interface ProblemData {
   id: number;
@@ -176,6 +177,12 @@ export default function DSAProblemPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [executionResult, setExecutionResult] = useState<ExecutionResult | null>(null);
   const [showResult, setShowResult] = useState(false);
+  
+  // AI states
+  const [aiResponse, setAiResponse] = useState<AIResponse | null>(null);
+  const [showAiPanel, setShowAiPanel] = useState(false);
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
 
   useEffect(() => {
     if (slug && mockProblems[slug]) {
@@ -273,6 +280,140 @@ export default function DSAProblemPage() {
     }
   };
 
+  // AI Handlers
+  const handleGetHint = async () => {
+    if (!problem) return;
+    
+    setIsAiLoading(true);
+    setShowAiPanel(true);
+    setAiError(null);
+    
+    try {
+      const response = await getHint({
+        title: problem.title,
+        description: problem.description,
+        examples: problem.examples,
+        constraints: problem.constraints,
+        language: selectedLanguage
+      });
+      setAiResponse(response);
+    } catch (error) {
+      setAiError(error instanceof Error ? error.message : 'Failed to get hint');
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
+  const handleExplainProblem = async () => {
+    if (!problem) return;
+    
+    setIsAiLoading(true);
+    setShowAiPanel(true);
+    setAiError(null);
+    
+    try {
+      const response = await explainProblem({
+        title: problem.title,
+        description: problem.description,
+        examples: problem.examples,
+        constraints: problem.constraints,
+        language: selectedLanguage
+      });
+      setAiResponse(response);
+    } catch (error) {
+      setAiError(error instanceof Error ? error.message : 'Failed to explain problem');
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
+  const handleGenerateSolution = async () => {
+    if (!problem) return;
+    
+    setIsAiLoading(true);
+    setShowAiPanel(true);
+    setAiError(null);
+    
+    try {
+      const response = await generateSolution({
+        title: problem.title,
+        description: problem.description,
+        examples: problem.examples,
+        constraints: problem.constraints,
+        language: selectedLanguage
+      });
+      setAiResponse(response);
+    } catch (error) {
+      setAiError(error instanceof Error ? error.message : 'Failed to generate solution');
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
+  const handleExplainMyCode = async () => {
+    if (!problem || !code.trim()) {
+      setAiError('Please write some code first');
+      setShowAiPanel(true);
+      return;
+    }
+    
+    setIsAiLoading(true);
+    setShowAiPanel(true);
+    setAiError(null);
+    
+    try {
+      const response = await explainCode(code, selectedLanguage, problem.title);
+      setAiResponse(response);
+    } catch (error) {
+      setAiError(error instanceof Error ? error.message : 'Failed to explain code');
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
+  const handleFixMyCode = async () => {
+    if (!problem || !code.trim()) {
+      setAiError('Please write some code first');
+      setShowAiPanel(true);
+      return;
+    }
+    
+    setIsAiLoading(true);
+    setShowAiPanel(true);
+    setAiError(null);
+    
+    try {
+      const errorMsg = executionResult?.error || undefined;
+      const response = await fixCode(code, selectedLanguage, problem.title, errorMsg);
+      setAiResponse(response);
+    } catch (error) {
+      setAiError(error instanceof Error ? error.message : 'Failed to fix code');
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
+  const handlePasteToEditor = () => {
+    if (!aiResponse || aiResponse.type !== 'solution') return;
+    
+    // Extract code from response (remove markdown code blocks if present)
+    let codeContent = aiResponse.content;
+    const codeBlockRegex = /```[\w]*\n([\s\S]*?)\n```/;
+    const match = codeContent.match(codeBlockRegex);
+    if (match) {
+      codeContent = match[1];
+    }
+    
+    if (confirm('This will replace your current code. Continue?')) {
+      setCode(codeContent);
+      setShowAiPanel(false);
+    }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+  };
+
   if (!problem) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -352,6 +493,66 @@ export default function DSAProblemPage() {
         <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
           <div className="w-full lg:w-1/2 overflow-y-auto border-b lg:border-b-0 lg:border-r border-gray-200">
             <DSAProblemStatement problem={problem} />
+            
+            {/* AI Tools Section */}
+            <div className="bg-gradient-to-r from-purple-50 to-blue-50 border-t border-gray-200 p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles className="w-5 h-5 text-purple-600" />
+                <h3 className="text-sm font-semibold text-gray-900">AI Assistant</h3>
+              </div>
+              
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <button
+                  onClick={handleGetHint}
+                  disabled={isAiLoading}
+                  className="flex items-center justify-center gap-2 px-3 py-2 bg-white border border-purple-200 rounded-lg text-sm font-medium text-purple-700 hover:bg-purple-50 disabled:opacity-50 transition-colors"
+                >
+                  <Lightbulb className="w-4 h-4" />
+                  <span className="hidden sm:inline">Get Hint</span>
+                  <span className="sm:hidden">Hint</span>
+                </button>
+                
+                <button
+                  onClick={handleExplainProblem}
+                  disabled={isAiLoading}
+                  className="flex items-center justify-center gap-2 px-3 py-2 bg-white border border-blue-200 rounded-lg text-sm font-medium text-blue-700 hover:bg-blue-50 disabled:opacity-50 transition-colors"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  <span className="hidden sm:inline">Explain</span>
+                  <span className="sm:hidden">Explain</span>
+                </button>
+                
+                <button
+                  onClick={handleGenerateSolution}
+                  disabled={isAiLoading}
+                  className="flex items-center justify-center gap-2 px-3 py-2 bg-white border border-green-200 rounded-lg text-sm font-medium text-green-700 hover:bg-green-50 disabled:opacity-50 transition-colors"
+                >
+                  <Code className="w-4 h-4" />
+                  <span className="hidden sm:inline">Solution</span>
+                  <span className="sm:hidden">Solution</span>
+                </button>
+                
+                <button
+                  onClick={handleExplainMyCode}
+                  disabled={isAiLoading || !code.trim()}
+                  className="flex items-center justify-center gap-2 px-3 py-2 bg-white border border-indigo-200 rounded-lg text-sm font-medium text-indigo-700 hover:bg-indigo-50 disabled:opacity-50 transition-colors"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  <span className="hidden sm:inline">Explain Code</span>
+                  <span className="sm:hidden">Explain</span>
+                </button>
+                
+                <button
+                  onClick={handleFixMyCode}
+                  disabled={isAiLoading || !code.trim()}
+                  className="flex items-center justify-center gap-2 px-3 py-2 bg-white border border-orange-200 rounded-lg text-sm font-medium text-orange-700 hover:bg-orange-50 disabled:opacity-50 transition-colors"
+                >
+                  <Bug className="w-4 h-4" />
+                  <span className="hidden sm:inline">Fix Code</span>
+                  <span className="sm:hidden">Fix</span>
+                </button>
+              </div>
+            </div>
           </div>
 
           <div className="w-full lg:w-1/2 flex flex-col bg-gray-900">
@@ -362,6 +563,68 @@ export default function DSAProblemPage() {
                 onChange={setCode}
               />
             </div>
+
+            {/* AI Response Panel */}
+            {showAiPanel && (
+              <div className="border-t border-gray-700 bg-gradient-to-r from-purple-900 to-blue-900 p-4 max-h-80 overflow-y-auto">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-purple-300" />
+                    <h3 className="text-sm font-semibold text-white">
+                      {isAiLoading ? 'AI is thinking...' : 'AI Assistant'}
+                    </h3>
+                  </div>
+                  <button
+                    onClick={() => setShowAiPanel(false)}
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    <XCircle className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {isAiLoading && (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-8 h-8 text-purple-300 animate-spin" />
+                  </div>
+                )}
+
+                {aiError && !isAiLoading && (
+                  <div className="bg-red-900/50 border border-red-700 rounded-lg p-3">
+                    <p className="text-sm text-red-200">{aiError}</p>
+                  </div>
+                )}
+
+                {aiResponse && !isAiLoading && !aiError && (
+                  <div className="space-y-3">
+                    <div className="bg-gray-900/50 rounded-lg p-4 border border-purple-700">
+                      <pre className="text-sm text-gray-200 whitespace-pre-wrap font-sans leading-relaxed">
+                        {aiResponse.content}
+                      </pre>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {aiResponse.type === 'solution' && (
+                        <button
+                          onClick={handlePasteToEditor}
+                          className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+                        >
+                          <Code className="w-4 h-4" />
+                          Paste to Editor
+                        </button>
+                      )}
+                      
+                      <button
+                        onClick={() => copyToClipboard(aiResponse.content)}
+                        className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors"
+                      >
+                        <Copy className="w-4 h-4" />
+                        Copy
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {showResult && executionResult && (
               <div className="border-t border-gray-700 bg-gray-800 p-4 max-h-64 overflow-y-auto">
