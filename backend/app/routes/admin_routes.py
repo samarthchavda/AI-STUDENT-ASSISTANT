@@ -7,6 +7,7 @@ from datetime import datetime
 from pydantic import BaseModel
 import csv
 import io
+import json
 
 from app.core.database import get_db
 from app.models import User, ChatHistory, UserProgress, Payment, PlanType, CompanyQuestion, QuestionCategory, DifficultyLevel
@@ -1554,15 +1555,54 @@ async def get_resume_analytics(
                     
                 # Get templates breakdown
                 breakdown_result = connection.execute(text("""
-                    SELECT template_id, COUNT(*) as usage_count, SUM(pdf_export_count) as exports
+                    SELECT 
+                        template_id, 
+                        COUNT(*) as usage_count, 
+                        SUM(pdf_export_count) as exports,
+                        AVG(ats_score) as avg_ats_score
                     FROM resume_tracking
                     GROUP BY template_id
                     ORDER BY usage_count DESC
                 """))
                 analytics["templates_breakdown"] = [
-                    {"template": row[0], "usage": row[1], "exports": row[2] or 0}
+                    {
+                        "template": row[0], 
+                        "usage": row[1], 
+                        "exports": row[2] or 0,
+                        "avg_ats_score": round(float(row[3] or 0), 1)
+                    }
                     for row in breakdown_result.fetchall()
                 ]
+                
+                # Get ATS distribution
+                ats_dist_result = connection.execute(text("""
+                    SELECT 
+                        COUNT(CASE WHEN ats_score < 50 THEN 1 END) as low,
+                        COUNT(CASE WHEN ats_score >= 50 AND ats_score <= 70 THEN 1 END) as medium,
+                        COUNT(CASE WHEN ats_score > 70 THEN 1 END) as high
+                    FROM resume_tracking
+                """))
+                ats_dist_row = ats_dist_result.fetchone()
+                if ats_dist_row:
+                    analytics["ats_distribution"] = {
+                        "low": ats_dist_row[0] or 0,
+                        "medium": ats_dist_row[1] or 0,
+                        "high": ats_dist_row[2] or 0
+                    }
+                
+                # Get AI vs Manual ATS comparison
+                ai_manual_result = connection.execute(text("""
+                    SELECT 
+                        AVG(CASE WHEN ai_generated = true THEN ats_score END) as ai_avg,
+                        AVG(CASE WHEN ai_generated = false THEN ats_score END) as manual_avg
+                    FROM resume_tracking
+                """))
+                ai_manual_row = ai_manual_result.fetchone()
+                if ai_manual_row:
+                    analytics["ai_vs_manual_ats"] = {
+                        "ai_avg": round(float(ai_manual_row[0] or 0), 1),
+                        "manual_avg": round(float(ai_manual_row[1] or 0), 1)
+                    }
                 
                 # Calculate completion rate
                 if analytics["total_resumes"] > 0:
@@ -1854,6 +1894,13 @@ class AISettingsUpdate(BaseModel):
     ai_enabled: bool
     free_user_limit: int
     premium_user_limit: int
+    ats_enabled: Optional[bool] = True
+    ats_mode: Optional[str] = 'normal'
+    keywords_weight: Optional[int] = 25
+    formatting_weight: Optional[int] = 20
+    experience_weight: Optional[int] = 25
+    skills_weight: Optional[int] = 20
+    readability_weight: Optional[int] = 10
     
     class Config:
         json_schema_extra = {
@@ -1862,7 +1909,14 @@ class AISettingsUpdate(BaseModel):
                 "prompt_version": "v1.0",
                 "ai_enabled": True,
                 "free_user_limit": 5,
-                "premium_user_limit": 50
+                "premium_user_limit": 50,
+                "ats_enabled": True,
+                "ats_mode": "normal",
+                "keywords_weight": 25,
+                "formatting_weight": 20,
+                "experience_weight": 25,
+                "skills_weight": 20,
+                "readability_weight": 10
             }
         }
 
@@ -1887,6 +1941,13 @@ async def get_ai_settings(
                         ai_enabled,
                         free_user_limit,
                         premium_user_limit,
+                        ats_enabled,
+                        ats_mode,
+                        keywords_weight,
+                        formatting_weight,
+                        experience_weight,
+                        skills_weight,
+                        readability_weight,
                         updated_at
                     FROM ai_settings
                     WHERE module = 'resume'
@@ -1901,7 +1962,14 @@ async def get_ai_settings(
                         "ai_enabled": row[2],
                         "free_user_limit": row[3],
                         "premium_user_limit": row[4],
-                        "updated_at": row[5].isoformat() if row[5] else None
+                        "ats_enabled": row[5] if row[5] is not None else True,
+                        "ats_mode": row[6] or 'normal',
+                        "keywords_weight": row[7] or 25,
+                        "formatting_weight": row[8] or 20,
+                        "experience_weight": row[9] or 25,
+                        "skills_weight": row[10] or 20,
+                        "readability_weight": row[11] or 10,
+                        "updated_at": row[12].isoformat() if row[12] else None
                     }
             except Exception:
                 # Table doesn't exist yet, return defaults
@@ -1914,6 +1982,13 @@ async def get_ai_settings(
             "ai_enabled": True,
             "free_user_limit": 5,
             "premium_user_limit": 50,
+            "ats_enabled": True,
+            "ats_mode": "normal",
+            "keywords_weight": 25,
+            "formatting_weight": 20,
+            "experience_weight": 25,
+            "skills_weight": 20,
+            "readability_weight": 10,
             "updated_at": None
         }
         
@@ -1941,14 +2016,25 @@ async def update_ai_settings(
     if not settings.model_name or not settings.prompt_version:
         raise HTTPException(status_code=400, detail="Model name and prompt version are required")
     
+    # Validate ATS weights total to 100
+    total_weight = (settings.keywords_weight or 0) + (settings.formatting_weight or 0) + \
+                   (settings.experience_weight or 0) + (settings.skills_weight or 0) + \
+                   (settings.readability_weight or 0)
+    if total_weight != 100:
+        raise HTTPException(status_code=400, detail=f"ATS weights must total 100, got {total_weight}")
+    
     try:
         with engine.begin() as connection:
             try:
                 # Try to update or insert settings
                 result = connection.execute(text("""
                     INSERT INTO ai_settings 
-                    (module, model_name, prompt_version, ai_enabled, free_user_limit, premium_user_limit, updated_by, updated_at)
-                    VALUES ('resume', :model_name, :prompt_version, :ai_enabled, :free_limit, :premium_limit, :admin_id, CURRENT_TIMESTAMP)
+                    (module, model_name, prompt_version, ai_enabled, free_user_limit, premium_user_limit, 
+                     ats_enabled, ats_mode, keywords_weight, formatting_weight, experience_weight, 
+                     skills_weight, readability_weight, updated_by, updated_at)
+                    VALUES ('resume', :model_name, :prompt_version, :ai_enabled, :free_limit, :premium_limit,
+                            :ats_enabled, :ats_mode, :keywords_weight, :formatting_weight, :experience_weight,
+                            :skills_weight, :readability_weight, :admin_id, CURRENT_TIMESTAMP)
                     ON CONFLICT (module) 
                     DO UPDATE SET
                         model_name = EXCLUDED.model_name,
@@ -1956,6 +2042,13 @@ async def update_ai_settings(
                         ai_enabled = EXCLUDED.ai_enabled,
                         free_user_limit = EXCLUDED.free_user_limit,
                         premium_user_limit = EXCLUDED.premium_user_limit,
+                        ats_enabled = EXCLUDED.ats_enabled,
+                        ats_mode = EXCLUDED.ats_mode,
+                        keywords_weight = EXCLUDED.keywords_weight,
+                        formatting_weight = EXCLUDED.formatting_weight,
+                        experience_weight = EXCLUDED.experience_weight,
+                        skills_weight = EXCLUDED.skills_weight,
+                        readability_weight = EXCLUDED.readability_weight,
                         updated_by = EXCLUDED.updated_by,
                         updated_at = CURRENT_TIMESTAMP
                     RETURNING id
@@ -1965,6 +2058,13 @@ async def update_ai_settings(
                     "ai_enabled": settings.ai_enabled,
                     "free_limit": settings.free_user_limit,
                     "premium_limit": settings.premium_user_limit,
+                    "ats_enabled": settings.ats_enabled,
+                    "ats_mode": settings.ats_mode,
+                    "keywords_weight": settings.keywords_weight,
+                    "formatting_weight": settings.formatting_weight,
+                    "experience_weight": settings.experience_weight,
+                    "skills_weight": settings.skills_weight,
+                    "readability_weight": settings.readability_weight,
                     "admin_id": admin.id
                 })
                 
@@ -1978,7 +2078,14 @@ async def update_ai_settings(
                         "prompt_version": settings.prompt_version,
                         "ai_enabled": settings.ai_enabled,
                         "free_user_limit": settings.free_user_limit,
-                        "premium_user_limit": settings.premium_user_limit
+                        "premium_user_limit": settings.premium_user_limit,
+                        "ats_enabled": settings.ats_enabled,
+                        "ats_mode": settings.ats_mode,
+                        "keywords_weight": settings.keywords_weight,
+                        "formatting_weight": settings.formatting_weight,
+                        "experience_weight": settings.experience_weight,
+                        "skills_weight": settings.skills_weight,
+                        "readability_weight": settings.readability_weight
                     }
                 }
                 
@@ -1993,3 +2100,99 @@ async def update_ai_settings(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to update AI settings: {str(e)}")
+
+
+@router.post("/recalculate-ats/{resume_id}")
+async def recalculate_ats_score(
+    resume_id: int,
+    admin: User = Depends(get_admin_user),
+    db: Session = Depends(get_db)
+):
+    """Recalculate ATS score for a specific resume using AI"""
+    from sqlalchemy import text
+    from app.core.database import engine
+    from app.services.ai_service import AIService
+    
+    try:
+        with engine.begin() as connection:
+            # Get resume data
+            resume_result = connection.execute(text("""
+                SELECT resume_data
+                FROM resume_tracking
+                WHERE id = :resume_id
+            """), {"resume_id": resume_id})
+            
+            resume_row = resume_result.fetchone()
+            if not resume_row:
+                raise HTTPException(status_code=404, detail="Resume not found")
+            
+            resume_data = resume_row[0]
+            
+            # Get ATS settings
+            settings_result = connection.execute(text("""
+                SELECT ats_mode, keywords_weight, formatting_weight, experience_weight, 
+                       skills_weight, readability_weight
+                FROM ai_settings
+                WHERE module = 'resume'
+                LIMIT 1
+            """))
+            settings_row = settings_result.fetchone()
+            
+            # Default weights if not configured
+            ats_mode = settings_row[0] if settings_row else 'normal'
+            weights = {
+                'keywords': settings_row[1] if settings_row else 25,
+                'formatting': settings_row[2] if settings_row else 20,
+                'experience': settings_row[3] if settings_row else 25,
+                'skills': settings_row[4] if settings_row else 20,
+                'readability': settings_row[5] if settings_row else 10
+            }
+            
+            # Convert resume data to text for AI analysis
+            resume_text = json.dumps(resume_data) if isinstance(resume_data, dict) else str(resume_data)
+            
+            # Use AI service to calculate ATS score
+            ai_service = AIService()
+            ats_result = ai_service.calculate_ats_score(resume_text)
+            
+            # Apply mode adjustment
+            base_score = ats_result.get('overallScore', 70)
+            if ats_mode == 'lenient':
+                adjusted_score = min(100, base_score + 10)
+            elif ats_mode == 'strict':
+                adjusted_score = max(0, base_score - 10)
+            else:
+                adjusted_score = base_score
+            
+            # Apply custom weights to breakdown scores
+            breakdown = ats_result.get('breakdown', {})
+            weighted_score = (
+                breakdown.get('keywords', {}).get('score', 70) * (weights['keywords'] / 100) +
+                breakdown.get('formatting', {}).get('score', 70) * (weights['formatting'] / 100) +
+                breakdown.get('experience', {}).get('score', 70) * (weights['experience'] / 100) +
+                breakdown.get('skills', {}).get('score', 70) * (weights['skills'] / 100) +
+                70 * (weights['readability'] / 100)  # Readability is estimated
+            )
+            
+            # Final score is average of AI score and weighted score
+            final_score = round((adjusted_score + weighted_score) / 2)
+            
+            # Update database
+            connection.execute(text("""
+                UPDATE resume_tracking
+                SET ats_score = :ats_score, updated_at = CURRENT_TIMESTAMP
+                WHERE id = :resume_id
+            """), {"ats_score": final_score, "resume_id": resume_id})
+            
+            return {
+                "success": True,
+                "message": "ATS score recalculated successfully",
+                "new_ats_score": final_score,
+                "mode": ats_mode,
+                "weights_applied": weights
+            }
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to recalculate ATS score: {str(e)}")

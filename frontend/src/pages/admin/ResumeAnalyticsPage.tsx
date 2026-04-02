@@ -27,7 +27,17 @@ interface ResumeAnalytics {
     template: string;
     usage: number;
     exports: number;
+    avg_ats_score?: number;
   }>;
+  ats_distribution?: {
+    low: number;
+    medium: number;
+    high: number;
+  };
+  ai_vs_manual_ats?: {
+    ai_avg: number;
+    manual_avg: number;
+  };
 }
 
 const ResumeAnalyticsPage = () => {
@@ -169,6 +179,64 @@ const ResumeAnalyticsPage = () => {
                 </div>
               </div>
 
+              {/* ATS Distribution */}
+              {analytics.ats_distribution && (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6 sm:mb-8">
+                  <div className="flex items-center gap-3 mb-6">
+                    <BarChart3 className="w-5 h-5 text-gray-600" />
+                    <h3 className="text-lg font-semibold text-gray-900">ATS Score Distribution</h3>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="bg-red-50 rounded-lg p-4 border border-red-100">
+                      <p className="text-sm text-red-600 font-medium mb-1">Low (&lt;50)</p>
+                      <p className="text-3xl font-bold text-red-700">{analytics.ats_distribution.low}</p>
+                      <p className="text-xs text-red-600 mt-1">
+                        {analytics.total_resumes > 0 ? Math.round((analytics.ats_distribution.low / analytics.total_resumes) * 100) : 0}% of total
+                      </p>
+                    </div>
+                    <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-100">
+                      <p className="text-sm text-yellow-600 font-medium mb-1">Medium (50-70)</p>
+                      <p className="text-3xl font-bold text-yellow-700">{analytics.ats_distribution.medium}</p>
+                      <p className="text-xs text-yellow-600 mt-1">
+                        {analytics.total_resumes > 0 ? Math.round((analytics.ats_distribution.medium / analytics.total_resumes) * 100) : 0}% of total
+                      </p>
+                    </div>
+                    <div className="bg-green-50 rounded-lg p-4 border border-green-100">
+                      <p className="text-sm text-green-600 font-medium mb-1">High (&gt;70)</p>
+                      <p className="text-3xl font-bold text-green-700">{analytics.ats_distribution.high}</p>
+                      <p className="text-xs text-green-600 mt-1">
+                        {analytics.total_resumes > 0 ? Math.round((analytics.ats_distribution.high / analytics.total_resumes) * 100) : 0}% of total
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* AI vs Manual ATS Comparison */}
+              {analytics.ai_vs_manual_ats && (
+                <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl shadow-sm p-6 border border-purple-100 mb-6 sm:mb-8">
+                  <div className="flex items-center gap-3 mb-6">
+                    <Sparkles className="w-5 h-5 text-purple-600" />
+                    <h3 className="text-lg font-semibold text-gray-900">AI vs Manual Resume Quality</h3>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="bg-white rounded-lg p-4">
+                      <p className="text-sm text-gray-600 mb-1">AI-Generated Average</p>
+                      <p className="text-3xl font-bold text-purple-600">{analytics.ai_vs_manual_ats.ai_avg}</p>
+                    </div>
+                    <div className="bg-white rounded-lg p-4">
+                      <p className="text-sm text-gray-600 mb-1">Manual Created Average</p>
+                      <p className="text-3xl font-bold text-blue-600">{analytics.ai_vs_manual_ats.manual_avg}</p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-4">
+                    {analytics.ai_vs_manual_ats.ai_avg > analytics.ai_vs_manual_ats.manual_avg 
+                      ? '✓ AI-generated resumes show higher ATS scores on average' 
+                      : 'Manual resumes are performing well'}
+                  </p>
+                </div>
+              )}
+
               {/* Most Popular Template */}
               <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl shadow-sm p-6 border border-blue-100 mb-8">
                 <div className="flex items-center gap-3 mb-4">
@@ -198,6 +266,7 @@ const ResumeAnalyticsPage = () => {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Template</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Usage Count</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Export Count</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Avg ATS Score</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
@@ -207,11 +276,20 @@ const ResumeAnalyticsPage = () => {
                             <td className="px-6 py-4 text-sm font-medium text-gray-900">{template.template}</td>
                             <td className="px-6 py-4 text-sm text-gray-900">{template.usage}</td>
                             <td className="px-6 py-4 text-sm text-gray-900">{template.exports}</td>
+                            <td className="px-6 py-4">
+                              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                                (template.avg_ats_score || 0) >= 70 ? 'bg-green-100 text-green-700' :
+                                (template.avg_ats_score || 0) >= 50 ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-red-100 text-red-700'
+                              }`}>
+                                {template.avg_ats_score || 0}
+                              </span>
+                            </td>
                           </tr>
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={3} className="px-6 py-8 text-center text-sm text-gray-500">
+                          <td colSpan={4} className="px-6 py-8 text-center text-sm text-gray-500">
                             No template data available yet
                           </td>
                         </tr>

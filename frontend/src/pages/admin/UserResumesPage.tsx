@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
 import Header from '../../components/Header';
-import { Eye, Trash2, Sparkles, ArrowLeft, User } from 'lucide-react';
+import { Eye, Trash2, Sparkles, ArrowLeft, User, RefreshCw, Filter } from 'lucide-react';
 
 interface UserResume {
   id: number;
@@ -26,6 +26,8 @@ const UserResumesPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedResume, setSelectedResume] = useState<UserResume | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [atsFilter, setAtsFilter] = useState<'all' | 'low' | 'medium' | 'high'>('all');
+  const [recalculating, setRecalculating] = useState<number | null>(null);
 
   useEffect(() => {
     if (!user?.isAdmin) {
@@ -66,11 +68,46 @@ const UserResumesPage = () => {
     }
   };
 
-  const filteredResumes = resumes.filter(r => 
-    r.user_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    r.user_email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    r.template_name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleRecalculateATS = async (resumeId: number) => {
+    setRecalculating(resumeId);
+    setError(null);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/admin/recalculate-ats/${resumeId}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+      });
+      if (!response.ok) throw new Error('Failed to recalculate ATS score');
+      const data = await response.json();
+      
+      // Update the resume in the list
+      setResumes(resumes.map(r => 
+        r.id === resumeId ? { ...r, ats_score: data.new_ats_score } : r
+      ));
+    } catch (err: any) {
+      setError(err.message || 'Failed to recalculate ATS score');
+    } finally {
+      setRecalculating(null);
+    }
+  };
+
+  const filteredResumes = resumes.filter(r => {
+    // Search filter
+    const matchesSearch = r.user_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      r.user_email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      r.template_name.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // ATS filter
+    let matchesATS = true;
+    if (atsFilter === 'low') {
+      matchesATS = r.ats_score < 50;
+    } else if (atsFilter === 'medium') {
+      matchesATS = r.ats_score >= 50 && r.ats_score <= 70;
+    } else if (atsFilter === 'high') {
+      matchesATS = r.ats_score > 70;
+    }
+    
+    return matchesSearch && matchesATS;
+  });
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -85,13 +122,25 @@ const UserResumesPage = () => {
               <h1 className="text-xl sm:text-2xl font-bold text-gray-900">User Resumes</h1>
               <p className="text-sm sm:text-base text-gray-500 mt-1">View and manage all user resumes</p>
             </div>
-            <input
-              type="text"
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-            />
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <input
+                type="text"
+                placeholder="Search..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full sm:w-48 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              />
+              <select
+                value={atsFilter}
+                onChange={(e) => setAtsFilter(e.target.value as any)}
+                className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+              >
+                <option value="all">All ATS Scores</option>
+                <option value="low">Low (&lt;50)</option>
+                <option value="medium">Medium (50-70)</option>
+                <option value="high">High (&gt;70)</option>
+              </select>
+            </div>
           </div>
 
           {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">{error}</div>}
@@ -131,8 +180,12 @@ const UserResumesPage = () => {
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-900">{resume.template_name}</td>
                         <td className="px-6 py-4">
-                          <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
-                            {resume.ats_score}+
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                            resume.ats_score >= 70 ? 'bg-green-100 text-green-700' :
+                            resume.ats_score >= 50 ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-red-100 text-red-700'
+                          }`}>
+                            {resume.ats_score}
                           </span>
                         </td>
                         <td className="px-6 py-4">
@@ -151,6 +204,14 @@ const UserResumesPage = () => {
                         <td className="px-6 py-4 text-sm text-gray-900">{resume.export_count}</td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleRecalculateATS(resume.id)}
+                              disabled={recalculating === resume.id}
+                              className="p-2 hover:bg-purple-50 rounded-lg transition disabled:opacity-50"
+                              title="Recalculate ATS Score"
+                            >
+                              <RefreshCw className={`w-4 h-4 text-purple-600 ${recalculating === resume.id ? 'animate-spin' : ''}`} />
+                            </button>
                             <button
                               onClick={() => setSelectedResume(resume)}
                               className="p-2 hover:bg-blue-50 rounded-lg transition"

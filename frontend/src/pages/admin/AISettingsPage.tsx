@@ -17,6 +17,13 @@ interface AISettings {
   ai_enabled: boolean;
   free_user_limit: number;
   premium_user_limit: number;
+  ats_enabled?: boolean;
+  ats_mode?: string;
+  keywords_weight?: number;
+  formatting_weight?: number;
+  experience_weight?: number;
+  skills_weight?: number;
+  readability_weight?: number;
 }
 
 const AISettingsPage = () => {
@@ -287,6 +294,164 @@ const AISettingsPage = () => {
                     <p className="mt-1 text-xs text-gray-500">
                       Maximum AI generations allowed per day for premium users
                     </p>
+                  </div>
+                </div>
+
+                {/* ATS Scoring Settings */}
+                <div className="border-t border-gray-200 pt-6">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-4">ATS Scoring Configuration</h4>
+                  
+                  {/* ATS Enabled Toggle */}
+                  <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-lg mb-6">
+                    <input
+                      id="ats_enabled"
+                      type="checkbox"
+                      checked={settings.ats_enabled ?? true}
+                      onChange={(e) => handleInputChange('ats_enabled', e.target.checked)}
+                      className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 mt-0.5"
+                    />
+                    <div className="flex-1">
+                      <label htmlFor="ats_enabled" className="block text-sm font-medium text-gray-900 cursor-pointer">
+                        ATS Scoring Enabled
+                      </label>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Enable AI-powered ATS score calculation for resumes
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Scoring Mode */}
+                  <div className="mb-6">
+                    <label htmlFor="ats_mode" className="block text-sm font-medium text-gray-700 mb-2">
+                      Scoring Mode
+                    </label>
+                    <select
+                      id="ats_mode"
+                      value={settings.ats_mode || 'normal'}
+                      onChange={(e) => handleInputChange('ats_mode', e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                    >
+                      <option value="lenient">Lenient (Higher scores)</option>
+                      <option value="normal">Normal (Balanced)</option>
+                      <option value="strict">Strict (Lower scores)</option>
+                    </select>
+                    <p className="mt-1 text-xs text-gray-500">Controls how strictly resumes are evaluated</p>
+                  </div>
+
+                  {/* ATS Weights */}
+                  <div className="space-y-4">
+                    <p className="text-sm text-gray-700 font-medium">ATS Score Weights (must total 100)</p>
+                    
+                    <div>
+                      <label htmlFor="keywords_weight" className="block text-xs font-medium text-gray-600 mb-1">
+                        Keywords Weight: {settings.keywords_weight || 25}%
+                      </label>
+                      <input
+                        id="keywords_weight"
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={settings.keywords_weight || 25}
+                        onChange={(e) => handleInputChange('keywords_weight', parseInt(e.target.value))}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="formatting_weight" className="block text-xs font-medium text-gray-600 mb-1">
+                        Formatting Weight: {settings.formatting_weight || 20}%
+                      </label>
+                      <input
+                        id="formatting_weight"
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={settings.formatting_weight || 20}
+                        onChange={(e) => handleInputChange('formatting_weight', parseInt(e.target.value))}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="experience_weight" className="block text-xs font-medium text-gray-600 mb-1">
+                        Experience Weight: {settings.experience_weight || 25}%
+                      </label>
+                      <input
+                        id="experience_weight"
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={settings.experience_weight || 25}
+                        onChange={(e) => handleInputChange('experience_weight', parseInt(e.target.value))}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="skills_weight" className="block text-xs font-medium text-gray-600 mb-1">
+                        Skills Weight: {settings.skills_weight || 20}%
+                      </label>
+                      <input
+                        id="skills_weight"
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={settings.skills_weight || 20}
+                        onChange={(e) => handleInputChange('skills_weight', parseInt(e.target.value))}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                      />
+                    </div>
+
+                    <div>
+                      <label htmlFor="readability_weight" className="block text-xs font-medium text-gray-600 mb-1">
+                        Readability Weight: {settings.readability_weight || 10}%
+                      </label>
+                      <input
+                        id="readability_weight"
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={settings.readability_weight || 10}
+                        onChange={(e) => handleInputChange('readability_weight', parseInt(e.target.value))}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                      />
+                    </div>
+
+                    {/* Total Weight Indicator */}
+                    <div className={`p-3 rounded-lg ${
+                      ((settings.keywords_weight || 25) + 
+                       (settings.formatting_weight || 20) + 
+                       (settings.experience_weight || 25) + 
+                       (settings.skills_weight || 20) + 
+                       (settings.readability_weight || 10)) === 100 
+                        ? 'bg-green-50 border border-green-200' 
+                        : 'bg-red-50 border border-red-200'
+                    }`}>
+                      <p className={`text-sm font-medium ${
+                        ((settings.keywords_weight || 25) + 
+                         (settings.formatting_weight || 20) + 
+                         (settings.experience_weight || 25) + 
+                         (settings.skills_weight || 20) + 
+                         (settings.readability_weight || 10)) === 100 
+                          ? 'text-green-700' 
+                          : 'text-red-700'
+                      }`}>
+                        Total: {
+                          (settings.keywords_weight || 25) + 
+                          (settings.formatting_weight || 20) + 
+                          (settings.experience_weight || 25) + 
+                          (settings.skills_weight || 20) + 
+                          (settings.readability_weight || 10)
+                        }%
+                        {((settings.keywords_weight || 25) + 
+                          (settings.formatting_weight || 20) + 
+                          (settings.experience_weight || 25) + 
+                          (settings.skills_weight || 20) + 
+                          (settings.readability_weight || 10)) === 100 
+                          ? ' ✓ Valid' 
+                          : ' ✗ Must equal 100%'}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
