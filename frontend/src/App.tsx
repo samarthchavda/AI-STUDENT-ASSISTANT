@@ -27,6 +27,8 @@ import AdminPage from './pages/admin/AdminPage'
 import ServicesPage from './pages/marketing/ServicesPage'
 import AboutPage from './pages/marketing/AboutPage'
 import ProfilePage from './pages/profile/ProfilePage'
+import DSAQuestionListPage from './pages/dsa/DSAQuestionListPage'
+import DSAProblemPage from './pages/dsa/DSAProblemPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import ScrollToTop from './components/ScrollToTop'
 import { useAutoLogout } from './hooks/useAutoLogout'
@@ -63,6 +65,10 @@ function AppRoutes() {
       <Route path="/company-prep" element={<ProtectedRoute><CompanyPrepPage /></ProtectedRoute>} />
       <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+      
+      {/* DSA Routes */}
+      <Route path="/dsa" element={<ProtectedRoute><DSAQuestionListPage /></ProtectedRoute>} />
+      <Route path="/dsa/problem/:slug" element={<ProtectedRoute><DSAProblemPage /></ProtectedRoute>} />
       
       {/* Admin Routes - Require Login + Admin */}
       <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminPage /></ProtectedRoute>} />
