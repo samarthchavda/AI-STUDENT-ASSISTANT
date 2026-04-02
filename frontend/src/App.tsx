@@ -7,11 +7,6 @@ import ExamSimulationPage from './pages/aptitude/ExamSimulationPage'
 import ExamResultPage from './pages/aptitude/ExamResultPage'
 import AptitudeHistoryPage from './pages/aptitude/AptitudeHistoryPage'
 import AptitudePracticePage from './pages/aptitude/AptitudePracticePage'
-import DSAPracticeDashboardPage from './pages/dsa/DSAPracticeDashboardPage'
-import DSAEditorDemoPage from './pages/dsa/DSAEditorDemoPage'
-import DSADashboardPage from './pages/dsa/DSADashboardPage'
-import DSAProblemPage from './pages/dsa/DSAProblemPage'
-import DSAUserPerformancePage from './pages/dsa/DSAUserPerformancePage'
 import SystemHealthPage from './pages/admin/SystemHealthPage'
 import BroadcastSystemPage from './pages/admin/BroadcastSystemPage'
 import AuditLogsPage from './pages/admin/AuditLogsPage'
@@ -59,11 +54,6 @@ function AppRoutes() {
       <Route path="/exam-simulation" element={<ProtectedRoute><ExamSimulationPage /></ProtectedRoute>} />
       <Route path="/aptitude-history" element={<ProtectedRoute><AptitudeHistoryPage /></ProtectedRoute>} />
       <Route path="/practice-aptitude" element={<ProtectedRoute><AptitudePracticePage /></ProtectedRoute>} />
-      <Route path="/dsa" element={<ProtectedRoute><DSAPracticeDashboardPage /></ProtectedRoute>} />
-      <Route path="/dsa/dashboard" element={<ProtectedRoute><DSADashboardPage /></ProtectedRoute>} />
-      <Route path="/dsa/problem/:id" element={<ProtectedRoute><DSAProblemPage /></ProtectedRoute>} />
-      <Route path="/dsa/editor/:id" element={<ProtectedRoute><DSAEditorDemoPage /></ProtectedRoute>} />
-      <Route path="/roadmap" element={<ProtectedRoute><DSAPracticeDashboardPage /></ProtectedRoute>} />
       <Route path="/career" element={<ProtectedRoute><CareerPage /></ProtectedRoute>} />
       <Route path="/career/resume-analysis" element={<ProtectedRoute><CareerPage /></ProtectedRoute>} />
       <Route path="/career/resume-templates" element={<ProtectedRoute><ResumeTemplateGalleryPage /></ProtectedRoute>} />
@@ -76,7 +66,6 @@ function AppRoutes() {
       
       {/* Admin Routes - Require Login + Admin */}
       <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminPage /></ProtectedRoute>} />
-      <Route path="/admin/dsa/user-performance" element={<ProtectedRoute requireAdmin><DSAUserPerformancePage /></ProtectedRoute>} />
       <Route path="/admin/system-health" element={<ProtectedRoute requireAdmin><SystemHealthPage /></ProtectedRoute>} />
       <Route path="/admin/broadcast" element={<ProtectedRoute requireAdmin><BroadcastSystemPage /></ProtectedRoute>} />
       <Route path="/admin/audit-logs" element={<ProtectedRoute requireAdmin><AuditLogsPage /></ProtectedRoute>} />

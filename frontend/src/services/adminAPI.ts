@@ -235,53 +235,6 @@ export const adminAPI = {
     return response.data;
   },
 
-  // DSA Admin APIs
-  getDSAStats: async (): Promise<any> => {
-    const response = await api.get('/admin/dsa-admin/stats');
-    return response.data;
-  },
-
-  getDSAQuestions: async (params?: { skip?: number; limit?: number; topic?: string; company?: string; search?: string }): Promise<any> => {
-    const response = await api.get('/admin/dsa-admin/questions', { params });
-    return response.data;
-  },
-
-  getDSAQuestionDetail: async (questionId: number): Promise<any> => {
-    const response = await api.get(`/admin/dsa-admin/questions/${questionId}`);
-    return response.data;
-  },
-
-  updateDSAQuestion: async (questionId: number, data: { title?: string; description?: string; constraints?: string }): Promise<any> => {
-    const response = await api.put(`/admin/dsa-admin/questions/${questionId}`, data);
-    return response.data;
-  },
-
-  getDSASubmissions: async (params?: { limit?: number; status?: string }): Promise<any> => {
-    const response = await api.get('/admin/dsa-admin/submissions', { params });
-    return response.data;
-  },
-
-  generateMissingSolutions: async (): Promise<any> => {
-    const response = await api.post('/admin/dsa-admin/generate-missing-solutions');
-    return response.data;
-  },
-
-  getDSACacheStatus: async (): Promise<any> => {
-    const response = await api.get('/admin/dsa-admin/cache-status');
-    return response.data;
-  },
-
-  // DSA User Performance APIs
-  getDSAUserPerformance: async (): Promise<any> => {
-    const response = await api.get('/admin/dsa-admin/user-performance');
-    return response.data;
-  },
-
-  getDSAUserDetail: async (userId: number): Promise<any> => {
-    const response = await api.get(`/admin/dsa-admin/user-performance/${userId}`);
-    return response.data;
-  },
-
   // System Health APIs
   getSystemHealth: async (): Promise<any> => {
     const response = await api.get('/admin/system-health');

@@ -72,7 +72,6 @@ export default function DashboardPageNew() {
   const sidebarItems: SidebarItem[] = [
     { id: 'dashboard', label: 'Dashboard', icon: Home, route: '/dashboard' },
     { id: 'aptitude', label: 'Aptitude', icon: BookOpen, route: '/exam-prep' },
-    { id: 'dsa', label: 'DSA Practice', icon: Code2, route: '/dsa/dashboard' },
     { id: 'copilot', label: 'AI Copilot', icon: MessageSquare, route: '/chat' },
     { id: 'resume', label: 'Resume', icon: FileText, route: '/career' },
     { id: 'billing', label: 'Billing', icon: CreditCard, route: '/pricing' }
@@ -82,8 +81,7 @@ export default function DashboardPageNew() {
   const stats: StatCard[] = [
     { label: 'Placement Readiness', value: '75%', icon: Trophy, color: 'text-green-600' },
     { label: 'Mock Tests Taken', value: '12', icon: Target, color: 'text-blue-600' },
-    { label: 'Resume ATS Score', value: '85/100', icon: FileText, color: 'text-purple-600' },
-    { label: 'DSA Problems Solved', value: '45', icon: Code2, color: 'text-orange-600' }
+    { label: 'Resume ATS Score', value: '85/100', icon: FileText, color: 'text-purple-600' }
   ]
 
   // Free Practice Cards

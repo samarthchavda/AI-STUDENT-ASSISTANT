@@ -28,7 +28,6 @@ import { useAppStore } from '../../store/useAppStore';
 
 const APTITUDE_PROGRESS_KEY = 'aptitude_progress';
 const RESUME_ATS_SCORE_KEY = 'latest_resume_ats_score';
-const DSA_SOLVED_WITHIN_TIME_KEY = 'dsa_solved_within_time';
 
 const upcomingPlacements = [
   { companyId: 'tcs', company: 'TCS NQT', role: 'Ninja / Digital', date: '15 April 2026', package: '3.3 - 7.0 LPA', color: 'from-blue-500 to-cyan-500' },
@@ -46,7 +45,6 @@ interface DashboardStats {
   overallReadiness: number;
   mockTestsTaken: number;
   resumeAtsScore: number;
-  dsaSolved: number;
   aptitudeAccuracy: number;
   companyPracticeAverage: number;
   hrRoundsPracticed: number;
@@ -106,14 +104,7 @@ const toolCards: ToolCard[] = [
     icon: FileText,
     accent: 'from-emerald-50 to-teal-50 border-emerald-100'
   },
-  {
-    id: 'dsa-code',
-    title: 'DSA & Code Analysis',
-    description: 'Get hints, debug code, and optimize your solutions with AI',
-    route: '/coding',
-    icon: Code2,
-    accent: 'from-violet-50 to-purple-50 border-violet-100'
-  },
+
   {
     id: 'interview-copilot',
     title: 'AI Interview Copilot',
@@ -191,16 +182,6 @@ function getActivityVisual(roundName: string): { icon: LucideIcon; iconClass: st
   return { icon: Trophy, iconClass: 'text-emerald-600 bg-emerald-50 border-emerald-100' };
 }
 
-function isDsaLike(question: PracticeHistoryItem): boolean {
-  const round = question.round_name.toLowerCase();
-  const text = question.question_text.toLowerCase();
-  return (
-    round.includes('coding') ||
-    round.includes('technical') ||
-    /dsa|array|linked list|stack|queue|tree|graph|dp|dynamic programming|recursion/.test(text)
-  );
-}
-
 export default function DashboardPage() {
   const navigate = useNavigate();
   const user = useAppStore((state) => state.user);
@@ -209,7 +190,6 @@ export default function DashboardPage() {
     overallReadiness: 0,
     mockTestsTaken: 0,
     resumeAtsScore: 0,
-    dsaSolved: 0,
     aptitudeAccuracy: 0,
     companyPracticeAverage: 0,
     hrRoundsPracticed: 0,
@@ -232,14 +212,12 @@ export default function DashboardPage() {
       'resume_ats_score',
       'resumeATSScore'
     ]);
-    const dsaFromChallenge = readNumericFromStorage([DSA_SOLVED_WITHIN_TIME_KEY]);
 
     setStats((current) => ({
       ...current,
       overallReadiness: aptitudeAverage,
       mockTestsTaken: aptitude.totalQuizzes,
       resumeAtsScore,
-      dsaSolved: dsaFromChallenge,
       aptitudeAccuracy: aptitudeAverage,
     }));
 
@@ -319,13 +297,11 @@ export default function DashboardPage() {
         (companyAverage * companyAttempts)
       );
       const overallReadiness = totalAttempts > 0 ? Math.round(weightedScore / totalAttempts) : aptitudeAvgFromDB;
-      const dsaFromHistory = practiceHistory.filter(isDsaLike).length;
 
       setStats({
         overallReadiness,
         mockTestsTaken: totalAttempts,
         resumeAtsScore,
-        dsaSolved: Math.max(dsaFromHistory, dsaFromChallenge),
         aptitudeAccuracy: aptitudeAvgFromDB,
         companyPracticeAverage: companyAverage,
         hrRoundsPracticed,
@@ -403,13 +379,6 @@ export default function DashboardPage() {
       value: `${stats.resumeAtsScore}/100`,
       icon: FileText,
       accent: 'from-violet-50 to-purple-50 border-violet-100'
-    },
-    {
-      id: 'dsa-solved',
-      title: 'DSA Solved',
-      value: `${stats.dsaSolved} Problems`,
-      icon: Code2,
-      accent: 'from-orange-50 to-amber-50 border-orange-100'
     }
   ];
 
@@ -500,7 +469,7 @@ export default function DashboardPage() {
             <p className="text-gray-600 mt-1">Your placement command center for tests, coding, resume, and interviews.</p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-10">
             {statCards.map((stat) => {
               const Icon = stat.icon;
 

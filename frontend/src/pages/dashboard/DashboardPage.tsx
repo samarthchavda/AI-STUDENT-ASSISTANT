@@ -119,7 +119,6 @@ export default function DashboardPageNew() {
   const [loadingActivities, setLoadingActivities] = useState(true)
   const [userStats, setUserStats] = useState({
     mockTestsTaken: 0,
-    dsaProblemsSolved: 0,
     placementReadiness: 0,
     resumeScore: 0
   })
@@ -166,7 +165,6 @@ export default function DashboardPageNew() {
         
         setUserStats({
           mockTestsTaken: mockTests,
-          dsaProblemsSolved: 0, // TODO: Fetch from DSA API when available
           placementReadiness: Math.round(avgScore),
           resumeScore: 0 // TODO: Fetch from resume API when available
         })
@@ -195,7 +193,6 @@ export default function DashboardPageNew() {
   const sidebarItems: SidebarItem[] = [
     { id: 'dashboard', label: 'Dashboard', icon: Home, route: '/dashboard' },
     { id: 'aptitude', label: 'Aptitude', icon: BookOpen, route: '/exam-prep' },
-    { id: 'dsa', label: 'DSA Practice', icon: Code2, route: '/dsa/dashboard' },
     { id: 'copilot', label: 'AI Copilot', icon: MessageSquare, route: '/chat' },
     { id: 'resume', label: 'Resume', icon: FileText, route: '/career' },
     { id: 'billing', label: 'Billing', icon: CreditCard, route: '/pricing' }
@@ -205,8 +202,7 @@ export default function DashboardPageNew() {
   const stats: StatCard[] = [
     { label: 'Placement Readiness', value: `${userStats.placementReadiness}%`, icon: Trophy, color: 'text-green-600' },
     { label: 'Mock Tests Taken', value: userStats.mockTestsTaken, icon: Target, color: 'text-blue-600' },
-    { label: 'Resume ATS Score', value: userStats.resumeScore > 0 ? `${userStats.resumeScore}/100` : 'Not Created', icon: FileText, color: 'text-purple-600' },
-    { label: 'DSA Problems Solved', value: userStats.dsaProblemsSolved, icon: Code2, color: 'text-orange-600' }
+    { label: 'Resume ATS Score', value: userStats.resumeScore > 0 ? `${userStats.resumeScore}/100` : 'Not Created', icon: FileText, color: 'text-purple-600' }
   ]
 
   // Free Practice Cards

@@ -65,7 +65,7 @@ interface AptitudeExamHistory {
 const AdminPage = () => {
   const navigate = useNavigate();
   const { user, logout } = useAppStore();
-  const [activeTab, setActiveTab] = useState<'stats' | 'users' | 'chats' | 'payments' | 'progress' | 'company-questions' | 'aptitude-history' | 'ai-monitor' | 'broadcast' | 'aptitude-questions' | 'dsa-management'>('stats');
+  const [activeTab, setActiveTab] = useState<'stats' | 'users' | 'chats' | 'payments' | 'progress' | 'company-questions' | 'aptitude-history' | 'ai-monitor' | 'broadcast' | 'aptitude-questions'>('stats');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   const [stats, setStats] = useState<AdminStats | null>(null);
@@ -106,12 +106,6 @@ const AdminPage = () => {
   const [aptitudeFilterCategory, setAptitudeFilterCategory] = useState<string>('all')
   const [aptitudeFilterSubcategory, setAptitudeFilterSubcategory] = useState<string>('all')
   const [aptitudeStats, setAptitudeStats] = useState<any>(null)
-  
-  // DSA Management states
-  const [dsaStats, setDsaStats] = useState<any>(null);
-  const [dsaQuestions, setDsaQuestions] = useState<any[]>([]);
-  const [dsaSearchQuery, setDsaSearchQuery] = useState('');
-  const [dsaTopicFilter, setDsaTopicFilter] = useState('');
   
   // User Sessions state
   const [userSessions, setUserSessions] = useState<Map<number, boolean>>(new Map());
@@ -447,22 +441,7 @@ const AdminPage = () => {
     }
   };
 
-  const loadDSAManagement = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [stats, questions] = await Promise.all([
-        adminAPI.getDSAStats(),
-        adminAPI.getDSAQuestions({ limit: 50, search: dsaSearchQuery, topic: dsaTopicFilter })
-      ]);
-      setDsaStats(stats);
-      setDsaQuestions(questions.questions || []);
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to load DSA management data');
-    } finally {
-      setLoading(false);
-    }
-  };
+
 
   const handleAptitudeFileUpload = async () => {
     if (!aptitudeQuestionsFile) {
@@ -547,9 +526,6 @@ const AdminPage = () => {
       case 'aptitude-questions':
         loadAptitudeQuestions();
         break;
-      case 'dsa-management':
-        loadDSAManagement();
-        break;
     }
   };
 
@@ -603,7 +579,6 @@ const AdminPage = () => {
   const sidebarItems = [
     { id: 'stats', label: 'Statistics', icon: BarChart3 },
     { id: 'users', label: 'Users', icon: Users },
-    { id: 'dsa-management', label: 'DSA Management', icon: Code2 },
     { id: 'aptitude-questions', label: 'Aptitude Questions', icon: Target },
     { id: 'ai-monitor', label: 'AI Monitor', icon: Activity },
     { id: 'broadcast', label: 'Broadcast', icon: Send },
@@ -2494,267 +2469,6 @@ const AdminPage = () => {
                 <p className="text-gray-500">Upload a JSON file to add questions to the database.</p>
               </div>
             )}
-          </div>
-        )}
-
-        {/* DSA Management Tab */}
-        {activeTab === 'dsa-management' && !loading && (
-          <div>
-            <div className="mb-6 flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">DSA Management</h1>
-                <p className="text-gray-500 mt-1">Monitor and manage DSA practice module</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => navigate('/admin/dsa/user-performance')}
-                  className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium shadow-sm flex items-center gap-2"
-                >
-                  <BarChart3 className="w-5 h-5" />
-                  View User Performance Insights 📊
-                </button>
-                <button
-                  onClick={async () => {
-                    if (confirm('Generate missing solutions for all questions? This may take a while.')) {
-                      setLoading(true);
-                      try {
-                        const result = await adminAPI.generateMissingSolutions();
-                        setSuccessMessage(result.message || 'Solution generation triggered!');
-                        setTimeout(() => {
-                          setSuccessMessage(null);
-                          loadDSAManagement();
-                        }, 3000);
-                      } catch (err: any) {
-                        setError(err.response?.data?.detail || 'Failed to trigger solution generation');
-                      } finally {
-                        setLoading(false);
-                      }
-                    }
-                  }}
-                  className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium shadow-sm flex items-center gap-2"
-                >
-                  <Database className="w-5 h-5" />
-                  Generate All Missing Solutions
-                </button>
-              </div>
-            </div>
-
-            {/* Stats Cards - Indigo Theme */}
-            {dsaStats && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                {/* Total Questions */}
-                <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl shadow-lg p-6 text-white hover:shadow-xl transition">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                      <Code2 className="w-6 h-6 text-white" />
-                    </div>
-                    <span className="text-xs font-medium text-indigo-100 uppercase">Total</span>
-                  </div>
-                  <h3 className="text-4xl font-bold mb-1">{dsaStats.total_questions}</h3>
-                  <p className="text-sm text-indigo-100">DSA Problems</p>
-                </div>
-
-                {/* Total Submissions */}
-                <div className="bg-gradient-to-br from-indigo-400 to-indigo-500 rounded-xl shadow-lg p-6 text-white hover:shadow-xl transition">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                      <Activity className="w-6 h-6 text-white" />
-                    </div>
-                    <span className="text-xs font-medium text-indigo-100 uppercase">Activity</span>
-                  </div>
-                  <h3 className="text-4xl font-bold mb-1">{dsaStats.total_submissions}</h3>
-                  <p className="text-sm text-indigo-100">Code Submissions</p>
-                </div>
-
-                {/* Success Rate */}
-                <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-xl shadow-lg p-6 text-white hover:shadow-xl transition">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                      <CheckCircle className="w-6 h-6 text-white" />
-                    </div>
-                    <span className="text-xs font-medium text-indigo-100 uppercase">Success</span>
-                  </div>
-                  <h3 className="text-4xl font-bold mb-1">{dsaStats.success_rate}%</h3>
-                  <p className="text-sm text-indigo-100">Acceptance Rate</p>
-                </div>
-
-                {/* Cache Coverage */}
-                <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl shadow-lg p-6 text-white hover:shadow-xl transition">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
-                      <Database className="w-6 h-6 text-white" />
-                    </div>
-                    <span className="text-xs font-medium text-indigo-100 uppercase">Cache</span>
-                  </div>
-                  <h3 className="text-4xl font-bold mb-1">{dsaStats.cache_coverage}%</h3>
-                  <p className="text-sm text-indigo-100">Solutions Cached</p>
-                </div>
-              </div>
-            )}
-
-            {/* Questions Table */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-8">
-              <div className="p-6 border-b border-gray-100">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-bold text-gray-900">DSA Questions Database</h2>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-500">{dsaQuestions.length} questions</span>
-                    <button
-                      onClick={() => loadDSAManagement()}
-                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm font-medium"
-                    >
-                      Refresh
-                    </button>
-                  </div>
-                </div>
-                
-                {/* Filters */}
-                <div className="flex gap-3">
-                  <input
-                    type="text"
-                    placeholder="Search questions..."
-                    value={dsaSearchQuery}
-                    onChange={(e) => setDsaSearchQuery(e.target.value)}
-                    className="flex-1 px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                  <select
-                    value={dsaTopicFilter}
-                    onChange={(e) => setDsaTopicFilter(e.target.value)}
-                    className="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  >
-                    <option value="">All Topics</option>
-                    <option value="arrays">Arrays</option>
-                    <option value="strings">Strings</option>
-                    <option value="linked_lists">Linked Lists</option>
-                    <option value="stacks">Stacks</option>
-                    <option value="queues">Queues</option>
-                    <option value="trees">Trees</option>
-                    <option value="graphs">Graphs</option>
-                    <option value="dynamic_programming">Dynamic Programming</option>
-                    <option value="greedy">Greedy</option>
-                    <option value="backtracking">Backtracking</option>
-                  </select>
-                  <button
-                    onClick={() => loadDSAManagement()}
-                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm font-medium"
-                  >
-                    Apply Filters
-                  </button>
-                </div>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="min-w-full">
-                  <thead>
-                    <tr className="border-b border-gray-100 bg-gray-50">
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">ID</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Title</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Topic</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Difficulty</th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Company</th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase">Cache Status</th>
-                      <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {dsaQuestions.map((question) => (
-                      <tr key={question.id} className="hover:bg-gray-50 transition">
-                        <td className="px-6 py-4">
-                          <span className="text-sm font-mono text-gray-600">#{question.id}</span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm font-medium text-gray-900 max-w-md truncate">
-                            {question.title}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-indigo-100 text-indigo-700">
-                            {question.topic.replace('_', ' ')}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                            question.difficulty === 'easy' ? 'bg-green-100 text-green-700' :
-                            question.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                            'bg-red-100 text-red-700'
-                          }`}>
-                            {question.difficulty.toUpperCase()}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className="text-sm text-gray-600">{question.company || 'General'}</span>
-                        </td>
-                        <td className="px-6 py-4 text-center">
-                          {question.has_cache ? (
-                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-green-100">
-                              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                              <span className="text-xs font-medium text-green-700">Cached</span>
-                            </div>
-                          ) : (
-                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-100">
-                              <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                              <span className="text-xs font-medium text-red-700">No Cache</span>
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center justify-end gap-2">
-                            <button
-                              onClick={() => {
-                                const newTitle = prompt('Enter new title:', question.title);
-                                if (newTitle && newTitle !== question.title) {
-                                  setLoading(true);
-                                  adminAPI.updateDSAQuestion(question.id, { title: newTitle })
-                                    .then(() => {
-                                      setSuccessMessage('Question updated successfully!');
-                                      loadDSAManagement();
-                                      setTimeout(() => setSuccessMessage(null), 3000);
-                                    })
-                                    .catch((err) => {
-                                      setError(err.response?.data?.detail || 'Update failed');
-                                      setLoading(false);
-                                    });
-                                }
-                              }}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-indigo-600 hover:bg-indigo-50 rounded-lg transition font-medium"
-                              title="Edit question"
-                            >
-                              <Edit3 className="w-4 h-4" />
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => {
-                                if (confirm(`Regenerate AI solution for "${question.title}"?`)) {
-                                  setSuccessMessage('Solution regeneration triggered! This may take a moment...');
-                                  // In a real implementation, you'd call an API endpoint here
-                                  setTimeout(() => {
-                                    setSuccessMessage('Solution regenerated successfully!');
-                                    loadDSAManagement();
-                                    setTimeout(() => setSuccessMessage(null), 3000);
-                                  }, 2000);
-                                }
-                              }}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 text-sm text-green-600 hover:bg-green-50 rounded-lg transition font-medium"
-                              title="Refresh AI solution"
-                            >
-                              <Database className="w-4 h-4" />
-                              Refresh AI
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {dsaQuestions.length === 0 && (
-                <div className="p-12 text-center">
-                  <Code2 className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500">No questions found</p>
-                </div>
-              )}
-            </div>
           </div>
         )}
         </main>
