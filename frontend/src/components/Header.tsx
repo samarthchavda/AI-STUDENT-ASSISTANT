@@ -1,10 +1,12 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { LogOut, User, Shield, Brain } from 'lucide-react'
+import { LogOut, User, Shield, Brain, Menu, X } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
+import { useState } from 'react'
 
 export default function Header() {
   const navigate = useNavigate()
   const { user, isAuthenticated, logout } = useAppStore()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const handleLogout = () => {
     logout()
@@ -26,6 +28,15 @@ export default function Header() {
           </Link>
 
           <div className="flex items-center gap-3 sm:gap-5">
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 text-stone-700 hover:bg-stone-100 rounded-lg transition"
+            >
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+
+            {/* Desktop Navigation */}
             <nav className="hidden items-center gap-2 rounded-full border border-stone-200 bg-white/75 p-1 shadow-[0_10px_25px_rgba(33,24,9,0.06)] md:flex">
               {isAuthenticated && user && (
                 <>
@@ -49,7 +60,7 @@ export default function Header() {
             </nav>
 
             {isAuthenticated && user ? (
-              <div className="flex items-center gap-2 sm:gap-3">
+              <div className="hidden md:flex items-center gap-2 sm:gap-3">
                 <Link 
                   to="/profile"
                   className="flex items-center gap-3 rounded-2xl border border-stone-200 bg-white/90 px-4 py-2.5 shadow-[0_10px_25px_rgba(33,24,9,0.06)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_30px_rgba(33,24,9,0.08)]"
@@ -95,13 +106,116 @@ export default function Header() {
                 </button>
               </div>
             ) : (
-              <Link to="/auth" className="btn-primary">
+              <Link to="/auth" className="btn-primary hidden md:block">
                 Get Started
               </Link>
             )}
           </div>
         </div>
       </div>
+
+      {/* Mobile Menu Overlay */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-40 md:hidden">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
+          <div className="fixed top-20 left-0 right-0 bg-white border-b border-gray-200 shadow-xl">
+            <nav className="p-4 space-y-2">
+              {isAuthenticated && user && (
+                <>
+                  <Link 
+                    to="/dashboard" 
+                    className="block px-4 py-3 text-sm font-semibold text-stone-700 hover:bg-stone-100 rounded-lg transition"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Dashboard
+                  </Link>
+                  <Link 
+                    to="/chat" 
+                    className="block px-4 py-3 text-sm font-semibold text-stone-700 hover:bg-stone-100 rounded-lg transition"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    Copilot
+                  </Link>
+                </>
+              )}
+              <Link 
+                to="/services" 
+                className="block px-4 py-3 text-sm font-semibold text-stone-700 hover:bg-stone-100 rounded-lg transition"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Services
+              </Link>
+              <Link 
+                to="/about" 
+                className="block px-4 py-3 text-sm font-semibold text-stone-700 hover:bg-stone-100 rounded-lg transition"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                About
+              </Link>
+              <Link 
+                to="/pricing" 
+                className="block px-4 py-3 text-sm font-semibold text-stone-700 hover:bg-stone-100 rounded-lg transition"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Pricing
+              </Link>
+              
+              {isAuthenticated && user ? (
+                <>
+                  <div className="border-t border-gray-200 my-2" />
+                  <Link 
+                    to="/profile" 
+                    className="flex items-center gap-3 px-4 py-3 text-sm font-semibold text-stone-700 hover:bg-stone-100 rounded-lg transition"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <User className="h-4 w-4 text-teal-700" />
+                    <span>{user.name}</span>
+                    <span className={`ml-auto rounded-full px-2 py-1 text-[10px] font-bold uppercase ${
+                      user.plan.toLowerCase() === 'pro'
+                        ? 'bg-green-100 text-green-700'
+                        : user.plan.toLowerCase() === 'basic'
+                        ? 'bg-blue-100 text-blue-700'
+                        : 'bg-orange-100 text-orange-700'
+                    }`}>
+                      {user.plan}
+                    </span>
+                  </Link>
+                  
+                  {user.isAdmin && (
+                    <Link
+                      to="/admin"
+                      className="flex items-center gap-2 px-4 py-3 text-sm font-semibold text-violet-700 hover:bg-violet-50 rounded-lg transition"
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      <Shield className="h-4 w-4" />
+                      Admin
+                    </Link>
+                  )}
+                  
+                  <button
+                    onClick={() => {
+                      handleLogout()
+                      setMobileMenuOpen(false)
+                    }}
+                    className="w-full flex items-center gap-2 px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50 rounded-lg transition"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <Link 
+                  to="/auth" 
+                  className="block px-4 py-3 text-center bg-teal-700 text-white font-semibold rounded-lg hover:bg-teal-800 transition"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Get Started
+                </Link>
+              )}
+            </nav>
+          </div>
+        </div>
+      )}
     </header>
   )
 }

@@ -106,7 +106,7 @@ const AIResumeMonitorPage = () => {
     <div className="min-h-screen bg-gray-50">
       <Header />
       
-      <div className="pt-20 px-8 pb-8">
+      <div className="pt-20 px-4 sm:px-6 lg:px-8 pb-8">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-6 flex items-center gap-4">
@@ -139,7 +139,7 @@ const AIResumeMonitorPage = () => {
           ) : stats ? (
             <>
               {/* Top Metrics Row */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
                 {/* Total AI Generations */}
                 <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition">
                   <div className="flex items-center justify-between mb-4">
@@ -190,7 +190,7 @@ const AIResumeMonitorPage = () => {
               </div>
 
               {/* Generation Types Row */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
                 {/* Summary Generations */}
                 <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
                   <div className="flex items-center gap-3 mb-4">

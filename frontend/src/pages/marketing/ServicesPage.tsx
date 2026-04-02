@@ -111,18 +111,18 @@ export default function ServicesPage() {
               Our Services
             </span>
           </div>
-          <h1 className="text-5xl md:text-6xl font-bold mb-6">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
             Everything You Need to
             <span className="gradient-text block mt-2">Succeed in Your Career</span>
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto">
             Comprehensive AI-powered tools designed specifically for engineering students 
             to excel in placements and beyond.
           </p>
         </div>
 
         {/* Services Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           {services.map((service, index) => (
             <div
               key={index}
@@ -166,16 +166,16 @@ export default function ServicesPage() {
 
       {/* CTA Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl p-12 text-center text-white">
-          <h2 className="text-4xl font-bold mb-4">Ready to Get Started?</h2>
-          <p className="text-xl mb-8 opacity-90">
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl p-8 sm:p-12 text-center text-white">
+          <h2 className="text-3xl sm:text-4xl font-bold mb-4">Ready to Get Started?</h2>
+          <p className="text-lg sm:text-xl mb-8 opacity-90">
             Join thousands of students who are already using our platform to achieve their career goals.
           </p>
-          <div className="flex gap-4 justify-center flex-wrap">
-            <Link to="/auth" className="bg-white text-blue-600 px-8 py-4 rounded-xl font-semibold hover:bg-gray-100 transition-colors">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center flex-wrap">
+            <Link to="/auth" className="bg-white text-blue-600 px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold hover:bg-gray-100 transition-colors">
               Get Started Free
             </Link>
-            <Link to="/pricing" className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-xl font-semibold hover:bg-white/10 transition-colors">
+            <Link to="/pricing" className="bg-transparent border-2 border-white text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold hover:bg-white/10 transition-colors">
               View Pricing
             </Link>
           </div>

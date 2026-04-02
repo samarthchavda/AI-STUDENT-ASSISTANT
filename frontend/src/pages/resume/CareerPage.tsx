@@ -142,7 +142,7 @@ export default function CareerPage() {
         </div>
 
         {/* 2-Column Layout */}
-        <div className="grid lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
             {/* Left Column - Form */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sm:p-8 h-fit">
               <h2 className="text-2xl font-bold mb-6 text-gray-900">Upload Your Resume</h2>
@@ -255,7 +255,7 @@ export default function CareerPage() {
               {result ? (
                 <div className="space-y-6">
                   {/* Score Cards */}
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-2xl text-center border border-blue-200">
                       <p className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-2">ATS Score</p>
                       <p className="text-5xl font-black text-blue-900">{result.atsScore}</p>

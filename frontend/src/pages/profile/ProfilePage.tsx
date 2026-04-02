@@ -107,23 +107,24 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <Header />
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8">{/* Profile Header */}
-        <div className="bg-white rounded-3xl shadow-xl overflow-hidden mb-8">
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 h-32"></div>
-          <div className="px-8 pb-8">
-            <div className="flex items-end justify-between -mt-16 mb-6">
-              <div className="flex items-end gap-6">
-                <div className="w-32 h-32 bg-white rounded-2xl shadow-lg flex items-center justify-center border-4 border-white">
-                  <User className="w-16 h-16 text-blue-600" />
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8">
+        {/* Profile Header */}
+        <div className="bg-white rounded-3xl shadow-xl overflow-hidden mb-6 sm:mb-8">
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 h-24 sm:h-32"></div>
+          <div className="px-4 sm:px-8 pb-6 sm:pb-8">
+            <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 -mt-12 sm:-mt-16 mb-4 sm:mb-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-end gap-4 sm:gap-6">
+                <div className="w-24 h-24 sm:w-32 sm:h-32 bg-white rounded-2xl shadow-lg flex items-center justify-center border-4 border-white">
+                  <User className="w-12 h-12 sm:w-16 sm:h-16 text-blue-600" />
                 </div>
-                <div className="pb-2">
-                  <h1 className="text-3xl font-bold text-gray-900">{user.name}</h1>
-                  <p className="text-gray-600">{user.email}</p>
+                <div className="pb-0 sm:pb-2">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{user.name}</h1>
+                  <p className="text-sm sm:text-base text-gray-600 break-all">{user.email}</p>
                 </div>
               </div>
               <button 
                 onClick={() => setShowEditModal(true)}
-                className="btn-secondary flex items-center gap-2 mb-2"
+                className="btn-secondary flex items-center gap-2 mb-0 sm:mb-2 w-full sm:w-auto justify-center"
               >
                 <Edit className="w-4 h-4" />
                 Edit Profile
@@ -148,7 +149,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Profile Strength */}
-        <div className="bg-white rounded-2xl shadow-lg p-8 mb-8">
+        <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 mb-6 sm:mb-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold flex items-center gap-3">
               <TrendingUp className="w-6 h-6 text-green-600" />
@@ -182,9 +183,9 @@ export default function ProfilePage() {
         </div>
 
         {/* Profile Details */}
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
           {/* Personal Information */}
-          <div className="bg-white rounded-2xl shadow-lg p-8">
+          <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
             <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
               <User className="w-6 h-6 text-blue-600" />
               Personal Information
@@ -209,7 +210,7 @@ export default function ProfilePage() {
           </div>
 
           {/* Account Details */}
-          <div className="bg-white rounded-2xl shadow-lg p-8">
+          <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8">
             <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
               <Shield className="w-6 h-6 text-purple-600" />
               Account Details
@@ -235,12 +236,12 @@ export default function ProfilePage() {
         </div>
 
         {/* Quick Stats */}
-        <div className="bg-white rounded-2xl shadow-lg p-8 mb-8">
-          <h2 className="text-2xl font-bold mb-6">Your Activity</h2>
+        <div className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 mb-6 sm:mb-8">
+          <h2 className="text-xl sm:text-2xl font-bold mb-4 sm:mb-6">Your Activity</h2>
           {loading ? (
             <div className="text-center py-8 text-gray-500">Loading your activity...</div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               <div className="text-center">
                 <div className="text-3xl font-bold gradient-text mb-2">{stats.chatSessions}</div>
                 <div className="text-sm text-gray-600">Chat Sessions</div>
@@ -264,7 +265,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Actions */}
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
           <button
             onClick={() => navigate('/pricing')}
             className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl p-6 text-left hover:shadow-xl transition-shadow"

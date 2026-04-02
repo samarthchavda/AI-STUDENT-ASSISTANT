@@ -391,8 +391,8 @@ export default function ExamSimulationPage() {
   return (
     <div className="min-h-screen bg-white text-slate-900">
       <div className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-5xl flex-col gap-4 px-6 py-5">
-          <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="mx-auto flex max-w-5xl flex-col gap-3 sm:gap-4 px-4 sm:px-6 py-4 sm:py-5">
+          <div className="flex flex-wrap items-center justify-between gap-3 sm:gap-4">
             <p className="text-sm font-semibold text-slate-600">
               {config.company} · {config.difficulty} Level
             </p>
@@ -422,11 +422,11 @@ export default function ExamSimulationPage() {
         </div>
       </div>
 
-      <main className="mx-auto flex w-full max-w-5xl flex-col px-6 py-8">
-        <section className="rounded-3xl border border-slate-200 bg-white p-7 md:p-9">
-          <h1 className="text-2xl font-black leading-relaxed text-slate-900">{cleanQuestionText(currentQuestion.question)}</h1>
+      <main className="mx-auto flex w-full max-w-5xl flex-col px-4 sm:px-6 py-6 sm:py-8">
+        <section className="rounded-2xl sm:rounded-3xl border border-slate-200 bg-white p-5 sm:p-7 md:p-9">
+          <h1 className="text-xl sm:text-2xl font-black leading-relaxed text-slate-900">{cleanQuestionText(currentQuestion.question)}</h1>
 
-          <div className="mt-7 grid gap-4">
+          <div className="mt-5 sm:mt-7 grid gap-3 sm:gap-4">
             {currentQuestion.options.map((option, optionIndex) => {
               const selected = selectedAnswers[currentIndex] === option
               return (
@@ -447,7 +447,7 @@ export default function ExamSimulationPage() {
           </div>
         </section>
 
-        <footer className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-4">
+        <footer className="mt-4 sm:mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl sm:rounded-2xl border border-slate-200 bg-white p-3 sm:p-4">
           <button
             onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
             disabled={currentIndex === 0}

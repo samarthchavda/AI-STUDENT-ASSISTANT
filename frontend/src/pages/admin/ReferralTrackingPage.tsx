@@ -42,10 +42,10 @@ export default function ReferralTrackingPage() {
   );
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-4 sm:p-6 space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Referral Tracking</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Referral Tracking</h1>
           <p className="text-gray-600 mt-1">Monitor user growth through referrals</p>
         </div>
         <button
@@ -59,7 +59,7 @@ export default function ReferralTrackingPage() {
 
       {/* Stats Cards */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <div className="bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl shadow-lg p-6 text-white">
             <div className="flex items-center justify-between">
               <div>
@@ -106,7 +106,7 @@ export default function ReferralTrackingPage() {
       {stats && stats.top_referrers.length > 0 && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h2 className="text-xl font-bold text-gray-900 mb-4">🏆 Top Referrers</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {stats.top_referrers.map((referrer: any, idx: number) => (
               <div key={referrer.user_id} className="p-4 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg border border-indigo-200">
                 <div className="flex items-center justify-between mb-2">

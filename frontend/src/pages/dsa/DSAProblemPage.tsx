@@ -288,9 +288,9 @@ export default function DSAProblemPage() {
       <Header />
       
       {/* Main Content - Fixed Height with Independent Scrolling */}
-      <div className="flex-1 flex mt-20 overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row mt-20 overflow-hidden">
         {/* Left Panel - Problem Description */}
-        <div className="w-1/2 flex flex-col bg-white border-r border-gray-200">
+        <div className="w-full lg:w-1/2 flex flex-col bg-white border-r border-gray-200">
           {/* Tabs Header */}
           <div className="flex items-center border-b border-gray-200 bg-gray-50">
             <button
@@ -488,7 +488,7 @@ export default function DSAProblemPage() {
                   {(problem.time_complexity || problem.space_complexity) && (
                     <div className="mb-6">
                       <h2 className="text-xl font-bold text-gray-900 mb-3">Expected Complexity</h2>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {problem.time_complexity && (
                           <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
                             <p className="text-sm text-gray-600 mb-1">Time Complexity</p>
@@ -577,9 +577,9 @@ export default function DSAProblemPage() {
         </div>
 
         {/* Right Panel - Code Editor */}
-        <div className="w-1/2 flex flex-col bg-[#1e1e1e]">
+        <div className="w-full lg:w-1/2 flex flex-col bg-[#1e1e1e]">
           {/* Editor Header - Dark Theme */}
-          <div className="bg-[#252526] border-b border-gray-700 px-6 py-3 flex items-center justify-between">
+          <div className="bg-[#252526] border-b border-gray-700 px-4 sm:px-6 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div className="flex items-center gap-4">
               <Code2 className="w-5 h-5 text-gray-400" />
               <select
@@ -593,35 +593,35 @@ export default function DSAProblemPage() {
               </select>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <button
                 onClick={handleGetSolution}
-                className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium"
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors font-medium text-sm"
               >
                 <BookOpen className="w-4 h-4" />
-                Solution
+                <span className="hidden sm:inline">Solution</span>
               </button>
               <button
                 onClick={handleRun}
                 disabled={running}
-                className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
               >
                 {running ? (
                   <>
                     <Clock className="w-4 h-4 animate-spin" />
-                    Running
+                    <span className="hidden sm:inline">Running</span>
                   </>
                 ) : (
                   <>
                     <Play className="w-4 h-4" />
-                    Run
+                    <span className="hidden sm:inline">Run</span>
                   </>
                 )}
               </button>
               <button
                 onClick={handleRun}
                 disabled={running}
-                className="flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed font-bold shadow-lg"
+                className="flex items-center gap-2 px-4 sm:px-5 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed font-bold shadow-lg text-sm"
               >
                 <Send className="w-4 h-4" />
                 Submit
@@ -927,7 +927,7 @@ export default function DSAProblemPage() {
 
                     {/* Complexity Analysis */}
                     {(solution.time_complexity || solution.space_complexity) && (
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {solution.time_complexity && (
                           <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
                             <p className="text-sm text-gray-600 mb-1">Time Complexity</p>

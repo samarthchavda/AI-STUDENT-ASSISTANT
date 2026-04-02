@@ -140,7 +140,7 @@ const AISettingsPage = () => {
     <div className="min-h-screen bg-gray-50">
       <Header />
       
-      <div className="pt-20 px-8 pb-8">
+      <div className="pt-20 px-4 sm:px-6 lg:px-8 pb-8">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="mb-6 flex items-center gap-4">

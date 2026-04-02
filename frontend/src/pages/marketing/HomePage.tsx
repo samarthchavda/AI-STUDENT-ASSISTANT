@@ -16,16 +16,16 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-600 to-teal-900 flex flex-col">
       {/* Hero Section */}
-      <section className="max-w-7xl mx-auto w-full px-4 py-20 flex flex-col md:flex-row items-center gap-12">
+      <section className="max-w-7xl mx-auto w-full px-4 py-12 sm:py-20 flex flex-col md:flex-row items-center gap-8 sm:gap-12">
         {/* Left: Headline & Buttons */}
         <div className="flex-1 text-center md:text-left">
-          <h1 className="text-5xl md:text-6xl font-extrabold text-white leading-tight mb-6">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white leading-tight mb-4 sm:mb-6">
             Crack Your Campus Placements <br />
             <span className="bg-gradient-to-r from-emerald-300 to-teal-400 bg-clip-text text-transparent">
               with AI
             </span>
           </h1>
-          <p className="text-xl text-emerald-100 mb-8 max-w-xl">
+          <p className="text-lg sm:text-xl text-emerald-100 mb-6 sm:mb-8 max-w-xl mx-auto md:mx-0">
             Your all-in-one AI co-pilot for Resume Building, Aptitude Prep, and 24/7 Career Guidance.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
@@ -45,7 +45,7 @@ export default function HomePage() {
         </div>
         {/* Right: Glassmorphism Dashboard Card */}
         <div className="flex-1 flex justify-center">
-          <div className="relative w-[340px] h-[420px] bg-white/10 rounded-3xl shadow-2xl border border-white/20 backdrop-blur-lg flex flex-col items-center justify-center p-8 glass-card">
+          <div className="relative w-full max-w-[340px] h-auto min-h-[420px] bg-white/10 rounded-3xl shadow-2xl border border-white/20 backdrop-blur-lg flex flex-col items-center justify-center p-8 glass-card">
             <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-400 to-teal-400 rounded-full px-6 py-2 text-white font-bold shadow-lg text-lg">
               Dashboard Preview
             </div>
@@ -81,9 +81,9 @@ export default function HomePage() {
       </section>
 
       {/* Feature Showcase */}
-      <section className="max-w-7xl mx-auto w-full px-4 py-20">
-        <h2 className="text-4xl font-bold text-center text-white mb-14">Everything You Need</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+      <section className="max-w-7xl mx-auto w-full px-4 py-12 sm:py-20">
+        <h2 className="text-3xl sm:text-4xl font-bold text-center text-white mb-10 sm:mb-14">Everything You Need</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
           <FeatureCard
             icon={<Bot className="w-8 h-8 text-emerald-400" />}
             title="AI Mock Interviews"
@@ -108,8 +108,8 @@ export default function HomePage() {
       </section>
 
       {/* The AI Difference */}
-      <section className="w-full py-20 bg-gradient-to-br from-gray-900 to-gray-800">
-        <div className="max-w-5xl mx-auto px-4 flex flex-col md:flex-row items-center gap-12">
+      <section className="w-full py-12 sm:py-20 bg-gradient-to-br from-gray-900 to-gray-800">
+        <div className="max-w-5xl mx-auto px-4 flex flex-col md:flex-row items-center gap-8 sm:gap-12">
           <div className="flex-1">
             <h3 className="text-3xl font-bold text-white mb-4">The AI Difference</h3>
             <p className="text-lg text-gray-200 mb-6">
@@ -133,8 +133,8 @@ export default function HomePage() {
       </section>
 
       {/* Stats Bar */}
-      <section className="w-full py-8 bg-gradient-to-r from-emerald-700 to-teal-800">
-        <div className="flex flex-col md:flex-row items-center justify-center gap-8 max-w-4xl mx-auto">
+      <section className="w-full py-6 sm:py-8 bg-gradient-to-r from-emerald-700 to-teal-800">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 max-w-4xl mx-auto px-4">
           <Stat label="500+ Practice Questions" />
           <Stat label="10+ Resume Templates" />
           <Stat label="24/7 AI Availability" />

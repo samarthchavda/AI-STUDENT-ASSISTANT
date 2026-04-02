@@ -322,8 +322,8 @@ export default function ChatPage() {
       <Header />
       <div className="min-h-screen bg-white pt-20">
         {/* Chat Messages - Modern Bubble Design */}
-        <div className="px-4 py-8 pb-48 sm:px-6 lg:px-8">
-          <div className="mx-auto w-full max-w-4xl space-y-4">
+        <div className="px-4 py-6 sm:py-8 pb-48 sm:pb-48 sm:px-6 lg:px-8">
+          <div className="mx-auto w-full max-w-4xl space-y-3 sm:space-y-4">
             <AnimatePresence>
               {messages.map((message, index) => {
                 const isUser = message.role === 'user'
@@ -348,10 +348,10 @@ export default function ChatPage() {
                     )}
 
                     {/* Message Content */}
-                    <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} ${isUser ? 'max-w-[80%]' : 'max-w-[85%]'}`}>
+                    <div className={`flex flex-col ${isUser ? 'items-end' : 'items-start'} ${isUser ? 'max-w-[85%] sm:max-w-[80%]' : 'max-w-[90%] sm:max-w-[85%]'}`}>
                       {/* Message Bubble */}
                       <div
-                        className={`rounded-2xl px-5 py-3 shadow-sm ${
+                        className={`rounded-2xl px-4 sm:px-5 py-3 shadow-sm ${
                           isUser
                             ? 'bg-indigo-600 text-white'
                             : 'bg-gray-50 border border-gray-100'
@@ -572,7 +572,7 @@ export default function ChatPage() {
         </div>
 
         {/* Floating Input Area - Fixed Bottom */}
-        <div className="fixed bottom-0 left-0 right-0 bg-transparent px-4 py-6">
+        <div className="fixed bottom-0 left-0 right-0 bg-transparent px-3 sm:px-4 py-4 sm:py-6">
           <div className="mx-auto w-full max-w-5xl">
             {guestLimitReached && (
               <div className="mb-4 rounded-xl border border-violet-200 bg-violet-50 p-4 text-violet-800">
@@ -602,15 +602,15 @@ export default function ChatPage() {
                   key={action.label}
                   onClick={() => handleQuickAction(action.prompt)}
                   disabled={isLoading || guestLimitReached}
-                  className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                  className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2.5 sm:px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                 >
                   <action.icon className="h-3.5 w-3.5" />
-                  {action.label}
+                  <span className="hidden sm:inline">{action.label}</span>
                 </button>
               ))}
             </div>
 
-            <div className="flex items-end gap-3 rounded-2xl border border-gray-300 bg-white p-3 shadow-2xl transition-all focus-within:border-teal-400 focus-within:ring-4 focus-within:ring-teal-100/50">
+            <div className="flex items-end gap-2 sm:gap-3 rounded-2xl border border-gray-300 bg-white p-2 sm:p-3 shadow-2xl transition-all focus-within:border-teal-400 focus-within:ring-4 focus-within:ring-teal-100/50">
               <div className="relative" ref={plusMenuRef}>
                 <button
                   onClick={() => setShowPlusMenu(!showPlusMenu)}

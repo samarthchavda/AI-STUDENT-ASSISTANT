@@ -128,18 +128,18 @@ export default function LandingPage() {
       </header>
 
       <main>
-        <section className="relative mx-auto max-w-5xl px-6 pt-24 pb-20 text-center lg:pt-32">
+        <section className="relative mx-auto max-w-5xl px-4 sm:px-6 pt-24 pb-20 text-center lg:pt-32">
           <div className="mx-auto mb-8 flex max-w-fit items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-1.5 shadow-sm">
             <Sparkles className="h-4 w-4 text-blue-600" />
             <p className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500">The New Standard for Campus Prep</p>
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-slate-900 mb-8 leading-[1.1]">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-slate-900 mb-8 leading-[1.1]">
             Ace Your Placements <br />
             <span className="text-blue-600 italic">Powered by AI.</span>
           </h1>
 
-          <p className="mt-8 mx-auto max-w-2xl text-xl text-slate-500 leading-relaxed">
+          <p className="mt-8 mx-auto max-w-2xl text-lg sm:text-xl text-slate-500 leading-relaxed">
             Personalized roadmaps, resume analysis, mock interviews, and DSA help. 
             The only workspace you need for placement success.
           </p>
@@ -160,17 +160,17 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="mx-auto max-w-7xl px-6 py-12 border-y border-slate-100 bg-slate-50/30">
+        <section className="mx-auto max-w-7xl px-4 sm:px-6 py-12 border-y border-slate-100 bg-slate-50/30">
           <p className="text-center text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-8">Trusted by students targeting top firms</p>
-          <div className="flex flex-wrap justify-center items-center gap-10 opacity-40 grayscale">
+          <div className="flex flex-wrap justify-center items-center gap-6 sm:gap-10 opacity-40 grayscale">
             {['TCS', 'Infosys', 'Amazon', 'Google', 'Wipro'].map(brand => (
                 <span key={brand} className="text-lg font-bold italic tracking-tighter text-slate-600">{brand}</span>
             ))}
           </div>
         </section>
 
-        <section className="mx-auto max-w-7xl px-6 py-20 text-center">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-12">
+        <section className="mx-auto max-w-7xl px-4 sm:px-6 py-20 text-center">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-12">
                 <Stat val="500+" lab="Placement Tests"/>
                 <Stat val="2.5k" lab="Engineers Hired"/>
                 <Stat val="99%" lab="AI Accuracy"/>
@@ -178,12 +178,12 @@ export default function LandingPage() {
             </div>
         </section>
 
-        <section className="mx-auto max-w-7xl px-6 py-32 bg-[#F8FAFC]/50 border-y border-slate-100">
+        <section className="mx-auto max-w-7xl px-4 sm:px-6 py-32 bg-[#F8FAFC]/50 border-y border-slate-100">
           <div className="text-center mb-20">
-            <h2 className="text-4xl font-black text-slate-900">Complete Placement Platform</h2>
+            <h2 className="text-3xl sm:text-4xl font-black text-slate-900">Complete Placement Platform</h2>
             <p className="text-slate-500 mt-4">Everything an engineering student needs to get hired.</p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {features.map((f, i) => (
               <div key={i} className="group relative rounded-3xl border border-slate-200 bg-white p-8 transition-all hover:shadow-2xl hover:border-blue-200">
                 {f.tag && <span className="absolute top-4 right-4 text-[10px] font-black bg-blue-50 text-blue-600 px-2.5 py-0.5 rounded-full uppercase">{f.tag}</span>}
@@ -198,9 +198,9 @@ export default function LandingPage() {
         </section>
 
         <section className="py-32 bg-white">
-          <div className="max-w-5xl mx-auto px-6 text-center">
-            <h2 className="text-4xl font-black mb-20 text-slate-900">How It Works</h2>
-            <div className="grid md:grid-cols-3 gap-16">
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 text-center">
+            <h2 className="text-3xl sm:text-4xl font-black mb-20 text-slate-900">How It Works</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12 sm:gap-16">
               <Step number="01" icon={Rocket} title="Create Account" text="Sign up and set your branch and target companies." />
               <Step number="02" icon={Brain} title="AI Generates Plan" text="AI builds your personalized 3-month preparation roadmap." />
               <Step number="03" icon={Trophy} title="Crack Interviews" text="Practice with AI tools and land your dream offer." />
@@ -218,9 +218,9 @@ export default function LandingPage() {
         <UseCasesSection />
 
         <section className="py-32 bg-[#F8FAFC]">
-            <div className="max-w-7xl mx-auto px-6 text-center">
-                <h2 className="text-4xl font-black mb-20 text-slate-900">Why Students Love CodeCampus</h2>
-                <div className="grid md:grid-cols-4 gap-12 text-center">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 text-center">
+                <h2 className="text-3xl sm:text-4xl font-black mb-20 text-slate-900">Why Students Love CodeCampus</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-12 text-center">
                     <Benefit icon={ShieldCheck} text="Reliable & Accurate AI Feedback"/>
                     <Benefit icon={Zap} text="Instant Answers to Coding Doubts"/>
                     <Benefit icon={Globe2} text="Practice Anywhere, Anytime"/>
@@ -230,23 +230,23 @@ export default function LandingPage() {
         </section>
 
         <section className="py-32 bg-white">
-          <div className="max-w-3xl mx-auto px-6">
-            <h2 className="text-center text-4xl font-black mb-16 text-slate-900">Frequently Asked Questions</h2>
+          <div className="max-w-3xl mx-auto px-4 sm:px-6">
+            <h2 className="text-center text-3xl sm:text-4xl font-black mb-16 text-slate-900">Frequently Asked Questions</h2>
             <FAQ q="Is CodeCampus AI free?" a="Yes, you can start with the free plan to explore our AI features." />
             <FAQ q="Which AI model powers the assistant?" a="We use Google's Gemini AI to provide real-time, accurate feedback." />
             <FAQ q="Can I practice for specific companies?" a="Absolutely. We have patterns for TCS, Infosys, Wipro, and many more." />
           </div>
         </section>
 
-        <section className="mx-auto max-w-5xl px-6 py-32 text-center">
-          <div className="bg-slate-900 text-white rounded-[3rem] p-16 md:p-24 shadow-2xl relative overflow-hidden">
+        <section className="mx-auto max-w-5xl px-4 sm:px-6 py-32 text-center">
+          <div className="bg-slate-900 text-white rounded-[3rem] p-8 sm:p-12 md:p-16 lg:p-24 shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/20 rounded-full blur-3xl -mr-20 -mt-20" />
-            <Brain className="mx-auto h-12 w-12 mb-8 text-blue-400" />
-            <h2 className="text-4xl md:text-6xl font-black mb-8 tracking-tight leading-tight">Ready to secure your future?</h2>
-            <p className="mb-10 text-xl text-slate-400 max-w-xl mx-auto">
+            <Brain className="mx-auto h-10 w-10 sm:h-12 sm:w-12 mb-8 text-blue-400" />
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-8 tracking-tight leading-tight">Ready to secure your future?</h2>
+            <p className="mb-10 text-lg sm:text-xl text-slate-400 max-w-xl mx-auto">
               Join thousands of students who are already using AI to secure high-package roles.
             </p>
-            <Link to="/signup" className="inline-block bg-white text-slate-900 px-12 py-5 rounded-2xl font-black text-xl hover:bg-blue-600 hover:text-white transition-all shadow-xl">
+            <Link to="/signup" className="inline-block bg-white text-slate-900 px-8 sm:px-12 py-4 sm:py-5 rounded-2xl font-black text-lg sm:text-xl hover:bg-blue-600 hover:text-white transition-all shadow-xl">
               Start Free Trial
             </Link>
           </div>
@@ -326,20 +326,20 @@ function HowItWorksSection() {
 
   return (
     <section ref={ref} className="py-20 bg-gradient-to-b from-white to-slate-50">
-      <div className="max-w-7xl mx-auto px-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <h2 className="text-4xl font-black text-slate-900 mb-4">How It Works</h2>
-          <p className="text-xl text-slate-600 max-w-2xl mx-auto">
+          <h2 className="text-3xl sm:text-4xl font-black text-slate-900 mb-4">How It Works</h2>
+          <p className="text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto">
             Three simple steps to placement success
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
           {steps.map((step, index) => (
             <motion.div
               key={index}
@@ -372,20 +372,20 @@ function TechStackSection() {
 
   return (
     <section ref={ref} className="py-20 bg-slate-100">
-      <div className="max-w-7xl mx-auto px-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <h2 className="text-4xl font-black text-slate-900 mb-4">Built with Modern Tech</h2>
-          <p className="text-xl text-slate-600 max-w-2xl mx-auto">
+          <h2 className="text-3xl sm:text-4xl font-black text-slate-900 mb-4">Built with Modern Tech</h2>
+          <p className="text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto">
             Powered by industry-leading technologies for speed, reliability, and intelligence
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {techStack.map((tech, index) => (
             <motion.div
               key={index}
@@ -413,20 +413,20 @@ function UseCasesSection() {
 
   return (
     <section ref={ref} className="py-20 bg-white">
-      <div className="max-w-7xl mx-auto px-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <h2 className="text-4xl font-black text-slate-900 mb-4">Perfect For Everyone</h2>
-          <p className="text-xl text-slate-600 max-w-2xl mx-auto">
+          <h2 className="text-3xl sm:text-4xl font-black text-slate-900 mb-4">Perfect For Everyone</h2>
+          <p className="text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto">
             Whether you're a student, coder, or job seeker - we've got you covered
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
           {useCases.map((useCase, index) => (
             <motion.div
               key={index}

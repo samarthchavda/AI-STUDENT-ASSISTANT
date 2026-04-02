@@ -252,16 +252,16 @@ export default function ExamPrepPage() {
 
       {showUpgradeModal && <UpgradeModal />}
 
-      <main className="mx-auto w-full max-w-5xl px-6 pt-24 pb-10">{/* Step 1 Setup */}
+      <main className="mx-auto w-full max-w-5xl px-4 sm:px-6 pt-24 pb-10">
         <div className="mb-8">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Step 1 · Setup</p>
-          <h1 className="mt-2 text-4xl font-black tracking-tight text-slate-900">Configure Your Aptitude Assessment</h1>
-          <p className="mt-3 text-slate-600">Pick exam pattern, category, and difficulty before starting your live timed test.</p>
+          <h1 className="mt-2 text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-slate-900">Configure Your Aptitude Assessment</h1>
+          <p className="mt-3 text-sm sm:text-base text-slate-600">Pick exam pattern, category, and difficulty before starting your live timed test.</p>
         </div>
 
-        <section className="rounded-3xl border border-slate-200 bg-white p-6 md:p-8">
-          <h2 className="text-lg font-bold text-slate-900">Choose Company Pattern</h2>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
+        <section className="rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 md:p-8">
+          <h2 className="text-base sm:text-lg font-bold text-slate-900">Choose Company Pattern</h2>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
             {companies.map((company) => {
               const selected = company.id === selectedCompany
               return (
@@ -290,14 +290,14 @@ export default function ExamPrepPage() {
           </div>
         </section>
 
-        <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 md:p-8">
-          <h2 className="text-lg font-bold text-slate-900">Choose Category</h2>
+        <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 md:p-8">
+          <h2 className="text-base sm:text-lg font-bold text-slate-900">Choose Category</h2>
           {loading ? (
             <div className="mt-4 flex items-center justify-center py-8">
               <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
             </div>
           ) : (
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
               {categories.map((category) => {
                 const selected = category.id === selectedCategory
                 const limitData = categoryLimits[category.id]
@@ -357,8 +357,8 @@ export default function ExamPrepPage() {
           )}
         </section>
 
-        <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 md:p-8">
-          <h2 className="text-lg font-bold text-slate-900">Difficulty Picker</h2>
+        <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 md:p-8">
+          <h2 className="text-base sm:text-lg font-bold text-slate-900">Difficulty Picker</h2>
           <div className="mt-4 inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1">
             {(['Easy', 'Medium', 'Hard'] as const).map((level) => {
               const selected = difficulty === level
@@ -389,7 +389,7 @@ export default function ExamPrepPage() {
           <button
             onClick={handleStart}
             disabled={loading || !selectedCategory}
-            className="inline-flex min-w-[320px] items-center justify-center gap-3 rounded-2xl bg-blue-600 px-8 py-4 text-lg font-bold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex w-full sm:w-auto sm:min-w-[320px] items-center justify-center gap-3 rounded-2xl bg-blue-600 px-8 py-4 text-base sm:text-lg font-bold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Play className="h-5 w-5" />
             Start Quiz

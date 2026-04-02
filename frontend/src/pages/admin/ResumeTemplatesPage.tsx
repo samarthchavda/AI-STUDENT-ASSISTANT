@@ -115,10 +115,10 @@ const ResumeTemplatesPage = () => {
     <div className="min-h-screen bg-gray-50">
       <Header />
       
-      <div className="pt-20 px-8 pb-8">
+      <div className="pt-20 px-4 sm:px-6 lg:px-8 pb-8">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
-          <div className="mb-6 flex items-center gap-4">
+          <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <button
               onClick={() => navigate('/admin')}
               className="p-2 hover:bg-gray-100 rounded-lg transition"
@@ -151,7 +151,7 @@ const ResumeTemplatesPage = () => {
           ) : (
             <>
               {/* Summary Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
                 <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
                   <div className="flex items-center gap-3 mb-2">
                     <Layout className="w-5 h-5 text-blue-600" />

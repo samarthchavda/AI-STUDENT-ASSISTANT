@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { dsaAPI, DSAQuestion, DSADashboardStats } from '../../api/client'
 import Header from '../../components/Header'
-import { Code, Trophy, Target, TrendingUp, Calendar, ChevronRight, Filter, Zap, Brain, Network, Box, List, GitBranch, Hash, Layers, Binary, Shuffle, Search, ArrowUpDown } from 'lucide-react'
+import { Code, Trophy, Target, TrendingUp, Calendar, ChevronRight, Filter, Zap, Brain, Network, Box, List, GitBranch, Hash, Layers, Binary, Shuffle, Search, ArrowUpDown, X } from 'lucide-react'
 
 export default function DSADashboardPage() {
   const navigate = useNavigate()
@@ -10,6 +10,7 @@ export default function DSADashboardPage() {
   const [questions, setQuestions] = useState<DSAQuestion[]>([])
   const [dailyChallenge, setDailyChallenge] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   
   // Filters
   const [selectedTopic, setSelectedTopic] = useState<string>('')
@@ -161,9 +162,17 @@ export default function DSADashboardPage() {
       <Header />
       
       <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8">
+        {/* Mobile Filter Button */}
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="lg:hidden fixed bottom-6 left-6 z-40 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center"
+        >
+          <Filter className="w-6 h-6" />
+        </button>
+
         {/* Page Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 bg-clip-text text-transparent mb-2">
+          <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 bg-clip-text text-transparent mb-2">
             DSA Practice Arena
           </h1>
           <p className="text-gray-600">Master Data Structures & Algorithms for top tech placements</p>
@@ -171,7 +180,7 @@ export default function DSADashboardPage() {
 
         {/* Stats Cards with Circular Progress */}
         {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-white/50 hover:shadow-xl transition-all duration-300">
               <div className="flex items-center justify-between">
                 <div>
@@ -245,8 +254,154 @@ export default function DSADashboardPage() {
         )}
 
         <div className="flex gap-6">
-          {/* Sidebar Navigation */}
-          <div className="w-72 flex-shrink-0">
+          {/* Mobile Filter Overlay */}
+          {mobileMenuOpen && (
+            <div className="lg:hidden fixed inset-0 z-50">
+              <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
+              <div className="fixed top-20 left-0 bottom-0 w-80 bg-white overflow-y-auto">
+                <div className="p-6">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-2">
+                      <Filter className="w-5 h-5 text-indigo-600" />
+                      <h3 className="font-bold text-gray-900 text-lg">Filters</h3>
+                    </div>
+                    <button onClick={() => setMobileMenuOpen(false)} className="p-1 hover:bg-gray-100 rounded">
+                      <X className="w-5 h-5 text-gray-600" />
+                    </button>
+                  </div>
+
+                  {/* Topic Filter with Icons */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Topic</label>
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => {
+                          setSelectedTopic('')
+                          setCurrentPage(1)
+                          setMobileMenuOpen(false)
+                        }}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+                          selectedTopic === '' 
+                            ? 'bg-indigo-50 text-indigo-600 border border-indigo-200 shadow-sm' 
+                            : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                        }`}
+                      >
+                        <Code className="w-5 h-5" />
+                        <span className="font-medium">All Topics</span>
+                      </button>
+                      {topics.map((topic) => {
+                        const Icon = getTopicIcon(topic.value)
+                        return (
+                          <button
+                            key={topic.value}
+                            onClick={() => {
+                              setSelectedTopic(topic.value)
+                              setCurrentPage(1)
+                              setMobileMenuOpen(false)
+                            }}
+                            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
+                              selectedTopic === topic.value
+                                ? 'bg-indigo-50 text-indigo-600 border border-indigo-200 shadow-sm'
+                                : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                            }`}
+                          >
+                            <Icon className="w-5 h-5" />
+                            <span className="font-medium">{topic.label}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Difficulty Filter */}
+                  <div className="mb-6">
+                    <label className="block text-sm font-semibold text-gray-700 mb-3">Difficulty</label>
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => {
+                          setSelectedDifficulty('')
+                          setCurrentPage(1)
+                          setMobileMenuOpen(false)
+                        }}
+                        className={`w-full px-4 py-2 rounded-xl font-medium transition-all duration-200 ${
+                          selectedDifficulty === ''
+                            ? 'bg-gray-900 text-white'
+                            : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                        }`}
+                      >
+                        All Levels
+                      </button>
+                      {difficulties.map((diff) => (
+                        <button
+                          key={diff.value}
+                          onClick={() => {
+                            setSelectedDifficulty(diff.value)
+                            setCurrentPage(1)
+                            setMobileMenuOpen(false)
+                          }}
+                          className={`w-full px-4 py-2 rounded-xl font-medium transition-all duration-200 ${
+                            selectedDifficulty === diff.value
+                              ? diff.value === 'easy'
+                                ? 'bg-emerald-500 text-white'
+                                : diff.value === 'medium'
+                                ? 'bg-amber-500 text-white'
+                                : 'bg-rose-500 text-white'
+                              : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                          }`}
+                        >
+                          {diff.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Clear Filters */}
+                  {(selectedTopic || selectedDifficulty) && (
+                    <button
+                      onClick={() => {
+                        setSelectedTopic('')
+                        setSelectedDifficulty('')
+                        setCurrentPage(1)
+                        setMobileMenuOpen(false)
+                      }}
+                      className="w-full text-sm text-indigo-600 hover:text-indigo-700 font-semibold py-2 hover:bg-indigo-50 rounded-lg transition-colors"
+                    >
+                      Clear All Filters
+                    </button>
+                  )}
+
+                  {/* Weak Topics */}
+                  {stats && stats.weak_topics.length > 0 && (
+                    <div className="mt-6 pt-6 border-t border-gray-200">
+                      <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4 text-orange-500" />
+                        Focus Areas
+                      </h4>
+                      <div className="space-y-3">
+                        {stats.weak_topics.slice(0, 5).map((topic) => (
+                          <div key={topic.topic} className="text-sm">
+                            <div className="flex justify-between mb-1">
+                              <span className="text-gray-700 font-medium capitalize">{topic.topic.replace('_', ' ')}</span>
+                              <span className="text-gray-500 text-xs">{topic.solved}/{topic.attempts}</span>
+                            </div>
+                            <div className="w-full bg-gray-200 rounded-full h-2">
+                              <div
+                                className="bg-gradient-to-r from-amber-400 to-orange-500 h-2 rounded-full transition-all duration-500"
+                                style={{ width: `${(topic.solved / topic.attempts) * 100}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Desktop Sidebar Navigation */}
+          <div className="w-72 flex-shrink-0 hidden lg:block">
             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 border border-white/50 sticky top-24">
               <div className="flex items-center gap-2 mb-6">
                 <Filter className="w-5 h-5 text-indigo-600" />
@@ -417,7 +572,7 @@ export default function DSADashboardPage() {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                 {questions.map((question) => {
                   const Icon = getTopicIcon(question.topic)
                   return (

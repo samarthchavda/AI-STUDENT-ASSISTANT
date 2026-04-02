@@ -131,17 +131,17 @@ export default function PricingPage() {
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50">
       <Header />
 
-      <div className="max-w-7xl mx-auto px-4 pt-24 pb-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8">
         {/* Welcome Message for Authenticated Users */}
         {isAuthenticated && user && (
-          <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl p-6 mb-8 shadow-lg">
+          <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-2xl p-4 sm:p-6 mb-8 shadow-lg">
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                <span className="text-2xl">👋</span>
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white/20 rounded-full flex items-center justify-center">
+                <span className="text-xl sm:text-2xl">👋</span>
               </div>
               <div>
-                <h3 className="text-2xl font-bold">Welcome, {user.name}!</h3>
-                <p className="text-blue-100">
+                <h3 className="text-xl sm:text-2xl font-bold">Welcome, {user.name}!</h3>
+                <p className="text-sm sm:text-base text-blue-100">
                   You're currently on the <span className="font-semibold uppercase">{user.plan}</span> plan
                   {user.plan === 'free' && ' - Upgrade to unlock all features'}
                 </p>
@@ -150,17 +150,15 @@ export default function PricingPage() {
           </div>
         )}
 
-        {/* 
-      <div className="max-w-7xl mx-auto px-4 py-12">
         {/* Billing Toggle */}
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold mb-4">Simple, Transparent Pricing</h2>
+          <h2 className="text-3xl sm:text-4xl font-bold mb-4">Simple, Transparent Pricing</h2>
           <p className="text-gray-600 mb-6">Start free, upgrade when you need more</p>
           
-          <div className="inline-flex items-center gap-3 bg-white rounded-full p-1 shadow-md">
+          <div className="inline-flex items-center gap-2 sm:gap-3 bg-white rounded-full p-1 shadow-md">
             <button
               onClick={() => setBillingCycle('monthly')}
-              className={`px-6 py-2 rounded-full font-semibold transition-colors ${
+              className={`px-4 sm:px-6 py-2 rounded-full text-sm sm:text-base font-semibold transition-colors ${
                 billingCycle === 'monthly'
                   ? 'bg-primary-600 text-white'
                   : 'text-gray-600 hover:text-gray-900'
@@ -170,7 +168,7 @@ export default function PricingPage() {
             </button>
             <button
               onClick={() => setBillingCycle('yearly')}
-              className={`px-6 py-2 rounded-full font-semibold transition-colors ${
+              className={`px-4 sm:px-6 py-2 rounded-full text-sm sm:text-base font-semibold transition-colors ${
                 billingCycle === 'yearly'
                   ? 'bg-primary-600 text-white'
                   : 'text-gray-600 hover:text-gray-900'
@@ -185,7 +183,7 @@ export default function PricingPage() {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 max-w-6xl mx-auto">
           {plans.map((plan) => {
             const Icon = plan.icon
             const price = plan.price[billingCycle]
@@ -287,14 +285,14 @@ export default function PricingPage() {
         </div>
 
         {/* Demo Notice */}
-        <div className="mt-12 max-w-3xl mx-auto">
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+        <div className="mt-12 max-w-3xl mx-auto px-4">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 sm:p-6">
             <h3 className="font-bold text-yellow-900 mb-2">🔑 Demo Mode Active</h3>
             <p className="text-yellow-800 text-sm">
               This is a demo application. Payment buttons use demo API keys and won't charge real money. 
               In production, integrate with Stripe, Razorpay, or another payment provider.
             </p>
-            <div className="mt-3 text-xs text-yellow-700 bg-yellow-100 p-3 rounded font-mono">
+            <div className="mt-3 text-xs text-yellow-700 bg-yellow-100 p-3 rounded font-mono overflow-x-auto">
               Demo API Keys in use (backend .env):<br />
               STRIPE_API_KEY=sk_test_demo123456<br />
               RAZORPAY_KEY_ID=rzp_test_demo123456
@@ -303,8 +301,8 @@ export default function PricingPage() {
         </div>
 
         {/* FAQ */}
-        <div className="mt-16 max-w-3xl mx-auto">
-          <h3 className="text-2xl font-bold text-center mb-8">Frequently Asked Questions</h3>
+        <div className="mt-16 max-w-3xl mx-auto px-4">
+          <h3 className="text-xl sm:text-2xl font-bold text-center mb-8">Frequently Asked Questions</h3>
           <div className="space-y-4">
             <details className="card">
               <summary className="font-semibold cursor-pointer">Can I cancel anytime?</summary>

@@ -75,22 +75,22 @@ const UserResumesPage = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      <div className="pt-20 px-8 pb-8">
+      <div className="pt-20 px-4 sm:px-6 lg:px-8 pb-8">
         <div className="max-w-7xl mx-auto">
-          <div className="mb-6 flex items-center gap-4">
+          <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <button onClick={() => navigate('/admin')} className="p-2 hover:bg-gray-100 rounded-lg transition">
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div className="flex-1">
-              <h1 className="text-2xl font-bold text-gray-900">User Resumes</h1>
-              <p className="text-gray-500 mt-1">View and manage all user resumes</p>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">User Resumes</h1>
+              <p className="text-sm sm:text-base text-gray-500 mt-1">View and manage all user resumes</p>
             </div>
             <input
               type="text"
-              placeholder="Search by name, email, or template..."
+              placeholder="Search..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
             />
           </div>
 

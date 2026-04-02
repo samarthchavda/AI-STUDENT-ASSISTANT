@@ -117,7 +117,7 @@ export default function DSAEditorDemoPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-10 gap-5 h-[calc(100vh-220px)] min-h-[620px]">
-            <section className="lg:col-span-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm overflow-y-auto">
+            <section className="lg:col-span-3 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 shadow-sm overflow-y-auto">
               <h1 className="text-xl font-bold text-slate-900 mb-3">{problem?.title || 'DSA Challenge'}</h1>
               <p className="text-sm text-slate-700 whitespace-pre-wrap leading-6 mb-4">{problem?.description}</p>
 

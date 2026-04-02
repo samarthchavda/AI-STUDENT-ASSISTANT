@@ -19,6 +19,7 @@ import {
   X,
   BookOpenCheck,
   Activity,
+  Menu,
   type LucideIcon
 } from 'lucide-react'
 import Header from '../../components/Header'
@@ -113,6 +114,7 @@ export default function DashboardPageNew() {
   const [activeSidebar, setActiveSidebar] = useState('dashboard')
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [showCopilot, setShowCopilot] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [activities, setActivities] = useState<ActivityItem[]>([])
   const [loadingActivities, setLoadingActivities] = useState(true)
   const [userStats, setUserStats] = useState({
@@ -415,7 +417,59 @@ export default function DashboardPageNew() {
       {/* Sticky Header */}
       <Header />
 
-      <div className="flex pt-20">{/* Left Sidebar - Enhanced */}
+      <div className="flex pt-20">
+        {/* Mobile Menu Button */}
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="lg:hidden fixed bottom-6 left-6 z-40 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center"
+        >
+          <Menu className="w-6 h-6" />
+        </button>
+
+        {/* Mobile Sidebar Overlay */}
+        {mobileMenuOpen && (
+          <div className="lg:hidden fixed inset-0 z-50">
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
+            <aside className="fixed top-20 left-0 bottom-0 w-64 bg-gray-50 border-r border-gray-100 overflow-y-auto">
+              <div className="p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    Navigation
+                  </h2>
+                  <button onClick={() => setMobileMenuOpen(false)} className="p-1 hover:bg-gray-200 rounded">
+                    <X className="w-5 h-5 text-gray-600" />
+                  </button>
+                </div>
+                <nav className="space-y-1">
+                  {sidebarItems.map((item, index) => {
+                    const Icon = item.icon
+                    const isActive = activeSidebar === item.id
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          setActiveSidebar(item.id)
+                          if (item.route) navigate(item.route)
+                          setMobileMenuOpen(false)
+                        }}
+                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                          isActive
+                            ? 'bg-blue-600 text-white font-semibold shadow-lg shadow-blue-500/30'
+                            : 'text-gray-700 hover:bg-gray-100'
+                        }`}
+                      >
+                        <Icon className="w-5 h-5" />
+                        <span>{item.label}</span>
+                      </button>
+                    )
+                  })}
+                </nav>
+              </div>
+            </aside>
+          </div>
+        )}
+
+        {/* Desktop Sidebar */}
         <aside className="w-64 bg-gray-50 border-r border-gray-100 min-h-screen sticky top-20 hidden lg:block">
           <div className="p-4">
             <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">
@@ -451,7 +505,7 @@ export default function DashboardPageNew() {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-6 lg:p-8">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8">
           {/* Welcome Avatar - Simple profile indicator */}
           {user && (
             <div className="mb-6 flex items-center gap-3">
@@ -473,7 +527,7 @@ export default function DashboardPageNew() {
 
           {/* Stats Grid - Enhanced with Sparklines */}
           <motion.div 
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8"
             variants={staggerContainer}
             initial="initial"
             animate="animate"
@@ -578,7 +632,7 @@ export default function DashboardPageNew() {
                 <Award className="w-5 h-5 text-purple-600" />
                 Premium Exam Mock Tests
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {mockTests.map((test, index) => {
                   const Icon = test.icon
                   const isLocked = test.isPremium && test.usedAttempts! >= test.totalAttempts!

@@ -33,7 +33,9 @@ import {
   Briefcase,
   Layout,
   Brain,
-  Settings
+  Settings,
+  Menu,
+  X
 } from 'lucide-react';
 
 interface AptitudeUserSummary {
@@ -64,6 +66,7 @@ const AdminPage = () => {
   const navigate = useNavigate();
   const { user, logout } = useAppStore();
   const [activeTab, setActiveTab] = useState<'stats' | 'users' | 'chats' | 'payments' | 'progress' | 'company-questions' | 'aptitude-history' | 'ai-monitor' | 'broadcast' | 'aptitude-questions' | 'dsa-management'>('stats');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -620,8 +623,197 @@ const AdminPage = () => {
     <div className="min-h-screen bg-gray-50">
       <Header />
       
-      <div className="flex pt-20">{/* Left Sidebar */}
-        <aside className="w-64 bg-white border-r border-gray-200 min-h-screen sticky top-20">
+      <div className="flex pt-20">
+        {/* Mobile Menu Button */}
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="lg:hidden fixed bottom-6 left-6 z-40 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center"
+        >
+          <Menu className="w-6 h-6" />
+        </button>
+
+        {/* Mobile Sidebar Overlay */}
+        {mobileMenuOpen && (
+          <div className="lg:hidden fixed inset-0 z-50">
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
+            <aside className="fixed top-20 left-0 bottom-0 w-64 bg-white border-r border-gray-200 overflow-y-auto">
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-xl font-bold text-gray-900 mb-1">Admin Panel</h2>
+                    <p className="text-sm text-gray-500">Manage your platform</p>
+                  </div>
+                  <button onClick={() => setMobileMenuOpen(false)} className="p-1 hover:bg-gray-100 rounded">
+                    <X className="w-5 h-5 text-gray-600" />
+                  </button>
+                </div>
+              </div>
+              
+              <nav className="px-3 pb-6">
+                {sidebarItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeTab === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        handleTabChange(item.id as typeof activeTab)
+                        setMobileMenuOpen(false)
+                      }}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 transition-all ${
+                        isActive
+                          ? 'bg-blue-50 text-blue-600 font-medium'
+                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span className="text-sm">{item.label}</span>
+                    </button>
+                  );
+                })}
+                
+                {/* Divider */}
+                <div className="my-4 border-t border-gray-200"></div>
+                
+                {/* System Health & Admin Enhancement Pages */}
+                <p className="px-4 text-xs font-semibold text-gray-400 uppercase mb-2">System</p>
+                <button
+                  onClick={() => {
+                    handleNavigateToPage('/admin/system-health')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+                >
+                  <Activity className="w-5 h-5" />
+                  <span className="text-sm">System Health</span>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    handleNavigateToPage('/admin/broadcast')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+                >
+                  <Bell className="w-5 h-5" />
+                  <span className="text-sm">Broadcast System</span>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    handleNavigateToPage('/admin/audit-logs')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+                >
+                  <Database className="w-5 h-5" />
+                  <span className="text-sm">Audit Logs</span>
+                </button>
+                
+                {/* Divider */}
+                <div className="my-4 border-t border-gray-200"></div>
+                
+                {/* Growth Features */}
+                <p className="px-4 text-xs font-semibold text-gray-400 uppercase mb-2">Growth</p>
+                <button
+                  onClick={() => {
+                    handleNavigateToPage('/admin/leaderboard')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+                >
+                  <Trophy className="w-5 h-5" />
+                  <span className="text-sm">Leaderboard</span>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    handleNavigateToPage('/admin/transactions')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+                >
+                  <DollarSign className="w-5 h-5" />
+                  <span className="text-sm">Transactions</span>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    handleNavigateToPage('/admin/referrals')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+                >
+                  <Users className="w-5 h-5" />
+                  <span className="text-sm">Referrals</span>
+                </button>
+                
+                {/* Divider */}
+                <div className="my-4 border-t border-gray-200"></div>
+                
+                {/* Resume Admin */}
+                <p className="px-4 text-xs font-semibold text-gray-400 uppercase mb-2">Resume Admin</p>
+                <button
+                  onClick={() => {
+                    handleNavigateToPage('/admin/resume-analytics')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+                >
+                  <BarChart3 className="w-5 h-5" />
+                  <span className="text-sm">Resume Analytics</span>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    handleNavigateToPage('/admin/resume-templates')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+                >
+                  <Layout className="w-5 h-5" />
+                  <span className="text-sm">Resume Templates</span>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    handleNavigateToPage('/admin/user-resumes')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+                >
+                  <Briefcase className="w-5 h-5" />
+                  <span className="text-sm">User Resumes</span>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    handleNavigateToPage('/admin/ai-resume-monitor')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+                >
+                  <Brain className="w-5 h-5" />
+                  <span className="text-sm">AI Resume Monitor</span>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    handleNavigateToPage('/admin/ai-settings')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+                >
+                  <Settings className="w-5 h-5" />
+                  <span className="text-sm">AI Settings</span>
+                </button>
+              </nav>
+            </aside>
+          </div>
+        )}
+
+        {/* Desktop Sidebar */}
+        <aside className="w-64 bg-white border-r border-gray-200 min-h-screen sticky top-20 hidden lg:block">
           <div className="p-6">
             <h2 className="text-xl font-bold text-gray-900 mb-1">Admin Panel</h2>
             <p className="text-sm text-gray-500">Manage your platform</p>
@@ -753,7 +945,7 @@ const AdminPage = () => {
         </aside>
 
         {/* Main Content Area */}
-        <main className="flex-1 p-8">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8">
           {/* Error Message */}
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 flex items-center gap-2">
@@ -786,7 +978,7 @@ const AdminPage = () => {
                 <p className="text-gray-500 mt-1">Monitor your platform's key metrics</p>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                 {/* Total Users */}
                 <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition">
                   <div className="flex items-center justify-between mb-4">
