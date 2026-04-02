@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Clock, Play, Send, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Clock, Play, Send, ChevronDown, CheckCircle2, XCircle, AlertCircle, Loader2 } from 'lucide-react';
 import Header from '../../components/Header';
 import DSACodeEditor from './components/DSACodeEditor';
 import DSAProblemStatement from './components/DSAProblemStatement';
+import { runCode, submitCode, ExecutionResult } from '../../services/codeExecutionService';
 
 interface ProblemData {
   id: number;
@@ -23,6 +24,10 @@ interface ProblemData {
     javascript: string;
     cpp: string;
   };
+  testCases: {
+    visible: Array<{ input: string; expected: string }>;
+    hidden: Array<{ input: string; expected: string }>;
+  };
   timeLimit: number;
 }
 
@@ -35,19 +40,9 @@ const mockProblems: Record<string, ProblemData> = {
     topic: 'Arrays',
     description: 'Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to `target`.\n\nYou may assume that each input would have exactly one solution, and you may not use the same element twice.\n\nYou can return the answer in any order.',
     examples: [
-      {
-        input: 'nums = [2,7,11,15], target = 9',
-        output: '[0,1]',
-        explanation: 'Because nums[0] + nums[1] == 9, we return [0, 1].'
-      },
-      {
-        input: 'nums = [3,2,4], target = 6',
-        output: '[1,2]'
-      },
-      {
-        input: 'nums = [3,3], target = 6',
-        output: '[0,1]'
-      }
+      { input: 'nums = [2,7,11,15], target = 9', output: '[0,1]', explanation: 'Because nums[0] + nums[1] == 9, we return [0, 1].' },
+      { input: 'nums = [3,2,4], target = 6', output: '[1,2]' },
+      { input: 'nums = [3,3], target = 6', output: '[0,1]' }
     ],
     constraints: [
       '2 <= nums.length <= 10^4',
@@ -56,9 +51,20 @@ const mockProblems: Record<string, ProblemData> = {
       'Only one valid answer exists.'
     ],
     starterCode: {
-      python: 'def twoSum(nums, target):\n    # Write your code here\n    pass',
-      javascript: 'function twoSum(nums, target) {\n    // Write your code here\n}',
-      cpp: 'vector<int> twoSum(vector<int>& nums, int target) {\n    // Write your code here\n}'
+      python: 'def twoSum(nums, target):\n    # Write your code here\n    pass\n\n# Test\nimport json\nnums, target = json.loads(input())\nprint(json.dumps(twoSum(nums, target)))',
+      javascript: 'function twoSum(nums, target) {\n    // Write your code here\n}\n\n// Test\nconst input = require("fs").readFileSync(0, "utf-8").trim();\nconst [nums, target] = JSON.parse(input);\nconsole.log(JSON.stringify(twoSum(nums, target)));',
+      cpp: '#include <iostream>\n#include <vector>\nusing namespace std;\n\nvector<int> twoSum(vector<int>& nums, int target) {\n    // Write your code here\n}\n\nint main() {\n    // Test code here\n    return 0;\n}'
+    },
+    testCases: {
+      visible: [
+        { input: '[[2,7,11,15], 9]', expected: '[0,1]' },
+        { input: '[[3,2,4], 6]', expected: '[1,2]' }
+      ],
+      hidden: [
+        { input: '[[3,3], 6]', expected: '[0,1]' },
+        { input: '[[1,5,3,7,9], 10]', expected: '[1,3]' },
+        { input: '[[0,4,3,0], 0]', expected: '[0,3]' }
+      ]
     },
     timeLimit: 1800
   },
@@ -70,23 +76,26 @@ const mockProblems: Record<string, ProblemData> = {
     topic: 'Strings',
     description: 'Write a function that reverses a string. The input string is given as an array of characters `s`.\n\nYou must do this by modifying the input array in-place with O(1) extra memory.',
     examples: [
-      {
-        input: 's = ["h","e","l","l","o"]',
-        output: '["o","l","l","e","h"]'
-      },
-      {
-        input: 's = ["H","a","n","n","a","h"]',
-        output: '["h","a","n","n","a","H"]'
-      }
+      { input: 's = ["h","e","l","l","o"]', output: '["o","l","l","e","h"]' },
+      { input: 's = ["H","a","n","n","a","h"]', output: '["h","a","n","n","a","H"]' }
     ],
     constraints: [
       '1 <= s.length <= 10^5',
       's[i] is a printable ascii character.'
     ],
     starterCode: {
-      python: 'def reverseString(s):\n    # Write your code here\n    pass',
-      javascript: 'function reverseString(s) {\n    // Write your code here\n}',
-      cpp: 'void reverseString(vector<char>& s) {\n    // Write your code here\n}'
+      python: 'def reverseString(s):\n    # Write your code here\n    pass\n\n# Test\nimport json\ns = json.loads(input())\nreverseString(s)\nprint(json.dumps(s))',
+      javascript: 'function reverseString(s) {\n    // Write your code here\n}\n\n// Test\nconst input = require("fs").readFileSync(0, "utf-8").trim();\nconst s = JSON.parse(input);\nreverseString(s);\nconsole.log(JSON.stringify(s));',
+      cpp: '#include <iostream>\n#include <vector>\nusing namespace std;\n\nvoid reverseString(vector<char>& s) {\n    // Write your code here\n}\n\nint main() {\n    return 0;\n}'
+    },
+    testCases: {
+      visible: [
+        { input: '["h","e","l","l","o"]', expected: '["o","l","l","e","h"]' }
+      ],
+      hidden: [
+        { input: '["H","a","n","n","a","h"]', expected: '["h","a","n","n","a","H"]' },
+        { input: '["a"]', expected: '["a"]' }
+      ]
     },
     timeLimit: 900
   },
@@ -98,60 +107,31 @@ const mockProblems: Record<string, ProblemData> = {
     topic: 'Stack',
     description: 'Given a string `s` containing just the characters `(`, `)`, `{`, `}`, `[` and `]`, determine if the input string is valid.\n\nAn input string is valid if:\n1. Open brackets must be closed by the same type of brackets.\n2. Open brackets must be closed in the correct order.\n3. Every close bracket has a corresponding open bracket of the same type.',
     examples: [
-      {
-        input: 's = "()"',
-        output: 'true'
-      },
-      {
-        input: 's = "()[]{}"',
-        output: 'true'
-      },
-      {
-        input: 's = "(]"',
-        output: 'false'
-      }
+      { input: 's = "()"', output: 'true' },
+      { input: 's = "()[]{}"', output: 'true' },
+      { input: 's = "(]"', output: 'false' }
     ],
     constraints: [
       '1 <= s.length <= 10^4',
       's consists of parentheses only \'()[]{}\'.'
     ],
     starterCode: {
-      python: 'def isValid(s):\n    # Write your code here\n    pass',
-      javascript: 'function isValid(s) {\n    // Write your code here\n}',
-      cpp: 'bool isValid(string s) {\n    // Write your code here\n}'
+      python: 'def isValid(s):\n    # Write your code here\n    pass\n\n# Test\nimport json\ns = input().strip()\nprint(json.dumps(isValid(s)))',
+      javascript: 'function isValid(s) {\n    // Write your code here\n}\n\n// Test\nconst input = require("fs").readFileSync(0, "utf-8").trim();\nconsole.log(JSON.stringify(isValid(input)));',
+      cpp: '#include <iostream>\n#include <string>\nusing namespace std;\n\nbool isValid(string s) {\n    // Write your code here\n}\n\nint main() {\n    return 0;\n}'
+    },
+    testCases: {
+      visible: [
+        { input: '()', expected: 'true' },
+        { input: '()[]{}', expected: 'true' }
+      ],
+      hidden: [
+        { input: '(]', expected: 'false' },
+        { input: '([)]', expected: 'false' },
+        { input: '{[]}', expected: 'true' }
+      ]
     },
     timeLimit: 1200
-  },
-  'merge-intervals': {
-    id: 4,
-    slug: 'merge-intervals',
-    title: 'Merge Intervals',
-    difficulty: 'Medium',
-    topic: 'Arrays',
-    description: 'Given an array of `intervals` where `intervals[i] = [starti, endi]`, merge all overlapping intervals, and return an array of the non-overlapping intervals that cover all the intervals in the input.',
-    examples: [
-      {
-        input: 'intervals = [[1,3],[2,6],[8,10],[15,18]]',
-        output: '[[1,6],[8,10],[15,18]]',
-        explanation: 'Since intervals [1,3] and [2,6] overlap, merge them into [1,6].'
-      },
-      {
-        input: 'intervals = [[1,4],[4,5]]',
-        output: '[[1,5]]',
-        explanation: 'Intervals [1,4] and [4,5] are considered overlapping.'
-      }
-    ],
-    constraints: [
-      '1 <= intervals.length <= 10^4',
-      'intervals[i].length == 2',
-      '0 <= starti <= endi <= 10^4'
-    ],
-    starterCode: {
-      python: 'def merge(intervals):\n    # Write your code here\n    pass',
-      javascript: 'function merge(intervals) {\n    // Write your code here\n}',
-      cpp: 'vector<vector<int>> merge(vector<vector<int>>& intervals) {\n    // Write your code here\n}'
-    },
-    timeLimit: 2400
   },
   'climbing-stairs': {
     id: 9,
@@ -161,24 +141,25 @@ const mockProblems: Record<string, ProblemData> = {
     topic: 'DP',
     description: 'You are climbing a staircase. It takes `n` steps to reach the top.\n\nEach time you can either climb 1 or 2 steps. In how many distinct ways can you climb to the top?',
     examples: [
-      {
-        input: 'n = 2',
-        output: '2',
-        explanation: 'There are two ways to climb to the top: 1. 1 step + 1 step, 2. 2 steps'
-      },
-      {
-        input: 'n = 3',
-        output: '3',
-        explanation: 'There are three ways to climb to the top: 1. 1 step + 1 step + 1 step, 2. 1 step + 2 steps, 3. 2 steps + 1 step'
-      }
+      { input: 'n = 2', output: '2', explanation: 'There are two ways to climb to the top: 1. 1 step + 1 step, 2. 2 steps' },
+      { input: 'n = 3', output: '3', explanation: 'There are three ways: 1+1+1, 1+2, 2+1' }
     ],
-    constraints: [
-      '1 <= n <= 45'
-    ],
+    constraints: ['1 <= n <= 45'],
     starterCode: {
-      python: 'def climbStairs(n):\n    # Write your code here\n    pass',
-      javascript: 'function climbStairs(n) {\n    // Write your code here\n}',
-      cpp: 'int climbStairs(int n) {\n    // Write your code here\n}'
+      python: 'def climbStairs(n):\n    # Write your code here\n    pass\n\n# Test\nn = int(input())\nprint(climbStairs(n))',
+      javascript: 'function climbStairs(n) {\n    // Write your code here\n}\n\n// Test\nconst input = require("fs").readFileSync(0, "utf-8").trim();\nconsole.log(climbStairs(parseInt(input)));',
+      cpp: '#include <iostream>\nusing namespace std;\n\nint climbStairs(int n) {\n    // Write your code here\n}\n\nint main() {\n    return 0;\n}'
+    },
+    testCases: {
+      visible: [
+        { input: '2', expected: '2' },
+        { input: '3', expected: '3' }
+      ],
+      hidden: [
+        { input: '4', expected: '5' },
+        { input: '5', expected: '8' },
+        { input: '10', expected: '89' }
+      ]
     },
     timeLimit: 1500
   }
@@ -192,18 +173,25 @@ export default function DSAProblemPage() {
   const [code, setCode] = useState('');
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [executionResult, setExecutionResult] = useState<ExecutionResult | null>(null);
+  const [showResult, setShowResult] = useState(false);
 
   useEffect(() => {
     if (slug && mockProblems[slug]) {
       const problemData = mockProblems[slug];
       setProblem(problemData);
       setCode(problemData.starterCode[selectedLanguage]);
+      setExecutionResult(null);
+      setShowResult(false);
     }
   }, [slug]);
 
   useEffect(() => {
     if (problem) {
       setCode(problem.starterCode[selectedLanguage]);
+      setExecutionResult(null);
+      setShowResult(false);
     }
   }, [selectedLanguage, problem]);
 
@@ -211,7 +199,6 @@ export default function DSAProblemPage() {
     const interval = setInterval(() => {
       setTimeElapsed((prev) => prev + 1);
     }, 1000);
-
     return () => clearInterval(interval);
   }, []);
 
@@ -221,16 +208,69 @@ export default function DSAProblemPage() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const handleRun = () => {
+  const handleRun = async () => {
+    if (!problem) return;
+    
     setIsRunning(true);
-    setTimeout(() => {
+    setShowResult(true);
+    setExecutionResult({ status: 'Running' });
+
+    try {
+      const result = await runCode(code, selectedLanguage, problem.testCases.visible);
+      setExecutionResult(result);
+    } catch (error) {
+      setExecutionResult({
+        status: 'Runtime Error',
+        error: error instanceof Error ? error.message : 'Execution failed'
+      });
+    } finally {
       setIsRunning(false);
-      alert('Run functionality will be implemented in next phase');
-    }, 500);
+    }
   };
 
-  const handleSubmit = () => {
-    alert('Submit functionality will be implemented in next phase');
+  const handleSubmit = async () => {
+    if (!problem) return;
+    
+    setIsSubmitting(true);
+    setShowResult(true);
+    setExecutionResult({ status: 'Running' });
+
+    try {
+      const allTestCases = [...problem.testCases.visible, ...problem.testCases.hidden];
+      const result = await submitCode(code, selectedLanguage, allTestCases);
+      setExecutionResult(result);
+    } catch (error) {
+      setExecutionResult({
+        status: 'Runtime Error',
+        error: error instanceof Error ? error.message : 'Submission failed'
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Accepted': return 'bg-green-100 text-green-700 border-green-300';
+      case 'Wrong Answer': return 'bg-red-100 text-red-700 border-red-300';
+      case 'Runtime Error': return 'bg-orange-100 text-orange-700 border-orange-300';
+      case 'Time Limit Exceeded': return 'bg-yellow-100 text-yellow-700 border-yellow-300';
+      case 'Compilation Error': return 'bg-red-100 text-red-700 border-red-300';
+      case 'Running': return 'bg-blue-100 text-blue-700 border-blue-300';
+      default: return 'bg-gray-100 text-gray-700 border-gray-300';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'Accepted': return <CheckCircle2 className="w-5 h-5" />;
+      case 'Wrong Answer': return <XCircle className="w-5 h-5" />;
+      case 'Runtime Error': return <AlertCircle className="w-5 h-5" />;
+      case 'Time Limit Exceeded': return <Clock className="w-5 h-5" />;
+      case 'Compilation Error': return <XCircle className="w-5 h-5" />;
+      case 'Running': return <Loader2 className="w-5 h-5 animate-spin" />;
+      default: return <AlertCircle className="w-5 h-5" />;
+    }
   };
 
   if (!problem) {
@@ -258,7 +298,7 @@ export default function DSAProblemPage() {
       
       <div className="pt-20 h-screen flex flex-col">
         <div className="bg-white border-b border-gray-200 px-4 py-3">
-          <div className="max-w-[1800px] mx-auto flex items-center justify-between gap-4">
+          <div className="max-w-[1800px] mx-auto flex items-center justify-between gap-4 flex-wrap">
             <button
               onClick={() => navigate('/dsa')}
               className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
@@ -267,7 +307,7 @@ export default function DSAProblemPage() {
               <span className="hidden sm:inline">Back to Problems</span>
             </button>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 flex-wrap">
               <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg">
                 <Clock className="w-4 h-4 text-gray-600" />
                 <span className="text-sm font-mono font-medium text-gray-900">
@@ -290,45 +330,109 @@ export default function DSAProblemPage() {
 
               <button
                 onClick={handleRun}
-                disabled={isRunning}
+                disabled={isRunning || isSubmitting}
                 className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
               >
-                <Play className="w-4 h-4" />
+                {isRunning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
                 Run
               </button>
 
               <button
                 onClick={handleSubmit}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+                disabled={isRunning || isSubmitting}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
               >
-                <Send className="w-4 h-4" />
+                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 Submit
               </button>
             </div>
           </div>
         </div>
 
-        <div className="flex-1 flex overflow-hidden">
-          <div className="w-full lg:w-1/2 overflow-y-auto border-r border-gray-200">
+        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+          <div className="w-full lg:w-1/2 overflow-y-auto border-b lg:border-b-0 lg:border-r border-gray-200">
             <DSAProblemStatement problem={problem} />
           </div>
 
-          <div className="hidden lg:block lg:w-1/2 bg-gray-900">
-            <DSACodeEditor
-              code={code}
-              language={selectedLanguage}
-              onChange={setCode}
-            />
-          </div>
-        </div>
+          <div className="w-full lg:w-1/2 flex flex-col bg-gray-900">
+            <div className="flex-1 overflow-hidden">
+              <DSACodeEditor
+                code={code}
+                language={selectedLanguage}
+                onChange={setCode}
+              />
+            </div>
 
-        <div className="lg:hidden">
-          <div className="bg-gray-900 h-96">
-            <DSACodeEditor
-              code={code}
-              language={selectedLanguage}
-              onChange={setCode}
-            />
+            {showResult && executionResult && (
+              <div className="border-t border-gray-700 bg-gray-800 p-4 max-h-64 overflow-y-auto">
+                <div className="mb-3">
+                  <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border font-medium ${getStatusColor(executionResult.status)}`}>
+                    {getStatusIcon(executionResult.status)}
+                    <span>{executionResult.status}</span>
+                  </div>
+                </div>
+
+                {executionResult.passedTests !== undefined && (
+                  <div className="mb-3">
+                    <p className="text-sm text-gray-300">
+                      Test Cases: <span className="font-semibold text-white">{executionResult.passedTests}/{executionResult.totalTests}</span> passed
+                    </p>
+                  </div>
+                )}
+
+                {executionResult.runtime !== undefined && (
+                  <div className="mb-3 flex items-center gap-4 text-sm text-gray-400">
+                    <span>Runtime: <span className="text-gray-200">{executionResult.runtime.toFixed(2)}s</span></span>
+                    {executionResult.memory && (
+                      <span>Memory: <span className="text-gray-200">{(executionResult.memory / 1024).toFixed(1)} MB</span></span>
+                    )}
+                  </div>
+                )}
+
+                {executionResult.output && (
+                  <div className="mb-3">
+                    <p className="text-xs font-semibold text-gray-400 mb-1">Output:</p>
+                    <pre className="bg-gray-900 rounded p-3 text-sm text-green-400 font-mono overflow-x-auto">
+                      {executionResult.output}
+                    </pre>
+                  </div>
+                )}
+
+                {executionResult.error && (
+                  <div className="mb-3">
+                    <p className="text-xs font-semibold text-gray-400 mb-1">Error:</p>
+                    <pre className="bg-gray-900 rounded p-3 text-sm text-red-400 font-mono overflow-x-auto">
+                      {executionResult.error}
+                    </pre>
+                  </div>
+                )}
+
+                {executionResult.testResults && executionResult.testResults.length > 0 && (
+                  <div>
+                    <p className="text-xs font-semibold text-gray-400 mb-2">Test Results:</p>
+                    <div className="space-y-2">
+                      {executionResult.testResults.slice(0, 3).map((test, idx) => (
+                        <div key={idx} className={`bg-gray-900 rounded p-3 border ${test.passed ? 'border-green-700' : 'border-red-700'}`}>
+                          <div className="flex items-center gap-2 mb-2">
+                            {test.passed ? (
+                              <CheckCircle2 className="w-4 h-4 text-green-500" />
+                            ) : (
+                              <XCircle className="w-4 h-4 text-red-500" />
+                            )}
+                            <span className="text-xs font-semibold text-gray-300">Test Case {idx + 1}</span>
+                          </div>
+                          <div className="text-xs space-y-1">
+                            <div><span className="text-gray-500">Input:</span> <span className="text-gray-300">{test.input}</span></div>
+                            <div><span className="text-gray-500">Expected:</span> <span className="text-gray-300">{test.expected}</span></div>
+                            <div><span className="text-gray-500">Actual:</span> <span className={test.passed ? 'text-green-400' : 'text-red-400'}>{test.actual || 'null'}</span></div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

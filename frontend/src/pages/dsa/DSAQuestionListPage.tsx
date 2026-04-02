@@ -13,7 +13,6 @@ interface DSAQuestion {
   acceptance: number;
 }
 
-// Mock data - replace with API call later
 const mockQuestions: DSAQuestion[] = [
   { id: 1, slug: 'two-sum', title: 'Two Sum', difficulty: 'Easy', topic: 'Arrays', solved: true, acceptance: 49.2 },
   { id: 2, slug: 'reverse-string', title: 'Reverse String', difficulty: 'Easy', topic: 'Strings', solved: true, acceptance: 76.8 },
@@ -64,7 +63,6 @@ export default function DSAQuestionListPage() {
       
       <div className="pt-20 px-4 sm:px-6 lg:px-8 pb-12">
         <div className="max-w-7xl mx-auto">
-          {/* Header */}
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-green-600 rounded-xl flex items-center justify-center">
@@ -75,9 +73,7 @@ export default function DSAQuestionListPage() {
             <p className="text-gray-600">Master data structures and algorithms with curated problems</p>
           </div>
 
-          {/* Filters Section */}
           <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6 shadow-sm">
-            {/* Search Bar */}
             <div className="mb-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -91,9 +87,7 @@ export default function DSAQuestionListPage() {
               </div>
             </div>
 
-            {/* Filter Options */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Topic Filter */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Topic</label>
                 <select
@@ -107,7 +101,6 @@ export default function DSAQuestionListPage() {
                 </select>
               </div>
 
-              {/* Difficulty Filter */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Difficulty</label>
                 <select
@@ -121,7 +114,6 @@ export default function DSAQuestionListPage() {
                 </select>
               </div>
 
-              {/* Solved Filter */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
                 <select
@@ -135,7 +127,6 @@ export default function DSAQuestionListPage() {
                 </select>
               </div>
 
-              {/* Results Count */}
               <div className="flex items-end">
                 <div className="w-full px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg">
                   <p className="text-sm text-blue-900 font-medium">
@@ -146,7 +137,6 @@ export default function DSAQuestionListPage() {
             </div>
           </div>
 
-          {/* Questions Table */}
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
