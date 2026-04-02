@@ -1060,6 +1060,9 @@ function loadDemoData() {
   updatePreview();
   validateSection();
   alert('✨ Sample data loaded! You can now edit or download your resume.');
+  
+  // Track resume activity (only for logged-in users)
+  trackResumeActivity(true);
 }
 
 // AI Optimization Function
@@ -1197,6 +1200,18 @@ function updatePreview() {
   const preview = document.getElementById('resume-preview');
   preview.innerHTML = generateResumeHTML(data);
   reportParentHeight();
+  
+  // Track resume activity with debounce (only for logged-in users)
+  debounceTrackActivity();
+}
+
+// Debounced tracking to avoid too many API calls
+let trackingTimeout;
+function debounceTrackActivity() {
+  clearTimeout(trackingTimeout);
+  trackingTimeout = setTimeout(() => {
+    trackResumeActivity(false);
+  }, 3000); // Track after 3 seconds of inactivity
 }
 
 // Resume template generator with smart rendering
@@ -1319,6 +1334,61 @@ function generateResumeHTML(data) {
   return defaultTemplate;
 }
 
+// Track resume activity to backend
+async function trackResumeActivity(aiGenerated = false) {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      // Guest user - don't track
+      return;
+    }
+    
+    const API_BASE_URL = window.location.origin + '/api';
+    
+    // Get ATS score from localStorage if available
+    const atsScore = localStorage.getItem('latest_resume_ats_score');
+    
+    // Determine template tier
+    const templateTier = templateId.includes('premium') || templateId.includes('creative') ? 'premium' : 'free';
+    
+    // Get resume data
+    const resumeData = {
+      name: document.getElementById('f-name')?.value || '',
+      email: document.getElementById('f-email')?.value || '',
+      phone: document.getElementById('f-phone')?.value || '',
+      location: document.getElementById('f-location')?.value || '',
+      summary: document.getElementById('f-summary')?.value || '',
+      skills: skills,
+      experience: experiences,
+      education: educations,
+      projects: projects,
+      achievements: achievements,
+      hobbies: hobbies
+    };
+    
+    await fetch(`${API_BASE_URL}/career/resume-track`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        template_id: templateId,
+        template_name: TEMPLATES[templateId]?.name || templateId,
+        template_tier: templateTier,
+        ats_score: atsScore ? parseInt(atsScore) : null,
+        ai_generated: aiGenerated,
+        resume_data: resumeData
+      })
+    });
+    
+    console.log('✓ Resume activity tracked');
+  } catch (error) {
+    console.error('Tracking error:', error);
+    // Don't show error to user - tracking is background operation
+  }
+}
+
 // Download PDF
 function downloadPDF() {
   const element = document.getElementById('resume-preview');
@@ -1330,6 +1400,38 @@ function downloadPDF() {
     jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
   };
   html2pdf().set(opt).from(element).save();
+  
+  // Track PDF export (only for logged-in users)
+  trackPDFExport();
+}
+
+// Track PDF export to backend
+async function trackPDFExport() {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      // Guest user - don't track
+      return;
+    }
+    
+    const API_BASE_URL = window.location.origin + '/api';
+    
+    await fetch(`${API_BASE_URL}/career/resume-track-export`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        template_id: templateId
+      })
+    });
+    
+    console.log('✓ PDF export tracked');
+  } catch (error) {
+    console.error('Tracking error:', error);
+    // Don't show error to user - tracking is background operation
+  }
 }
 
 // Report height to parent iframe

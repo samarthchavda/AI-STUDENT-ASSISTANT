@@ -99,6 +99,14 @@ export default function CareerPage() {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
+
+      // Track PDF export
+      try {
+        await careerAPI.trackPDFExport(resumeTemplate);
+      } catch (trackError) {
+        console.error('Tracking error:', trackError);
+        // Don't show error to user - tracking is background operation
+      }
     } catch (error: any) {
       console.error('Error:', error);
       try {

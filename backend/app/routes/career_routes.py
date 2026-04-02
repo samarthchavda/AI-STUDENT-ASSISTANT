@@ -1,13 +1,18 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, Form, Depends, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
+from typing import Optional
 from app.models.schemas import ResumeAnalyzeRequest, InterviewPrepRequest, ResumeGenerateRequest, PersonalizedRoadmapRequest, ResumeSectionEnhanceRequest, ResumeAIActionRequest
 from app.services.ai_service import ai_service
+from app.services.resume_tracking_service import resume_tracking_service
 from app.core.middleware import rate_limit
 from app.core.database import get_db
+from app.core.auth import get_current_user
+from app.models import User
 import PyPDF2
 import io
 import os
+import time
 
 # Try to import magic, but make it optional
 try:
@@ -266,11 +271,17 @@ async def upload_resume(
 
 @router.post("/resume-analyze")
 @rate_limit("10/minute")  # Rate limit for heavy AI endpoint
-async def analyze_resume(request: Request, req: ResumeAnalyzeRequest):
+async def analyze_resume(
+    request: Request, 
+    req: ResumeAnalyzeRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """
     Analyze resume text for ATS compatibility and improvements
     - Prompt length limiting
     - Security validation
+    - Tracks AI usage for logged-in users
     """
     
     if not req.resumeText or len(req.resumeText.strip()) < 50:
@@ -282,71 +293,163 @@ async def analyze_resume(request: Request, req: ResumeAnalyzeRequest):
     if len(resume_text) > 4000:
         resume_text = resume_text[:4000]
     
-    result = ai_service.analyze_resume(
-        resume_text,
-        target_role=req.target_role,
-        job_description=req.job_description
-    )
-    result["truncated"] = original_length > 4000
+    # Track AI generation start time
+    start_time = time.time()
     
-    return result
+    try:
+        result = ai_service.analyze_resume(
+            resume_text,
+            target_role=req.target_role,
+            job_description=req.job_description
+        )
+        result["truncated"] = original_length > 4000
+        
+        # Track successful AI generation
+        response_time_ms = int((time.time() - start_time) * 1000)
+        resume_tracking_service.track_ai_generation(
+            db=db,
+            user_id=current_user.id,
+            request_type='resume_analysis',
+            status='success',
+            response_time_ms=response_time_ms
+        )
+        
+        return result
+        
+    except Exception as e:
+        # Track failed AI generation
+        response_time_ms = int((time.time() - start_time) * 1000)
+        resume_tracking_service.track_ai_generation(
+            db=db,
+            user_id=current_user.id,
+            request_type='resume_analysis',
+            status='failed',
+            response_time_ms=response_time_ms,
+            error_message=str(e)
+        )
+        raise
 
 
 @router.post("/resume-enhance-section")
 @rate_limit("20/minute")
-async def enhance_resume_section(request: Request, req: ResumeSectionEnhanceRequest):
+async def enhance_resume_section(
+    request: Request, 
+    req: ResumeSectionEnhanceRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """Enhance a specific resume section text with AI."""
     if not req.content or len(req.content.strip()) < 5:
         raise HTTPException(status_code=400, detail="Please provide section content to enhance")
 
     content = req.content[:4000]
-    enhanced = ai_service.enhance_resume_section(req.section, content)
-
-    return {
-        "section": req.section,
-        "enhanced_content": enhanced,
-    }
+    start_time = time.time()
+    
+    try:
+        enhanced = ai_service.enhance_resume_section(req.section, content)
+        
+        # Track successful AI generation
+        response_time_ms = int((time.time() - start_time) * 1000)
+        resume_tracking_service.track_ai_generation(
+            db=db,
+            user_id=current_user.id,
+            request_type=f'enhance_{req.section}',
+            status='success',
+            response_time_ms=response_time_ms
+        )
+        
+        return {
+            "section": req.section,
+            "enhanced_content": enhanced,
+        }
+        
+    except Exception as e:
+        # Track failed AI generation
+        response_time_ms = int((time.time() - start_time) * 1000)
+        resume_tracking_service.track_ai_generation(
+            db=db,
+            user_id=current_user.id,
+            request_type=f'enhance_{req.section}',
+            status='failed',
+            response_time_ms=response_time_ms,
+            error_message=str(e)
+        )
+        raise
 
 
 @router.post("/resume-ai-action")
 @rate_limit("20/minute")
-async def resume_ai_action(request: Request, req: ResumeAIActionRequest):
+async def resume_ai_action(
+    request: Request, 
+    req: ResumeAIActionRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """Perform a specialised AI action: suggest_skills, enhance_bullets, generate_summary, generate_demo_resume."""
     ctx = req.context
+    start_time = time.time()
 
-    if req.action == "suggest_skills":
-        education_text = str(ctx.get("education", ""))[:2000]
-        experience_text = str(ctx.get("experience", ""))[:2000]
-        if not education_text and not experience_text:
-            raise HTTPException(status_code=400, detail="Provide education and experience context")
-        result = ai_service.suggest_skills(education_text, experience_text)
+    try:
+        if req.action == "suggest_skills":
+            education_text = str(ctx.get("education", ""))[:2000]
+            experience_text = str(ctx.get("experience", ""))[:2000]
+            if not education_text and not experience_text:
+                raise HTTPException(status_code=400, detail="Provide education and experience context")
+            result = ai_service.suggest_skills(education_text, experience_text)
+            request_type = 'suggest_skills'
+
+        elif req.action == "enhance_bullets":
+            title = str(ctx.get("title", ""))[:200]
+            company = str(ctx.get("company", ""))[:200]
+            raw_text = str(ctx.get("raw_text", ""))[:3000]
+            if not raw_text.strip():
+                raise HTTPException(status_code=400, detail="Provide experience description to enhance")
+            result = ai_service.enhance_experience_bullets(title, company, raw_text)
+            request_type = 'enhance_bullets'
+
+        elif req.action == "generate_summary":
+            name = str(ctx.get("name", ""))[:200]
+            role = str(ctx.get("role", ""))[:200]
+            education = str(ctx.get("education", ""))[:1000]
+            experience = str(ctx.get("experience", ""))[:1000]
+            skills = str(ctx.get("skills", ""))[:500]
+            result = ai_service.generate_professional_summary(name, role, education, experience, skills)
+            request_type = 'generate_summary'
+
+        elif req.action == "generate_demo_resume":
+            role = str(ctx.get("role", "Full Stack Developer"))[:200]
+            result = ai_service.generate_demo_resume_data(role)
+            request_type = 'generate_demo'
+
+        else:
+            raise HTTPException(status_code=400, detail=f"Unknown action: {req.action}")
+        
+        # Track successful AI generation
+        response_time_ms = int((time.time() - start_time) * 1000)
+        resume_tracking_service.track_ai_generation(
+            db=db,
+            user_id=current_user.id,
+            request_type=request_type,
+            status='success',
+            response_time_ms=response_time_ms
+        )
+        
         return {"action": req.action, "result": result}
-
-    elif req.action == "enhance_bullets":
-        title = str(ctx.get("title", ""))[:200]
-        company = str(ctx.get("company", ""))[:200]
-        raw_text = str(ctx.get("raw_text", ""))[:3000]
-        if not raw_text.strip():
-            raise HTTPException(status_code=400, detail="Provide experience description to enhance")
-        result = ai_service.enhance_experience_bullets(title, company, raw_text)
-        return {"action": req.action, "result": result}
-
-    elif req.action == "generate_summary":
-        name = str(ctx.get("name", ""))[:200]
-        role = str(ctx.get("role", ""))[:200]
-        education = str(ctx.get("education", ""))[:1000]
-        experience = str(ctx.get("experience", ""))[:1000]
-        skills = str(ctx.get("skills", ""))[:500]
-        result = ai_service.generate_professional_summary(name, role, education, experience, skills)
-        return {"action": req.action, "result": result}
-
-    elif req.action == "generate_demo_resume":
-        role = str(ctx.get("role", "Full Stack Developer"))[:200]
-        result = ai_service.generate_demo_resume_data(role)
-        return {"action": req.action, "result": result}
-
-    else:
-        raise HTTPException(status_code=400, detail=f"Unknown action: {req.action}")
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        # Track failed AI generation
+        response_time_ms = int((time.time() - start_time) * 1000)
+        resume_tracking_service.track_ai_generation(
+            db=db,
+            user_id=current_user.id,
+            request_type=req.action,
+            status='failed',
+            response_time_ms=response_time_ms,
+            error_message=str(e)
+        )
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/resume-ats-score")
@@ -541,3 +644,90 @@ async def optimize_resume_for_ats(request: Request):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Optimization failed: {str(e)}")
 
+
+
+
+# ============================================================================
+# RESUME TRACKING ENDPOINTS
+# ============================================================================
+
+from pydantic import BaseModel
+
+class ResumeTrackRequest(BaseModel):
+    template_id: str
+    template_name: Optional[str] = None
+    template_tier: str = 'free'
+    ats_score: Optional[int] = None
+    ai_generated: bool = False
+    resume_data: Optional[dict] = None
+
+class PDFExportTrackRequest(BaseModel):
+    template_id: str
+
+
+@router.post("/resume-track")
+async def track_resume(
+    req: ResumeTrackRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Track resume load/save/update activity
+    Called when user loads sample data, edits resume, or saves
+    """
+    try:
+        resume_id = resume_tracking_service.track_resume_activity(
+            db=db,
+            user_id=current_user.id,
+            template_id=req.template_id,
+            template_name=req.template_name,
+            template_tier=req.template_tier,
+            ats_score=req.ats_score,
+            ai_generated=req.ai_generated,
+            resume_data=req.resume_data
+        )
+        
+        return {
+            "success": True,
+            "resume_id": resume_id,
+            "message": "Resume activity tracked"
+        }
+        
+    except Exception as e:
+        # Don't fail the main operation if tracking fails
+        print(f"❌ Resume tracking error: {e}")
+        return {
+            "success": False,
+            "message": "Tracking failed but resume operation succeeded"
+        }
+
+
+@router.post("/resume-track-export")
+async def track_pdf_export(
+    req: PDFExportTrackRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Track PDF export/download
+    Called when user downloads resume PDF
+    """
+    try:
+        success = resume_tracking_service.track_pdf_export(
+            db=db,
+            user_id=current_user.id,
+            template_id=req.template_id
+        )
+        
+        return {
+            "success": success,
+            "message": "PDF export tracked" if success else "Tracking failed"
+        }
+        
+    except Exception as e:
+        # Don't fail the main operation if tracking fails
+        print(f"❌ PDF export tracking error: {e}")
+        return {
+            "success": False,
+            "message": "Tracking failed but PDF export succeeded"
+        }

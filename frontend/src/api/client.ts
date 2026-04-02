@@ -378,6 +378,19 @@ export const careerAPI = {
       responseType: 'blob',
     })
   },
+
+  // Resume tracking endpoints
+  trackResumeActivity: (data: {
+    template_id: string
+    template_name?: string
+    template_tier?: string
+    ats_score?: number
+    ai_generated?: boolean
+    resume_data?: any
+  }) => api.post('/career/resume-track', data),
+
+  trackPDFExport: (templateId: string) =>
+    api.post('/career/resume-track-export', { template_id: templateId }),
 }
 
 export const paymentAPI = {
