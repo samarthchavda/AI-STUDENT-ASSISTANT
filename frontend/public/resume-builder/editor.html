@@ -1340,6 +1340,7 @@ async function trackResumeActivity(aiGenerated = false) {
     const token = localStorage.getItem('token');
     if (!token) {
       // Guest user - don't track
+      console.log('⊘ Tracking skipped - guest user');
       return;
     }
     
@@ -1366,7 +1367,7 @@ async function trackResumeActivity(aiGenerated = false) {
       hobbies: hobbies
     };
     
-    await fetch(`${API_BASE_URL}/career/resume-track`, {
+    const response = await fetch(`${API_BASE_URL}/career/resume-track`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1382,9 +1383,14 @@ async function trackResumeActivity(aiGenerated = false) {
       })
     });
     
-    console.log('✓ Resume activity tracked');
+    if (response.ok) {
+      const data = await response.json();
+      console.log('✓ Resume activity tracked:', data);
+    } else {
+      console.error('✗ Tracking failed:', response.status, await response.text());
+    }
   } catch (error) {
-    console.error('Tracking error:', error);
+    console.error('✗ Tracking error:', error);
     // Don't show error to user - tracking is background operation
   }
 }
@@ -1411,12 +1417,13 @@ async function trackPDFExport() {
     const token = localStorage.getItem('token');
     if (!token) {
       // Guest user - don't track
+      console.log('⊘ PDF tracking skipped - guest user');
       return;
     }
     
     const API_BASE_URL = window.location.origin + '/api';
     
-    await fetch(`${API_BASE_URL}/career/resume-track-export`, {
+    const response = await fetch(`${API_BASE_URL}/career/resume-track-export`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1427,9 +1434,14 @@ async function trackPDFExport() {
       })
     });
     
-    console.log('✓ PDF export tracked');
+    if (response.ok) {
+      const data = await response.json();
+      console.log('✓ PDF export tracked:', data);
+    } else {
+      console.error('✗ PDF tracking failed:', response.status, await response.text());
+    }
   } catch (error) {
-    console.error('Tracking error:', error);
+    console.error('✗ PDF tracking error:', error);
     // Don't show error to user - tracking is background operation
   }
 }
