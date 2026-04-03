@@ -29,6 +29,9 @@ import AboutPage from './pages/marketing/AboutPage'
 import ProfilePage from './pages/profile/ProfilePage'
 import DSAQuestionListPage from './pages/dsa/DSAQuestionListPage'
 import DSAProblemPage from './pages/dsa/DSAProblemPage'
+import DSADashboardPage from './pages/dsa/DSADashboardPage'
+import DSALeaderboardPage from './pages/dsa/DSALeaderboardPage'
+import DSAAnalyticsPage from './pages/admin/DSAAnalyticsPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import ScrollToTop from './components/ScrollToTop'
 import { useAutoLogout } from './hooks/useAutoLogout'
@@ -69,6 +72,8 @@ function AppRoutes() {
       {/* DSA Routes */}
       <Route path="/dsa" element={<ProtectedRoute><DSAQuestionListPage /></ProtectedRoute>} />
       <Route path="/dsa/problem/:slug" element={<ProtectedRoute><DSAProblemPage /></ProtectedRoute>} />
+      <Route path="/dsa/dashboard" element={<ProtectedRoute><DSADashboardPage /></ProtectedRoute>} />
+      <Route path="/dsa/leaderboard" element={<ProtectedRoute><DSALeaderboardPage /></ProtectedRoute>} />
       
       {/* Admin Routes - Require Login + Admin */}
       <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminPage /></ProtectedRoute>} />
@@ -81,6 +86,7 @@ function AppRoutes() {
       <Route path="/admin/resume-analytics" element={<ProtectedRoute requireAdmin><ResumeAnalyticsPage /></ProtectedRoute>} />
       <Route path="/admin/resume-templates" element={<ProtectedRoute requireAdmin><ResumeTemplatesPage /></ProtectedRoute>} />
       <Route path="/admin/user-resumes" element={<ProtectedRoute requireAdmin><UserResumesPage /></ProtectedRoute>} />
+      <Route path="/admin/dsa-analytics" element={<ProtectedRoute requireAdmin><DSAAnalyticsPage /></ProtectedRoute>} />
       <Route path="/admin/ai-resume-monitor" element={<ProtectedRoute requireAdmin><AIResumeMonitorPage /></ProtectedRoute>} />
       <Route path="/admin/ai-settings" element={<ProtectedRoute requireAdmin><AISettingsPage /></ProtectedRoute>} />
     </Routes>

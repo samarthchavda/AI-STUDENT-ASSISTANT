@@ -103,10 +103,14 @@ async def create_submission(
             is_solved = submission.verdict == "Accepted" and submission.action_type == "submit"
             status = "solved" if is_solved else "attempted"
             
+            # Calculate score based on difficulty
+            score_map = {"Easy": 1, "Medium": 2, "Hard": 3}
+            question_score = score_map.get(submission.difficulty, 0)
+            
             # Check if progress record exists
             existing = conn.execute(
                 text("""
-                    SELECT id, status, best_runtime, attempts
+                    SELECT id, status, best_runtime, attempts, score
                     FROM dsa_user_progress
                     WHERE user_id = :user_id AND question_slug = :question_slug
                 """),
@@ -118,10 +122,14 @@ async def create_submission(
                 current_status = existing[1]
                 best_runtime = existing[2]
                 attempts = existing[3]
+                current_score = existing[4] or 0
                 
                 # Only update status if it's an improvement
                 new_status = status if status == "solved" or current_status != "solved" else current_status
                 new_best_runtime = min(best_runtime or float('inf'), submission.runtime or float('inf')) if submission.runtime else best_runtime
+                
+                # Update score only if newly solved
+                new_score = question_score if (is_solved and current_status != "solved") else current_score
                 
                 conn.execute(
                     text("""
@@ -131,6 +139,7 @@ async def create_submission(
                             latest_language = :language,
                             best_runtime = :best_runtime,
                             attempts = :attempts,
+                            score = :score,
                             solved_at = CASE WHEN :is_solved AND solved_at IS NULL THEN CURRENT_TIMESTAMP ELSE solved_at END,
                             last_attempted_at = CURRENT_TIMESTAMP
                         WHERE user_id = :user_id AND question_slug = :question_slug
@@ -143,21 +152,24 @@ async def create_submission(
                         "language": submission.language,
                         "best_runtime": new_best_runtime,
                         "attempts": attempts + 1,
+                        "score": new_score,
                         "is_solved": is_solved
                     }
                 )
             else:
                 # Insert new progress record
+                initial_score = question_score if is_solved else 0
+                
                 conn.execute(
                     text("""
                         INSERT INTO dsa_user_progress (
                             user_id, question_slug, question_title, difficulty, topic,
                             status, latest_verdict, latest_language, best_runtime, attempts,
-                            solved_at, last_attempted_at
+                            score, solved_at, last_attempted_at
                         ) VALUES (
                             :user_id, :question_slug, :question_title, :difficulty, :topic,
                             :status, :verdict, :language, :runtime, 1,
-                            CASE WHEN :is_solved THEN CURRENT_TIMESTAMP ELSE NULL END,
+                            :score, CASE WHEN :is_solved THEN CURRENT_TIMESTAMP ELSE NULL END,
                             CURRENT_TIMESTAMP
                         )
                     """),
@@ -171,8 +183,16 @@ async def create_submission(
                         "verdict": submission.verdict,
                         "language": submission.language,
                         "runtime": submission.runtime,
+                        "score": initial_score,
                         "is_solved": is_solved
                     }
+                )
+            
+            # Update streak if solved
+            if is_solved:
+                conn.execute(
+                    text("SELECT update_dsa_streak(:user_id, CURRENT_DATE)"),
+                    {"user_id": user_id}
                 )
             
             conn.commit()

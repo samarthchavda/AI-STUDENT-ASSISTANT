@@ -90,13 +90,32 @@ export default function DSAQuestionListPage() {
       <div className="pt-20 px-4 sm:px-6 lg:px-8 pb-12">
         <div className="max-w-7xl mx-auto">
           <div className="mb-8">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-green-600 rounded-xl flex items-center justify-center">
-                <Code2 className="w-6 h-6 text-white" />
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-green-600 rounded-xl flex items-center justify-center">
+                    <Code2 className="w-6 h-6 text-white" />
+                  </div>
+                  <h1 className="text-3xl font-bold text-gray-900">DSA Practice</h1>
+                </div>
+                <p className="text-gray-600">Master data structures and algorithms with curated problems</p>
               </div>
-              <h1 className="text-3xl font-bold text-gray-900">DSA Practice</h1>
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={() => navigate('/dsa/dashboard')}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                >
+                  Dashboard
+                </button>
+                <button
+                  onClick={() => navigate('/dsa/leaderboard')}
+                  className="px-4 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-lg text-sm font-medium hover:from-yellow-600 hover:to-orange-600"
+                >
+                  Leaderboard
+                </button>
+              </div>
             </div>
-            <p className="text-gray-600">Master data structures and algorithms with curated problems</p>
           </div>
 
           {/* Progress Summary */}
