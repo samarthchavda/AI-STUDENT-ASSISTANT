@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 from sqlalchemy import text
 from app.core.auth import get_current_user
@@ -13,7 +13,7 @@ class Notification(BaseModel):
     notification_type: str
     title: str
     message: str
-    action_url: str | None
+    action_url: Optional[str]
     is_read: bool
     created_at: datetime
 
@@ -160,7 +160,7 @@ async def create_notification(
     notification_type: str,
     title: str,
     message: str,
-    action_url: str | None = None
+    action_url: Optional[str] = None
 ):
     """Create a notification (internal use)"""
     
