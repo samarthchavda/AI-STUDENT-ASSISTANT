@@ -7,6 +7,7 @@ import DSAProblemStatement from './components/DSAProblemStatement';
 import { runCode, submitCode, ExecutionResult } from '../../services/codeExecutionService';
 import { getHint, explainProblem, generateSolution, explainCode, fixCode, AIResponse } from '../../services/dsaAiService';
 import { saveSubmission, getSubmissions, trackAIUsage, Submission } from '../../services/dsaTrackingService';
+import { dsaQuestions } from '../../data/dsaQuestions';
 
 interface ProblemData {
   id: number;
@@ -33,7 +34,14 @@ interface ProblemData {
   timeLimit: number;
 }
 
-const mockProblems: Record<string, ProblemData> = {
+// Convert imported questions to problem data format
+const mockProblems: Record<string, ProblemData> = dsaQuestions.reduce((acc, q) => {
+  acc[q.slug] = q;
+  return acc;
+}, {} as Record<string, ProblemData>);
+
+// Keep legacy problems for backward compatibility
+const legacyProblems: Record<string, ProblemData> = {
   'two-sum': {
     id: 1,
     slug: 'two-sum',
@@ -167,6 +175,9 @@ const mockProblems: Record<string, ProblemData> = {
   }
 };
 
+// Merge legacy problems with imported questions (imported takes precedence)
+Object.assign(legacyProblems, mockProblems);
+
 export default function DSAProblemPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -191,8 +202,8 @@ export default function DSAProblemPage() {
   const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
-    if (slug && mockProblems[slug]) {
-      const problemData = mockProblems[slug];
+    if (slug && legacyProblems[slug]) {
+      const problemData = legacyProblems[slug];
       setProblem(problemData);
       setCode(problemData.starterCode[selectedLanguage]);
       setExecutionResult(null);

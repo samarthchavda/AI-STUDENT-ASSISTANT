@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Code2, Search, Filter, CheckCircle2, Circle, Clock } from 'lucide-react';
 import Header from '../../components/Header';
 import { getStatusMap, getProgress, StatusMap, ProgressSummary } from '../../services/dsaTrackingService';
+import { dsaQuestions } from '../../data/dsaQuestions';
 
 interface DSAQuestion {
   id: number;
@@ -14,20 +15,20 @@ interface DSAQuestion {
   acceptance: number;
 }
 
-const mockQuestions: DSAQuestion[] = [
-  { id: 1, slug: 'two-sum', title: 'Two Sum', difficulty: 'Easy', topic: 'Arrays', solved: true, acceptance: 49.2 },
-  { id: 2, slug: 'reverse-string', title: 'Reverse String', difficulty: 'Easy', topic: 'Strings', solved: true, acceptance: 76.8 },
-  { id: 3, slug: 'valid-parentheses', title: 'Valid Parentheses', difficulty: 'Easy', topic: 'Stack', solved: false, acceptance: 40.1 },
-  { id: 4, slug: 'merge-intervals', title: 'Merge Intervals', difficulty: 'Medium', topic: 'Arrays', solved: false, acceptance: 45.3 },
-  { id: 5, slug: 'longest-substring', title: 'Longest Substring Without Repeating Characters', difficulty: 'Medium', topic: 'Sliding Window', solved: false, acceptance: 33.8 },
-  { id: 6, slug: 'binary-tree-inorder', title: 'Binary Tree Inorder Traversal', difficulty: 'Easy', topic: 'Trees', solved: false, acceptance: 71.2 },
-  { id: 7, slug: 'coin-change', title: 'Coin Change', difficulty: 'Medium', topic: 'DP', solved: false, acceptance: 41.5 },
-  { id: 8, slug: 'word-ladder', title: 'Word Ladder', difficulty: 'Hard', topic: 'Graph', solved: false, acceptance: 36.7 },
-  { id: 9, slug: 'climbing-stairs', title: 'Climbing Stairs', difficulty: 'Easy', topic: 'DP', solved: true, acceptance: 51.4 },
-  { id: 10, slug: 'median-sorted-arrays', title: 'Median of Two Sorted Arrays', difficulty: 'Hard', topic: 'Binary Search', solved: false, acceptance: 35.2 },
-];
+// Convert imported questions to display format
+const mockQuestions: DSAQuestion[] = dsaQuestions.map(q => ({
+  id: q.id,
+  slug: q.slug,
+  title: q.title,
+  difficulty: q.difficulty,
+  topic: q.topic,
+  solved: false,
+  acceptance: q.acceptance
+}));
 
-const topics = ['All', 'Arrays', 'Strings', 'DP', 'Graph', 'Trees', 'Stack', 'Sliding Window', 'Binary Search', 'Recursion'];
+// Extract unique topics from questions
+const allTopics = Array.from(new Set(dsaQuestions.map(q => q.topic))).sort();
+const topics = ['All', ...allTopics];
 const difficulties = ['All', 'Easy', 'Medium', 'Hard'];
 
 export default function DSAQuestionListPage() {
