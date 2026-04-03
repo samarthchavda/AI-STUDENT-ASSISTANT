@@ -196,9 +196,6 @@ class PaymentWebhook(Base):
     payload = Column(JSON, nullable=False)
     processed = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    
-    user = relationship("User", back_populates="payments")
 
 class CompanyQuestion(Base):
     """Store interview questions for different companies - SEO goldmine"""
