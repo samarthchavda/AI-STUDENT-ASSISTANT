@@ -89,11 +89,11 @@ async def get_user_dashboard(current_user = Depends(get_current_user)):
             progress = conn.execute(
                 text("""
                     SELECT 
-                        COUNT(*) FILTER (WHERE status = 'solved') as total_solved,
-                        COUNT(*) FILTER (WHERE status IN ('solved', 'attempted')) as total_attempted,
-                        COUNT(*) FILTER (WHERE status = 'solved' AND difficulty = 'Easy') as easy_solved,
-                        COUNT(*) FILTER (WHERE status = 'solved' AND difficulty = 'Medium') as medium_solved,
-                        COUNT(*) FILTER (WHERE status = 'solved' AND difficulty = 'Hard') as hard_solved,
+                        COALESCE(COUNT(*) FILTER (WHERE status = 'solved'), 0) as total_solved,
+                        COALESCE(COUNT(*) FILTER (WHERE status IN ('solved', 'attempted')), 0) as total_attempted,
+                        COALESCE(COUNT(*) FILTER (WHERE status = 'solved' AND difficulty = 'Easy'), 0) as easy_solved,
+                        COALESCE(COUNT(*) FILTER (WHERE status = 'solved' AND difficulty = 'Medium'), 0) as medium_solved,
+                        COALESCE(COUNT(*) FILTER (WHERE status = 'solved' AND difficulty = 'Hard'), 0) as hard_solved,
                         COALESCE(SUM(score), 0) as total_score,
                         COALESCE(MAX(current_streak), 0) as current_streak,
                         COALESCE(MAX(longest_streak), 0) as longest_streak
@@ -103,13 +103,16 @@ async def get_user_dashboard(current_user = Depends(get_current_user)):
                 {"user_id": user_id}
             ).fetchone()
             
-            # Get submission stats
+            # Get submission stats - handle multiple verdict formats
             submissions = conn.execute(
                 text("""
                     SELECT 
-                        COUNT(*) as total_submissions,
-                        COUNT(*) FILTER (WHERE ai_used = true) as ai_assisted,
-                        COUNT(*) FILTER (WHERE verdict = 'Accepted' AND action_type = 'submit') as accepted
+                        COALESCE(COUNT(*), 0) as total_submissions,
+                        COALESCE(COUNT(*) FILTER (WHERE ai_used = true), 0) as ai_assisted,
+                        COALESCE(COUNT(*) FILTER (WHERE 
+                            (LOWER(verdict) = 'accepted' OR LOWER(verdict) = 'ac' OR passed_testcases = total_testcases)
+                            AND action_type = 'submit'
+                        ), 0) as accepted
                     FROM dsa_submissions
                     WHERE user_id = :user_id
                 """),
@@ -142,7 +145,7 @@ async def get_user_dashboard(current_user = Depends(get_current_user)):
                 text("""
                     SELECT 
                         topic,
-                        COUNT(*) FILTER (WHERE status = 'solved') as solved,
+                        COALESCE(COUNT(*) FILTER (WHERE status = 'solved'), 0) as solved,
                         COUNT(*) as total
                     FROM dsa_user_progress
                     WHERE user_id = :user_id
@@ -156,32 +159,35 @@ async def get_user_dashboard(current_user = Depends(get_current_user)):
             for row in topics:
                 topic_progress.append({
                     "topic": row[0],
-                    "solved": row[1],
-                    "total": row[2]
+                    "solved": int(row[1]),
+                    "total": int(row[2])
                 })
             
             # Calculate acceptance rate
-            total_subs = submissions[0] or 0
-            accepted = submissions[2] or 0
-            acceptance_rate = (accepted / total_subs * 100) if total_subs > 0 else 0
+            total_subs = int(submissions[0] or 0)
+            accepted = int(submissions[2] or 0)
+            acceptance_rate = (accepted / total_subs * 100) if total_subs > 0 else 0.0
             
             return DashboardStats(
-                total_solved=progress[0] or 0,
-                total_attempted=progress[1] or 0,
-                easy_solved=progress[2] or 0,
-                medium_solved=progress[3] or 0,
-                hard_solved=progress[4] or 0,
-                total_score=progress[5] or 0,
-                current_streak=progress[6] or 0,
-                longest_streak=progress[7] or 0,
+                total_solved=int(progress[0] or 0),
+                total_attempted=int(progress[1] or 0),
+                easy_solved=int(progress[2] or 0),
+                medium_solved=int(progress[3] or 0),
+                hard_solved=int(progress[4] or 0),
+                total_score=int(progress[5] or 0),
+                current_streak=int(progress[6] or 0),
+                longest_streak=int(progress[7] or 0),
                 total_submissions=total_subs,
-                ai_assisted_submissions=submissions[1] or 0,
+                ai_assisted_submissions=int(submissions[1] or 0),
                 acceptance_rate=round(acceptance_rate, 1),
                 recent_solved=recent_solved,
                 topic_progress=topic_progress
             )
             
     except Exception as e:
+        import traceback
+        print(f"❌ Dashboard Error: {str(e)}")
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to fetch dashboard: {str(e)}")
 
 @router.get("/streak", response_model=StreakData)
@@ -323,13 +329,19 @@ async def get_dsa_analytics(current_user = Depends(require_admin)):
     
     try:
         with engine.connect() as conn:
-            # Submission stats
+            # Submission stats - handle multiple verdict formats
             sub_stats = conn.execute(
                 text("""
                     SELECT 
                         COALESCE(COUNT(*), 0) as total,
-                        COALESCE(COUNT(*) FILTER (WHERE verdict = 'Accepted' AND action_type = 'submit'), 0) as accepted,
-                        COALESCE(COUNT(*) FILTER (WHERE verdict != 'Accepted' OR action_type = 'run'), 0) as failed
+                        COALESCE(COUNT(*) FILTER (WHERE 
+                            (LOWER(verdict) = 'accepted' OR LOWER(verdict) = 'ac' OR passed_testcases = total_testcases)
+                            AND action_type = 'submit'
+                        ), 0) as accepted,
+                        COALESCE(COUNT(*) FILTER (WHERE 
+                            (LOWER(verdict) != 'accepted' AND LOWER(verdict) != 'ac' AND passed_testcases < total_testcases)
+                            OR action_type = 'run'
+                        ), 0) as failed
                     FROM dsa_submissions
                 """)
             ).fetchone()
@@ -338,6 +350,8 @@ async def get_dsa_analytics(current_user = Depends(require_admin)):
             accepted = int(sub_stats[1] or 0)
             failed = int(sub_stats[2] or 0)
             acceptance_rate = (accepted / total_subs * 100) if total_subs > 0 else 0.0
+            
+            print(f"📊 DSA Analytics - Total: {total_subs}, Accepted: {accepted}, Failed: {failed}, Rate: {acceptance_rate}%")
             
             # User stats
             user_stats = conn.execute(
@@ -350,7 +364,7 @@ async def get_dsa_analytics(current_user = Depends(require_admin)):
                 """)
             ).fetchone()
             
-            # Most attempted questions
+            # Most attempted questions (all submissions)
             attempted = conn.execute(
                 text("""
                     SELECT question_slug, question_title, COUNT(*) as attempts
@@ -369,10 +383,12 @@ async def get_dsa_analytics(current_user = Depends(require_admin)):
                     "attempts": int(row[2])
                 })
             
-            # Most solved questions
+            print(f"📈 Most attempted: {len(most_attempted)} questions")
+            
+            # Most solved questions (from user_progress where status = 'solved')
             solved = conn.execute(
                 text("""
-                    SELECT question_slug, question_title, COUNT(*) as solved_count
+                    SELECT question_slug, question_title, COUNT(DISTINCT user_id) as solved_count
                     FROM dsa_user_progress
                     WHERE status = 'solved'
                     GROUP BY question_slug, question_title
@@ -389,13 +405,15 @@ async def get_dsa_analytics(current_user = Depends(require_admin)):
                     "solved_count": int(row[2])
                 })
             
-            # Topic usage
+            print(f"✅ Most solved: {len(most_solved)} questions")
+            
+            # Topic usage (from user_progress)
             topics = conn.execute(
                 text("""
                     SELECT 
                         topic,
-                        COUNT(*) as total_attempts,
-                        COALESCE(COUNT(*) FILTER (WHERE status = 'solved'), 0) as solved
+                        COUNT(DISTINCT user_id) as total_attempts,
+                        COALESCE(COUNT(DISTINCT user_id) FILTER (WHERE status = 'solved'), 0) as solved
                     FROM dsa_user_progress
                     GROUP BY topic
                     ORDER BY total_attempts DESC
@@ -410,15 +428,20 @@ async def get_dsa_analytics(current_user = Depends(require_admin)):
                     "solved": int(row[2])
                 })
             
-            # Difficulty success rate
+            # Difficulty success rate (from submissions)
             difficulty = conn.execute(
                 text("""
                     SELECT 
-                        difficulty,
-                        COUNT(*) as total,
-                        COALESCE(COUNT(*) FILTER (WHERE status = 'solved'), 0) as solved
-                    FROM dsa_user_progress
-                    GROUP BY difficulty
+                        p.difficulty,
+                        COUNT(DISTINCT s.id) as total_submissions,
+                        COALESCE(COUNT(DISTINCT s.id) FILTER (WHERE 
+                            (LOWER(s.verdict) = 'accepted' OR LOWER(s.verdict) = 'ac' OR s.passed_testcases = s.total_testcases)
+                            AND s.action_type = 'submit'
+                        ), 0) as accepted_submissions
+                    FROM dsa_submissions s
+                    JOIN dsa_user_progress p ON s.question_slug = p.question_slug AND s.user_id = p.user_id
+                    WHERE s.action_type = 'submit'
+                    GROUP BY p.difficulty
                 """)
             )
             
@@ -434,19 +457,21 @@ async def get_dsa_analytics(current_user = Depends(require_admin)):
                     "success_rate": round(success_rate, 1)
                 })
             
-            # Top performers - use 'name' instead of 'username'
+            print(f"📊 Difficulty stats: {len(difficulty_success)} levels")
+            
+            # Top performers (from user_progress where status = 'solved')
             performers = conn.execute(
                 text("""
                     SELECT 
                         u.name,
                         u.email,
-                        COALESCE(SUM(p.score), 0) as score,
-                        COALESCE(COUNT(*) FILTER (WHERE p.status = 'solved'), 0) as solved
+                        COALESCE(SUM(p.score), 0) as total_score,
+                        COALESCE(COUNT(*) FILTER (WHERE p.status = 'solved'), 0) as solved_count
                     FROM dsa_user_progress p
                     JOIN users u ON p.user_id = u.id
                     GROUP BY u.name, u.email
                     HAVING COUNT(*) FILTER (WHERE p.status = 'solved') > 0
-                    ORDER BY score DESC, solved DESC
+                    ORDER BY total_score DESC, solved_count DESC
                     LIMIT 10
                 """)
             )
@@ -454,11 +479,13 @@ async def get_dsa_analytics(current_user = Depends(require_admin)):
             top_performers = []
             for row in performers:
                 top_performers.append({
-                    "username": row[0] or "Unknown",  # Use name as username
+                    "username": row[0] or "Unknown",
                     "email": row[1],
                     "score": int(row[2]),
                     "solved": int(row[3])
                 })
+            
+            print(f"🏆 Top performers: {len(top_performers)} users")
             
             return DSAAnalytics(
                 total_submissions=total_subs,
