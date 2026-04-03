@@ -6,6 +6,7 @@ import DSACodeEditor from './components/DSACodeEditor';
 import DSAProblemStatement from './components/DSAProblemStatement';
 import { runCode, submitCode, ExecutionResult } from '../../services/codeExecutionService';
 import { getHint, explainProblem, generateSolution, explainCode, fixCode, AIResponse } from '../../services/dsaAiService';
+import { saveSubmission, getSubmissions, trackAIUsage, Submission } from '../../services/dsaTrackingService';
 
 interface ProblemData {
   id: number;
@@ -183,6 +184,11 @@ export default function DSAProblemPage() {
   const [showAiPanel, setShowAiPanel] = useState(false);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const [aiActionsUsed, setAiActionsUsed] = useState<string[]>([]);
+  
+  // Submission history states
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
     if (slug && mockProblems[slug]) {
@@ -191,6 +197,10 @@ export default function DSAProblemPage() {
       setCode(problemData.starterCode[selectedLanguage]);
       setExecutionResult(null);
       setShowResult(false);
+      setAiActionsUsed([]);
+      
+      // Load submission history
+      loadSubmissionHistory(slug);
     }
   }, [slug]);
 
@@ -225,6 +235,26 @@ export default function DSAProblemPage() {
     try {
       const result = await runCode(code, selectedLanguage, problem.testCases.visible);
       setExecutionResult(result);
+      
+      // Save submission (optional for run)
+      if (result.status !== 'Running') {
+        await saveSubmission({
+          question_slug: problem.slug,
+          question_title: problem.title,
+          difficulty: problem.difficulty,
+          topic: problem.topic,
+          language: selectedLanguage,
+          code: code,
+          action_type: 'run',
+          verdict: result.status,
+          passed_testcases: result.passedTests || 0,
+          total_testcases: result.totalTests || problem.testCases.visible.length,
+          runtime: result.runtime,
+          memory: result.memory,
+          ai_used: aiActionsUsed.length > 0,
+          ai_actions: aiActionsUsed
+        }).catch(err => console.error('Failed to save run:', err));
+      }
     } catch (error) {
       setExecutionResult({
         status: 'Runtime Error',
@@ -246,6 +276,29 @@ export default function DSAProblemPage() {
       const allTestCases = [...problem.testCases.visible, ...problem.testCases.hidden];
       const result = await submitCode(code, selectedLanguage, allTestCases);
       setExecutionResult(result);
+      
+      // Save submission
+      if (result.status !== 'Running') {
+        await saveSubmission({
+          question_slug: problem.slug,
+          question_title: problem.title,
+          difficulty: problem.difficulty,
+          topic: problem.topic,
+          language: selectedLanguage,
+          code: code,
+          action_type: 'submit',
+          verdict: result.status,
+          passed_testcases: result.passedTests || 0,
+          total_testcases: result.totalTests || allTestCases.length,
+          runtime: result.runtime,
+          memory: result.memory,
+          ai_used: aiActionsUsed.length > 0,
+          ai_actions: aiActionsUsed
+        }).then(() => {
+          // Reload submission history
+          loadSubmissionHistory(problem.slug);
+        }).catch(err => console.error('Failed to save submission:', err));
+      }
     } catch (error) {
       setExecutionResult({
         status: 'Runtime Error',
@@ -287,6 +340,7 @@ export default function DSAProblemPage() {
     setIsAiLoading(true);
     setShowAiPanel(true);
     setAiError(null);
+    const startTime = Date.now();
     
     try {
       const response = await getHint({
@@ -297,6 +351,11 @@ export default function DSAProblemPage() {
         language: selectedLanguage
       });
       setAiResponse(response);
+      setAiActionsUsed([...aiActionsUsed, 'hint']);
+      
+      // Track AI usage
+      const responseTime = (Date.now() - startTime) / 1000;
+      trackAIUsage(problem.slug, 'hint', selectedLanguage, responseTime);
     } catch (error) {
       setAiError(error instanceof Error ? error.message : 'Failed to get hint');
     } finally {
@@ -310,6 +369,7 @@ export default function DSAProblemPage() {
     setIsAiLoading(true);
     setShowAiPanel(true);
     setAiError(null);
+    const startTime = Date.now();
     
     try {
       const response = await explainProblem({
@@ -320,6 +380,10 @@ export default function DSAProblemPage() {
         language: selectedLanguage
       });
       setAiResponse(response);
+      setAiActionsUsed([...aiActionsUsed, 'explain']);
+      
+      const responseTime = (Date.now() - startTime) / 1000;
+      trackAIUsage(problem.slug, 'explain', selectedLanguage, responseTime);
     } catch (error) {
       setAiError(error instanceof Error ? error.message : 'Failed to explain problem');
     } finally {
@@ -333,6 +397,7 @@ export default function DSAProblemPage() {
     setIsAiLoading(true);
     setShowAiPanel(true);
     setAiError(null);
+    const startTime = Date.now();
     
     try {
       const response = await generateSolution({
@@ -343,6 +408,10 @@ export default function DSAProblemPage() {
         language: selectedLanguage
       });
       setAiResponse(response);
+      setAiActionsUsed([...aiActionsUsed, 'solution']);
+      
+      const responseTime = (Date.now() - startTime) / 1000;
+      trackAIUsage(problem.slug, 'solution', selectedLanguage, responseTime);
     } catch (error) {
       setAiError(error instanceof Error ? error.message : 'Failed to generate solution');
     } finally {
@@ -360,10 +429,15 @@ export default function DSAProblemPage() {
     setIsAiLoading(true);
     setShowAiPanel(true);
     setAiError(null);
+    const startTime = Date.now();
     
     try {
       const response = await explainCode(code, selectedLanguage, problem.title);
       setAiResponse(response);
+      setAiActionsUsed([...aiActionsUsed, 'explain-code']);
+      
+      const responseTime = (Date.now() - startTime) / 1000;
+      trackAIUsage(problem.slug, 'explain-code', selectedLanguage, responseTime);
     } catch (error) {
       setAiError(error instanceof Error ? error.message : 'Failed to explain code');
     } finally {
@@ -381,15 +455,29 @@ export default function DSAProblemPage() {
     setIsAiLoading(true);
     setShowAiPanel(true);
     setAiError(null);
+    const startTime = Date.now();
     
     try {
       const errorMsg = executionResult?.error || undefined;
       const response = await fixCode(code, selectedLanguage, problem.title, errorMsg);
       setAiResponse(response);
+      setAiActionsUsed([...aiActionsUsed, 'fix-code']);
+      
+      const responseTime = (Date.now() - startTime) / 1000;
+      trackAIUsage(problem.slug, 'fix-code', selectedLanguage, responseTime);
     } catch (error) {
       setAiError(error instanceof Error ? error.message : 'Failed to fix code');
     } finally {
       setIsAiLoading(false);
+    }
+  };
+
+  const loadSubmissionHistory = async (questionSlug: string) => {
+    try {
+      const history = await getSubmissions(questionSlug, 10);
+      setSubmissions(history);
+    } catch (error) {
+      console.error('Failed to load submission history:', error);
     }
   };
 
@@ -485,6 +573,14 @@ export default function DSAProblemPage() {
               >
                 {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 Submit
+              </button>
+              
+              <button
+                onClick={() => setShowHistory(!showHistory)}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
+              >
+                <Clock className="w-4 h-4" />
+                History ({submissions.length})
               </button>
             </div>
           </div>
@@ -621,6 +717,60 @@ export default function DSAProblemPage() {
                         Copy
                       </button>
                     </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Submission History Panel */}
+            {showHistory && (
+              <div className="border-t border-gray-700 bg-gray-800 p-4 max-h-80 overflow-y-auto">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-blue-400" />
+                    <h3 className="text-sm font-semibold text-white">Submission History</h3>
+                  </div>
+                  <button
+                    onClick={() => setShowHistory(false)}
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    <XCircle className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {submissions.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-sm text-gray-400">No submissions yet</p>
+                    <p className="text-xs text-gray-500 mt-1">Run or submit your code to see history</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {submissions.map((sub) => (
+                      <div key={sub.id} className="bg-gray-900 rounded-lg p-3 border border-gray-700">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getStatusColor(sub.verdict)}`}>
+                              {sub.verdict}
+                            </span>
+                            <span className="text-xs text-gray-400">{sub.language}</span>
+                            {sub.ai_used && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-900 text-purple-300 border border-purple-700">
+                                <Sparkles className="w-3 h-3 mr-1" />
+                                AI
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-xs text-gray-500">
+                            {new Date(sub.created_at).toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-4 text-xs text-gray-400">
+                          <span>Tests: {sub.passed_testcases}/{sub.total_testcases}</span>
+                          {sub.runtime && <span>Runtime: {sub.runtime.toFixed(2)}s</span>}
+                          {sub.memory && <span>Memory: {(sub.memory / 1024).toFixed(1)} MB</span>}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>

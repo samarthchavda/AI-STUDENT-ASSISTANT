@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Code2, Search, Filter, CheckCircle2, Circle } from 'lucide-react';
+import { Code2, Search, Filter, CheckCircle2, Circle, Clock } from 'lucide-react';
 import Header from '../../components/Header';
+import { getStatusMap, getProgress, StatusMap, ProgressSummary } from '../../services/dsaTrackingService';
 
 interface DSAQuestion {
   id: number;
@@ -35,15 +36,40 @@ export default function DSAQuestionListPage() {
   const [selectedTopic, setSelectedTopic] = useState('All');
   const [selectedDifficulty, setSelectedDifficulty] = useState('All');
   const [solvedFilter, setSolvedFilter] = useState<'all' | 'solved' | 'unsolved'>('all');
+  const [statusMap, setStatusMap] = useState<StatusMap>({});
+  const [progress, setProgress] = useState<ProgressSummary | null>(null);
+
+  useEffect(() => {
+    loadUserProgress();
+  }, []);
+
+  const loadUserProgress = async () => {
+    try {
+      const [statusData, progressData] = await Promise.all([
+        getStatusMap(),
+        getProgress()
+      ]);
+      setStatusMap(statusData);
+      setProgress(progressData);
+    } catch (error) {
+      console.error('Failed to load progress:', error);
+    }
+  };
+
+  const getQuestionStatus = (slug: string): 'solved' | 'attempted' | 'unsolved' => {
+    return statusMap[slug]?.status || 'unsolved';
+  };
 
   const filteredQuestions = mockQuestions.filter((q) => {
     const matchesSearch = q.title.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesTopic = selectedTopic === 'All' || q.topic === selectedTopic;
     const matchesDifficulty = selectedDifficulty === 'All' || q.difficulty === selectedDifficulty;
+    
+    const questionStatus = getQuestionStatus(q.slug);
     const matchesSolved = 
       solvedFilter === 'all' || 
-      (solvedFilter === 'solved' && q.solved) || 
-      (solvedFilter === 'unsolved' && !q.solved);
+      (solvedFilter === 'solved' && questionStatus === 'solved') || 
+      (solvedFilter === 'unsolved' && questionStatus === 'unsolved');
     
     return matchesSearch && matchesTopic && matchesDifficulty && matchesSolved;
   });
@@ -72,6 +98,58 @@ export default function DSAQuestionListPage() {
             </div>
             <p className="text-gray-600">Master data structures and algorithms with curated problems</p>
           </div>
+
+          {/* Progress Summary */}
+          {progress && (
+            <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6 shadow-sm">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Your Progress</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                    <span className="text-sm font-medium text-green-900">Solved</span>
+                  </div>
+                  <p className="text-2xl font-bold text-green-700">{progress.total_solved}</p>
+                  <p className="text-xs text-green-600 mt-1">
+                    Easy: {progress.easy_solved} | Medium: {progress.medium_solved} | Hard: {progress.hard_solved}
+                  </p>
+                </div>
+                
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Clock className="w-5 h-5 text-yellow-600" />
+                    <span className="text-sm font-medium text-yellow-900">Attempted</span>
+                  </div>
+                  <p className="text-2xl font-bold text-yellow-700">{progress.total_attempted}</p>
+                  <p className="text-xs text-yellow-600 mt-1">
+                    Easy: {progress.easy_attempted} | Medium: {progress.medium_attempted} | Hard: {progress.hard_attempted}
+                  </p>
+                </div>
+                
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Code2 className="w-5 h-5 text-blue-600" />
+                    <span className="text-sm font-medium text-blue-900">Total</span>
+                  </div>
+                  <p className="text-2xl font-bold text-blue-700">{mockQuestions.length}</p>
+                  <p className="text-xs text-blue-600 mt-1">
+                    {progress.total_solved > 0 ? Math.round((progress.total_solved / mockQuestions.length) * 100) : 0}% completed
+                  </p>
+                </div>
+                
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Circle className="w-5 h-5 text-purple-600" />
+                    <span className="text-sm font-medium text-purple-900">Remaining</span>
+                  </div>
+                  <p className="text-2xl font-bold text-purple-700">
+                    {mockQuestions.length - progress.total_solved}
+                  </p>
+                  <p className="text-xs text-purple-600 mt-1">Keep going!</p>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6 shadow-sm">
             <div className="mb-4">
@@ -167,8 +245,10 @@ export default function DSAQuestionListPage() {
                       className="hover:bg-gray-50 cursor-pointer transition-colors"
                     >
                       <td className="px-6 py-4">
-                        {question.solved ? (
+                        {getQuestionStatus(question.slug) === 'solved' ? (
                           <CheckCircle2 className="w-5 h-5 text-green-600" />
+                        ) : getQuestionStatus(question.slug) === 'attempted' ? (
+                          <Clock className="w-5 h-5 text-yellow-600" />
                         ) : (
                           <Circle className="w-5 h-5 text-gray-300" />
                         )}
