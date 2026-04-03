@@ -1,15 +1,33 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Check, Zap, Crown } from 'lucide-react'
-import { paymentAPI } from '../../api/client'
 import { useAppStore } from '../../store/useAppStore'
 import Header from '../../components/Header'
+import { paymentService, openRazorpayCheckout } from '../../services/paymentService'
+
+// Load Razorpay script
+const loadRazorpayScript = () => {
+  return new Promise((resolve) => {
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
 
 export default function PricingPage() {
   const { isAuthenticated, user, setUser } = useAppStore()
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly')
   const [loading, setLoading] = useState<string | null>(null)
   const [showBasicUpgradeModal, setShowBasicUpgradeModal] = useState(false)
+  const [razorpayLoaded, setRazorpayLoaded] = useState(false)
+
+  useEffect(() => {
+    loadRazorpayScript().then((loaded) => {
+      setRazorpayLoaded(!!loaded);
+    });
+  }, []);
 
   const plans = [
     {
@@ -78,36 +96,81 @@ export default function PricingPage() {
   ]
 
   const processUpgrade = async (planId: 'free' | 'basic' | 'pro') => {
+    if (!razorpayLoaded) {
+      alert('Payment system is loading. Please try again in a moment.');
+      return;
+    }
+
     setLoading(planId)
     
     try {
-      // Demo payment - using demo API keys
-      await paymentAPI.createCheckout({
+      // Create Razorpay order
+      const orderData = await paymentService.createOrder({
         plan: planId,
-        paymentMethod: 'demo'
-      })
+        billing_cycle: billingCycle
+      });
 
-      // Simulate successful payment
-      await new Promise((resolve) => setTimeout(resolve, 1200))
+      // Open Razorpay checkout
+      openRazorpayCheckout({
+        key: orderData.key_id,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'CodeCampus AI',
+        description: `${planId.toUpperCase()} Plan - ${billingCycle === 'monthly' ? 'Monthly' : 'Yearly'}`,
+        order_id: orderData.order_id,
+        prefill: {
+          name: orderData.user_name,
+          email: orderData.user_email,
+        },
+        theme: {
+          color: '#667eea',
+        },
+        handler: async (response) => {
+          try {
+            // Verify payment
+            const verifyResult = await paymentService.verifyPayment({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              plan: planId,
+              billing_cycle: billingCycle
+            });
 
-      // Update plan in backend DB
-      await paymentAPI.upgradePlan(planId)
+            if (verifyResult.success) {
+              // Update user in store
+              if (user) {
+                setUser({
+                  ...user,
+                  plan: planId,
+                });
+              }
 
-      // Update frontend user store immediately
-      if (user) {
-        setUser({
-          ...user,
-          plan: planId,
-        })
-      }
-
-      alert(`Payment successful! Your plan has been upgraded to ${planId.toUpperCase()}.`)
+              alert(`🎉 ${verifyResult.message}\n\nInvoice: ${verifyResult.invoice_number}`);
+              
+              // Reload to refresh subscription status
+              window.location.reload();
+            } else {
+              alert('Payment verification failed. Please contact support.');
+            }
+          } catch (error: any) {
+            console.error('Payment verification error:', error);
+            alert(error.response?.data?.detail || 'Payment verification failed. Please contact support.');
+          } finally {
+            setLoading(null);
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            setLoading(null);
+            console.log('Payment cancelled by user');
+          },
+        },
+      });
       
-    } catch (error) {
-      console.error('Payment error:', error)
-      alert('Payment failed or plan upgrade failed. Please try again.')
-    } finally {
-      setLoading(null)
+    } catch (error: any) {
+      console.error('Payment error:', error);
+      alert(error.response?.data?.detail || 'Failed to initiate payment. Please try again.');
+      setLoading(null);
     }
   }
 
@@ -284,29 +347,13 @@ export default function PricingPage() {
           })}
         </div>
 
-        {/* Demo Notice */}
-        <div className="mt-12 max-w-3xl mx-auto px-4">
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 sm:p-6">
-            <h3 className="font-bold text-yellow-900 mb-2">🔑 Demo Mode Active</h3>
-            <p className="text-yellow-800 text-sm">
-              This is a demo application. Payment buttons use demo API keys and won't charge real money. 
-              In production, integrate with Stripe, Razorpay, or another payment provider.
-            </p>
-            <div className="mt-3 text-xs text-yellow-700 bg-yellow-100 p-3 rounded font-mono overflow-x-auto">
-              Demo API Keys in use (backend .env):<br />
-              STRIPE_API_KEY=sk_test_demo123456<br />
-              RAZORPAY_KEY_ID=rzp_test_demo123456
-            </div>
-          </div>
-        </div>
-
         {/* FAQ */}
         <div className="mt-16 max-w-3xl mx-auto px-4">
           <h3 className="text-xl sm:text-2xl font-bold text-center mb-8">Frequently Asked Questions</h3>
           <div className="space-y-4">
             <details className="card">
               <summary className="font-semibold cursor-pointer">Can I cancel anytime?</summary>
-              <p className="mt-2 text-gray-600">Yes! Cancel anytime with no questions asked.</p>
+              <p className="mt-2 text-gray-600">Yes! Cancel anytime with no questions asked. Your access will continue until the end of your billing period.</p>
             </details>
             <details className="card">
               <summary className="font-semibold cursor-pointer">Do you offer student discounts?</summary>
@@ -314,7 +361,15 @@ export default function PricingPage() {
             </details>
             <details className="card">
               <summary className="font-semibold cursor-pointer">What payment methods do you accept?</summary>
-              <p className="mt-2 text-gray-600">We accept all major credit/debit cards, UPI, and net banking.</p>
+              <p className="mt-2 text-gray-600">We accept all major credit/debit cards, UPI, net banking, and wallets through Razorpay.</p>
+            </details>
+            <details className="card">
+              <summary className="font-semibold cursor-pointer">Is my payment information secure?</summary>
+              <p className="mt-2 text-gray-600">Yes! All payments are processed securely through Razorpay. We never store your card details.</p>
+            </details>
+            <details className="card">
+              <summary className="font-semibold cursor-pointer">Will I get an invoice?</summary>
+              <p className="mt-2 text-gray-600">Yes! You'll receive an invoice via email immediately after successful payment. You can also download invoices from your profile.</p>
             </details>
           </div>
         </div>

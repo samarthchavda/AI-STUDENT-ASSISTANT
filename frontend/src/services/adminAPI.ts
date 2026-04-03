@@ -103,6 +103,7 @@ export interface AdminSubscription {
   plan: string;
   status: string;
   source: string;
+  billing_cycle: string | null;
   amount: number;
   payment_id: string | null;
   start_date: string;
@@ -360,6 +361,12 @@ export const adminAPI = {
   // Revenue Analytics
   getRevenueAnalytics: async (days: number = 30): Promise<any> => {
     const response = await api.get(`/admin/growth/revenue?days=${days}`);
+    return response.data;
+  },
+
+  // Invoices API
+  getAllInvoices: async (): Promise<any[]> => {
+    const response = await api.get('/admin/invoices');
     return response.data;
   },
 

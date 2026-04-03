@@ -45,3 +45,6 @@ beautifulsoup4==4.12.3
 
 # Scheduling
 apscheduler==3.10.4
+
+# Payment Gateway
+razorpay==2.0.1

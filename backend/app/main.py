@@ -173,7 +173,7 @@ app.include_router(chat_routes.router)
 app.include_router(exam_routes.router)
 app.include_router(coding_routes.router)
 app.include_router(career_routes.router)
-app.include_router(payment_routes.router)
+app.include_router(payment_routes.router, prefix="/api/payments", tags=["payments"])
 app.include_router(company_routes.router)  # SEO feature: company question database
 app.include_router(company_prep_routes.router)
 app.include_router(admin_routes.router, prefix="/api/admin", tags=["admin"])

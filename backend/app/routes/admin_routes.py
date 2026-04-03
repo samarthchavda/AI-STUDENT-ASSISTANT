@@ -429,6 +429,38 @@ class SubscriptionResponse(BaseModel):
     class Config:
         from_attributes = True
 
+# Get all invoices
+@router.get("/invoices")
+async def get_all_invoices(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    """Get all invoices"""
+    from app.models import Invoice
+    
+    invoices = db.query(Invoice).order_by(Invoice.created_at.desc()).offset(skip).limit(limit).all()
+    
+    return [
+        {
+            "id": inv.id,
+            "invoice_number": inv.invoice_number,
+            "user_id": inv.user_id,
+            "user_name": inv.user_name,
+            "user_email": inv.user_email,
+            "plan_name": inv.plan_name,
+            "billing_cycle": inv.billing_cycle,
+            "amount_paid": inv.amount_paid / 100,  # Convert to rupees
+            "currency": inv.currency,
+            "payment_id": inv.payment_id,
+            "order_id": inv.order_id,
+            "validity_period": inv.validity_period,
+            "invoice_date": inv.invoice_date.isoformat()
+        }
+        for inv in invoices
+    ]
+
 @router.get("/subscriptions")
 async def get_all_subscriptions(
     skip: int = 0,
@@ -437,10 +469,18 @@ async def get_all_subscriptions(
     admin: User = Depends(get_admin_user)
 ):
     """Get all user subscriptions (plan status for all users)"""
+    from app.models import Subscription
+    
     users = db.query(User).offset(skip).limit(limit).all()
     
     result = []
     for user in users:
+        # Get active subscription
+        subscription = db.query(Subscription).filter(
+            Subscription.user_id == user.id,
+            Subscription.status == 'active'
+        ).order_by(Subscription.created_at.desc()).first()
+        
         # Get latest payment if exists
         latest_payment = db.query(Payment).filter(
             Payment.user_id == user.id,
@@ -460,7 +500,17 @@ async def get_all_subscriptions(
         # Determine amount and payment_id
         amount = 0
         payment_id = None
-        if user.subscription_source == 'payment' and latest_payment:
+        billing_cycle = None
+        start_date = user.plan_updated_at or user.created_at
+        expiry_date = None
+        
+        if subscription:
+            amount = subscription.amount_paid
+            payment_id = subscription.razorpay_payment_id
+            billing_cycle = subscription.billing_cycle
+            start_date = subscription.starts_at
+            expiry_date = subscription.expires_at
+        elif user.subscription_source == 'payment' and latest_payment:
             amount = latest_payment.amount
             payment_id = latest_payment.payment_id
         
@@ -471,10 +521,11 @@ async def get_all_subscriptions(
             "plan": user.plan.value if hasattr(user.plan, 'value') else user.plan,
             "status": status,
             "source": user.subscription_source or 'free',
+            "billing_cycle": billing_cycle,
             "amount": amount,
             "payment_id": payment_id,
-            "start_date": user.plan_updated_at or user.created_at,
-            "expiry_date": None,  # TODO: Add expiry logic if needed
+            "start_date": start_date,
+            "expiry_date": expiry_date,
             "granted_by": granted_by_admin
         })
     

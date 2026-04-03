@@ -138,6 +138,64 @@ class Payment(Base):
     currency = Column(String, default="INR")
     status = Column(String)  # 'pending', 'completed', 'failed'
     payment_id = Column(String)  # from payment provider
+    order_id = Column(String, nullable=True)  # Razorpay order ID
+    signature = Column(String, nullable=True)  # Razorpay signature
+    notes = Column(JSON, nullable=True)  # Additional metadata
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    user = relationship("User", back_populates="payments")
+
+class Subscription(Base):
+    __tablename__ = "subscriptions"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    plan_name = Column(String, nullable=False)  # 'free', 'basic', 'pro'
+    billing_cycle = Column(String, nullable=False)  # 'monthly', 'yearly', 'lifetime'
+    source = Column(String, default='payment')  # 'payment', 'admin_grant', 'promo', 'free'
+    amount_paid = Column(Integer, default=0)  # in paise
+    currency = Column(String, default='INR')
+    razorpay_payment_id = Column(String, nullable=True)
+    razorpay_order_id = Column(String, nullable=True)
+    razorpay_subscription_id = Column(String, nullable=True)
+    status = Column(String, default='active')  # 'active', 'expired', 'cancelled'
+    starts_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    expires_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    user = relationship("User", backref="subscriptions")
+
+class Invoice(Base):
+    __tablename__ = "invoices"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    invoice_number = Column(String, unique=True, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    subscription_id = Column(Integer, ForeignKey("subscriptions.id", ondelete="SET NULL"), nullable=True)
+    user_name = Column(String, nullable=False)
+    user_email = Column(String, nullable=False)
+    plan_name = Column(String, nullable=False)
+    billing_cycle = Column(String, nullable=False)
+    amount_paid = Column(Integer, nullable=False)
+    currency = Column(String, default='INR')
+    payment_id = Column(String, nullable=True)
+    order_id = Column(String, nullable=True)
+    validity_period = Column(String, nullable=True)
+    invoice_date = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    
+    user = relationship("User", backref="invoices")
+
+class PaymentWebhook(Base):
+    __tablename__ = "payment_webhooks"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    event_id = Column(String, unique=True, nullable=False)
+    event_type = Column(String, nullable=False)
+    payload = Column(JSON, nullable=False)
+    processed = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
     created_at = Column(DateTime, default=datetime.utcnow)
     
     user = relationship("User", back_populates="payments")

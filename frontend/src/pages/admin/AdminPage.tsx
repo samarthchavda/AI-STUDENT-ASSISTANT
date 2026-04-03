@@ -1488,6 +1488,9 @@ const AdminPage = () => {
                       Plan
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Billing
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -1497,10 +1500,7 @@ const AdminPage = () => {
                       Amount
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Payment ID
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Start Date
+                      Expiry
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Granted By
@@ -1522,6 +1522,11 @@ const AdminPage = () => {
                         }`}>
                           {subscription.plan.toUpperCase()}
                         </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                        {subscription.billing_cycle ? (
+                          <span className="capitalize">{subscription.billing_cycle}</span>
+                        ) : '—'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
@@ -1548,14 +1553,11 @@ const AdminPage = () => {
                         {subscription.source === 'admin_grant' || subscription.source === 'free' ? (
                           <span className="text-gray-500">Free</span>
                         ) : (
-                          `₹${subscription.amount}`
+                          `₹${(subscription.amount / 100).toFixed(2)}`
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {subscription.payment_id || '—'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {formatDate(subscription.start_date)}
+                        {subscription.expiry_date ? formatDate(subscription.expiry_date) : '—'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                         {subscription.granted_by || '—'}
