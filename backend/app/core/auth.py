@@ -217,7 +217,7 @@ def get_current_user(
     return {
         "id": user.id,
         "email": user.email,
-        "username": user.username,
+        "name": user.name,
         "is_admin": user.is_admin
     }
 
