@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Trophy, Flame, CheckCircle2, Lock } from 'lucide-react';
+import { Calendar, Trophy, Flame, CheckCircle2 } from 'lucide-react';
 import { getTodayChallenge, DailyChallenge } from '../services/engagementService';
 
 export default function DailyChallengeWidget() {

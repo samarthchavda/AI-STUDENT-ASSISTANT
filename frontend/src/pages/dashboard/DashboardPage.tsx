@@ -460,7 +460,7 @@ export default function DashboardPageNew() {
                   </button>
                 </div>
                 <nav className="space-y-1">
-                  {sidebarItems.map((item, index) => {
+                  {sidebarItems.map((item) => {
                     const Icon = item.icon
                     const isActive = activeSidebar === item.id
                     return (

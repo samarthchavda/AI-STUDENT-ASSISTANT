@@ -99,7 +99,7 @@ async function executeCode(code: string, language: keyof typeof LANGUAGE_IDS, in
 }
 
 // Mock execution for development/demo
-function mockExecution(code: string, language: keyof typeof LANGUAGE_IDS, input: string): Promise<Judge0Response> {
+function mockExecution(code: string, _language: keyof typeof LANGUAGE_IDS, input: string): Promise<Judge0Response> {
   return new Promise((resolve) => {
     setTimeout(() => {
       // Simple mock logic

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { 
-  BarChart3, Users, CheckCircle2, XCircle, TrendingUp, 
+  BarChart3, Users, CheckCircle2, TrendingUp, 
   Code2, Target, Activity, Award, Brain 
 } from 'lucide-react';
 import Header from '../../components/Header';

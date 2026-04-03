@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
 import Header from '../../components/Header';
-import { Eye, Trash2, Sparkles, ArrowLeft, User, RefreshCw, Filter } from 'lucide-react';
+import { Eye, Trash2, Sparkles, ArrowLeft, User, RefreshCw } from 'lucide-react';
 
 interface UserResume {
   id: number;

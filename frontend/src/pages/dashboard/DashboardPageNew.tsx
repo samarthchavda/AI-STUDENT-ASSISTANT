@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import {
   Home,
   BookOpen,
-  Code2,
   MessageSquare,
   FileText,
   CreditCard,
