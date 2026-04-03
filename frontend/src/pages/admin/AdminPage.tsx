@@ -27,10 +27,7 @@ import {
   TrendingDown,
   Code2,
   Database,
-  Trophy,
-  Briefcase,
   Layout,
-  Brain,
   Settings,
   Menu,
   X
@@ -574,18 +571,44 @@ const AdminPage = () => {
     }).format(amount / 100);
   };
 
-  const sidebarItems = [
-    { id: 'stats', label: 'Statistics', icon: BarChart3 },
-    { id: 'users', label: 'Users', icon: Users },
-    { id: 'aptitude-questions', label: 'Aptitude Questions', icon: Target },
-    { id: 'ai-monitor', label: 'AI Monitor', icon: Activity },
-    { id: 'broadcast', label: 'Broadcast', icon: Send },
-    { id: 'chats', label: 'Chats', icon: MessageSquare },
-    { id: 'payments', label: 'Payments', icon: CreditCard },
-    { id: 'progress', label: 'Progress', icon: TrendingUp },
-    { id: 'company-questions', label: 'Company Questions', icon: Building2 },
-    { id: 'aptitude-history', label: 'Aptitude History', icon: FileText },
-  ] as const;
+  // Organized sidebar structure with sections
+  const sidebarSections = [
+    {
+      title: 'Overview',
+      items: [
+        { id: 'stats' as const, label: 'Overview', icon: BarChart3 },
+      ]
+    },
+    {
+      title: 'Users & Billing',
+      items: [
+        { id: 'users' as const, label: 'Users', icon: Users },
+        { id: 'payments' as const, label: 'Subscriptions', icon: CreditCard },
+        { id: 'chats' as const, label: 'Chat Logs', icon: MessageSquare },
+      ]
+    },
+    {
+      title: 'Learning Content',
+      items: [
+        { id: 'aptitude-questions' as const, label: 'Aptitude Bank', icon: Target },
+        { id: 'company-questions' as const, label: 'Company Sheets', icon: Building2 },
+      ]
+    },
+    {
+      title: 'Analytics',
+      items: [
+        { id: 'ai-monitor' as const, label: 'AI Analytics', icon: Activity },
+        { id: 'progress' as const, label: 'User Progress', icon: TrendingUp },
+        { id: 'aptitude-history' as const, label: 'Attempt History', icon: FileText },
+      ]
+    },
+    {
+      title: 'System',
+      items: [
+        { id: 'broadcast' as const, label: 'Broadcast Campaigns', icon: Send },
+      ]
+    }
+  ];
 
   // Navigate to dedicated pages
   const handleNavigateToPage = (path: string) => {
@@ -623,44 +646,37 @@ const AdminPage = () => {
               </div>
               
               <nav className="px-3 pb-6">
-                {sidebarItems.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = activeTab === item.id;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => {
-                        handleTabChange(item.id as typeof activeTab)
-                        setMobileMenuOpen(false)
-                      }}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 transition-all ${
-                        isActive
-                          ? 'bg-blue-50 text-blue-600 font-medium'
-                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                      }`}
-                    >
-                      <Icon className="w-5 h-5" />
-                      <span className="text-sm">{item.label}</span>
-                    </button>
-                  );
-                })}
+                {sidebarSections.map((section, sectionIndex) => (
+                  <div key={section.title}>
+                    {sectionIndex > 0 && <div className="my-3 border-t border-gray-200"></div>}
+                    <p className="px-4 text-xs font-semibold text-gray-400 uppercase mb-2">{section.title}</p>
+                    {section.items.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = activeTab === item.id;
+                      return (
+                        <button
+                          key={item.id}
+                          onClick={() => {
+                            handleTabChange(item.id as typeof activeTab)
+                            setMobileMenuOpen(false)
+                          }}
+                          className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 transition-all ${
+                            isActive
+                              ? 'bg-blue-50 text-blue-600 font-medium'
+                              : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                          }`}
+                        >
+                          <Icon className="w-5 h-5" />
+                          <span className="text-sm">{item.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ))}
                 
-                {/* Divider */}
-                <div className="my-4 border-t border-gray-200"></div>
-                
-                {/* System Health & Admin Enhancement Pages */}
+                {/* Additional System Pages */}
+                <div className="my-3 border-t border-gray-200"></div>
                 <p className="px-4 text-xs font-semibold text-gray-400 uppercase mb-2">System</p>
-                <button
-                  onClick={() => {
-                    handleNavigateToPage('/admin/system-health')
-                    setMobileMenuOpen(false)
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
-                >
-                  <Activity className="w-5 h-5" />
-                  <span className="text-sm">System Health</span>
-                </button>
-                
                 <button
                   onClick={() => {
                     handleNavigateToPage('/admin/broadcast')
@@ -669,7 +685,7 @@ const AdminPage = () => {
                   className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
                 >
                   <Bell className="w-5 h-5" />
-                  <span className="text-sm">Broadcast System</span>
+                  <span className="text-sm">Broadcast Settings</span>
                 </button>
                 
                 <button
@@ -683,91 +699,15 @@ const AdminPage = () => {
                   <span className="text-sm">Audit Logs</span>
                 </button>
                 
-                {/* Divider */}
-                <div className="my-4 border-t border-gray-200"></div>
-                
-                {/* Growth Features */}
-                <p className="px-4 text-xs font-semibold text-gray-400 uppercase mb-2">Growth</p>
                 <button
                   onClick={() => {
-                    handleNavigateToPage('/admin/leaderboard')
+                    handleNavigateToPage('/admin/system-health')
                     setMobileMenuOpen(false)
                   }}
                   className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
                 >
-                  <Trophy className="w-5 h-5" />
-                  <span className="text-sm">Leaderboard</span>
-                </button>
-                
-                <button
-                  onClick={() => {
-                    handleNavigateToPage('/admin/transactions')
-                    setMobileMenuOpen(false)
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
-                >
-                  <DollarSign className="w-5 h-5" />
-                  <span className="text-sm">Transactions</span>
-                </button>
-                
-                <button
-                  onClick={() => {
-                    handleNavigateToPage('/admin/referrals')
-                    setMobileMenuOpen(false)
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
-                >
-                  <Users className="w-5 h-5" />
-                  <span className="text-sm">Referrals</span>
-                </button>
-                
-                {/* Divider */}
-                <div className="my-4 border-t border-gray-200"></div>
-                
-                {/* Resume Admin */}
-                <p className="px-4 text-xs font-semibold text-gray-400 uppercase mb-2">Resume Admin</p>
-                <button
-                  onClick={() => {
-                    handleNavigateToPage('/admin/resume-analytics')
-                    setMobileMenuOpen(false)
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
-                >
-                  <BarChart3 className="w-5 h-5" />
-                  <span className="text-sm">Resume Analytics</span>
-                </button>
-                
-                <button
-                  onClick={() => {
-                    handleNavigateToPage('/admin/resume-templates')
-                    setMobileMenuOpen(false)
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
-                >
-                  <Layout className="w-5 h-5" />
-                  <span className="text-sm">Resume Templates</span>
-                </button>
-                
-                <button
-                  onClick={() => {
-                    handleNavigateToPage('/admin/user-resumes')
-                    setMobileMenuOpen(false)
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
-                >
-                  <Briefcase className="w-5 h-5" />
-                  <span className="text-sm">User Resumes</span>
-                </button>
-                
-                <button
-                  onClick={() => {
-                    handleNavigateToPage('/admin/ai-resume-monitor')
-                    setMobileMenuOpen(false)
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
-                >
-                  <Brain className="w-5 h-5" />
-                  <span className="text-sm">AI Resume Monitor</span>
+                  <Activity className="w-5 h-5" />
+                  <span className="text-sm">System Health</span>
                 </button>
                 
                 <button
@@ -781,11 +721,9 @@ const AdminPage = () => {
                   <span className="text-sm">AI Settings</span>
                 </button>
                 
-                {/* Divider */}
-                <div className="my-4 border-t border-gray-200"></div>
-                
-                {/* DSA Admin */}
-                <p className="px-4 text-xs font-semibold text-gray-400 uppercase mb-2">DSA Module</p>
+                {/* Analytics Section */}
+                <div className="my-3 border-t border-gray-200"></div>
+                <p className="px-4 text-xs font-semibold text-gray-400 uppercase mb-2">Analytics</p>
                 <button
                   onClick={() => {
                     handleNavigateToPage('/admin/dsa-analytics')
@@ -795,6 +733,31 @@ const AdminPage = () => {
                 >
                   <Code2 className="w-5 h-5" />
                   <span className="text-sm">DSA Analytics</span>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    handleNavigateToPage('/admin/resume-analytics')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+                >
+                  <BarChart3 className="w-5 h-5" />
+                  <span className="text-sm">Resume Analytics</span>
+                </button>
+                
+                {/* Learning Content Section */}
+                <div className="my-3 border-t border-gray-200"></div>
+                <p className="px-4 text-xs font-semibold text-gray-400 uppercase mb-2">Learning Content</p>
+                <button
+                  onClick={() => {
+                    handleNavigateToPage('/admin/resume-templates')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+                >
+                  <Layout className="w-5 h-5" />
+                  <span className="text-sm">Resume Templates</span>
                 </button>
               </nav>
             </aside>
@@ -809,44 +772,40 @@ const AdminPage = () => {
           </div>
           
           <nav className="px-3 pb-6">
-            {sidebarItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => handleTabChange(item.id as typeof activeTab)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 transition-all ${
-                    isActive
-                      ? 'bg-blue-50 text-blue-600 font-medium'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
-                >
-                  <Icon className="w-5 h-5" />
-                  <span className="text-sm">{item.label}</span>
-                </button>
-              );
-            })}
+            {sidebarSections.map((section, sectionIndex) => (
+              <div key={section.title}>
+                {sectionIndex > 0 && <div className="my-3 border-t border-gray-200"></div>}
+                <p className="px-4 text-xs font-semibold text-gray-400 uppercase mb-2">{section.title}</p>
+                {section.items.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = activeTab === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => handleTabChange(item.id as typeof activeTab)}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 transition-all ${
+                        isActive
+                          ? 'bg-blue-50 text-blue-600 font-medium'
+                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span className="text-sm">{item.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
             
-            {/* Divider */}
-            <div className="my-4 border-t border-gray-200"></div>
-            
-            {/* System Health & Admin Enhancement Pages */}
+            {/* Additional System Pages */}
+            <div className="my-3 border-t border-gray-200"></div>
             <p className="px-4 text-xs font-semibold text-gray-400 uppercase mb-2">System</p>
-            <button
-              onClick={() => handleNavigateToPage('/admin/system-health')}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
-            >
-              <Activity className="w-5 h-5" />
-              <span className="text-sm">System Health</span>
-            </button>
-            
             <button
               onClick={() => handleNavigateToPage('/admin/broadcast')}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
             >
               <Bell className="w-5 h-5" />
-              <span className="text-sm">Broadcast System</span>
+              <span className="text-sm">Broadcast Settings</span>
             </button>
             
             <button
@@ -857,70 +816,12 @@ const AdminPage = () => {
               <span className="text-sm">Audit Logs</span>
             </button>
             
-            {/* Divider */}
-            <div className="my-4 border-t border-gray-200"></div>
-            
-            {/* Growth Features */}
-            <p className="px-4 text-xs font-semibold text-gray-400 uppercase mb-2">Growth</p>
             <button
-              onClick={() => handleNavigateToPage('/admin/leaderboard')}
+              onClick={() => handleNavigateToPage('/admin/system-health')}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
             >
-              <Trophy className="w-5 h-5" />
-              <span className="text-sm">Leaderboard</span>
-            </button>
-            
-            <button
-              onClick={() => handleNavigateToPage('/admin/transactions')}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
-            >
-              <DollarSign className="w-5 h-5" />
-              <span className="text-sm">Transactions</span>
-            </button>
-            
-            <button
-              onClick={() => handleNavigateToPage('/admin/referrals')}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
-            >
-              <Users className="w-5 h-5" />
-              <span className="text-sm">Referrals</span>
-            </button>
-            
-            {/* Divider */}
-            <div className="my-4 border-t border-gray-200"></div>
-            
-            {/* Resume Admin */}
-            <p className="px-4 text-xs font-semibold text-gray-400 uppercase mb-2">Resume Admin</p>
-            <button
-              onClick={() => handleNavigateToPage('/admin/resume-analytics')}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
-            >
-              <BarChart3 className="w-5 h-5" />
-              <span className="text-sm">Resume Analytics</span>
-            </button>
-            
-            <button
-              onClick={() => handleNavigateToPage('/admin/resume-templates')}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
-            >
-              <Layout className="w-5 h-5" />
-              <span className="text-sm">Resume Templates</span>
-            </button>
-            
-            <button
-              onClick={() => handleNavigateToPage('/admin/user-resumes')}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
-            >
-              <Briefcase className="w-5 h-5" />
-              <span className="text-sm">User Resumes</span>
-            </button>
-            
-            <button
-              onClick={() => handleNavigateToPage('/admin/ai-resume-monitor')}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
-            >
-              <Brain className="w-5 h-5" />
-              <span className="text-sm">AI Resume Monitor</span>
+              <Activity className="w-5 h-5" />
+              <span className="text-sm">System Health</span>
             </button>
             
             <button
@@ -931,17 +832,34 @@ const AdminPage = () => {
               <span className="text-sm">AI Settings</span>
             </button>
             
-            {/* Divider */}
-            <div className="my-4 border-t border-gray-200"></div>
-            
-            {/* DSA Admin */}
-            <p className="px-4 text-xs font-semibold text-gray-400 uppercase mb-2">DSA Module</p>
+            {/* Analytics Section */}
+            <div className="my-3 border-t border-gray-200"></div>
+            <p className="px-4 text-xs font-semibold text-gray-400 uppercase mb-2">Analytics</p>
             <button
               onClick={() => handleNavigateToPage('/admin/dsa-analytics')}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
             >
               <Code2 className="w-5 h-5" />
               <span className="text-sm">DSA Analytics</span>
+            </button>
+            
+            <button
+              onClick={() => handleNavigateToPage('/admin/resume-analytics')}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+            >
+              <BarChart3 className="w-5 h-5" />
+              <span className="text-sm">Resume Analytics</span>
+            </button>
+            
+            {/* Learning Content Section */}
+            <div className="my-3 border-t border-gray-200"></div>
+            <p className="px-4 text-xs font-semibold text-gray-400 uppercase mb-2">Learning Content</p>
+            <button
+              onClick={() => handleNavigateToPage('/admin/resume-templates')}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+            >
+              <Layout className="w-5 h-5" />
+              <span className="text-sm">Resume Templates</span>
             </button>
           </nav>
         </aside>
