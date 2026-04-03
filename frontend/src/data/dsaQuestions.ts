@@ -1,5 +1,20 @@
-// DSA Questions Dataset - 100+ Curated Coding Problems
-// Organized by topic and difficulty for interview preparation
+// CodeCampus AI - Original DSA Practice Problems
+// Copyright © 2024 CodeCampus AI. All Rights Reserved.
+// 
+// LEGAL NOTICE:
+// All problem descriptions, examples, test cases, and content in this file
+// are original educational material created by CodeCampus AI.
+// 
+// These problems are inspired by common technical interview patterns and
+// algorithmic concepts that are in the public domain. However, the specific
+// wording, examples, explanations, and presentation are our original work.
+// 
+// NOT AFFILIATED: This platform is not affiliated with, endorsed by, or
+// connected to LeetCode, HackerRank, CodeForces, GeeksforGeeks, or any
+// other external coding platform.
+// 
+// EDUCATIONAL USE: This content is provided for educational purposes to help
+// students prepare for technical interviews and improve their coding skills.
 
 export interface DSAQuestion {
   id: number;

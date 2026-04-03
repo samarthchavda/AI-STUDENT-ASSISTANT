@@ -24,7 +24,7 @@ genai.configure(api_key=settings.gemini_api_key)
 model = genai.GenerativeModel('gemini-2.5-flash')
 
 
-# Sample LeetCode-style dataset (expandable to 1000+)
+# Sample interview-style dataset (expandable to 1000+)
 MEGA_DATASET = [
     # Arrays (100 problems)
     {"title": "Two Sum", "topic": "arrays", "difficulty": "easy", "company": "Amazon,Google,Facebook"},

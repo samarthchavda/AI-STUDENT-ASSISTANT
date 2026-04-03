@@ -149,7 +149,7 @@ class CompanyQuestion(Base):
     frequency = Column(Integer, default=1)  # How many times asked (helps rank top questions)
     year_asked = Column(String)  # "2024", "2023-24"
     solution_outline = Column(Text)  # Brief solution hint
-    similar_questions = Column(String)  # LeetCode IDs or references
+    similar_questions = Column(String)  # Problem references
     topic = Column(String)  # "Binary Search", "Dynamic Programming", etc.
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

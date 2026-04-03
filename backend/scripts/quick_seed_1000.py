@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from app.core.database import SessionLocal
 from app.models import DSAProblem
 
-# Curated 1000+ LeetCode-style problems
+# Curated 1000+ interview-style problems
 PROBLEM_DATASET = {
     "arrays": {
         "easy": [

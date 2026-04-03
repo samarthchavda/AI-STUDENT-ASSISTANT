@@ -90,6 +90,14 @@ export default function DSAQuestionListPage() {
       
       <div className="pt-20 px-4 sm:px-6 lg:px-8 pb-12">
         <div className="max-w-7xl mx-auto">
+          {/* Disclaimer Banner */}
+          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-sm text-blue-900">
+              <span className="font-semibold">Educational Content:</span> All practice problems are original educational content created by CodeCampus AI. 
+              These problems are inspired by common technical interview patterns and are not affiliated with or endorsed by any external coding platform.
+            </p>
+          </div>
+
           <div className="mb-8">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>

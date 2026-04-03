@@ -1465,7 +1465,7 @@ SCHEMA:
       "Title": "problem name",
       "Topic": "Arrays | Strings | Trees | Graphs | DP | etc",
       "Difficulty": "Easy|Medium|Hard",
-      "LeetCodeLink": "https://leetcode.com/problems/.../"
+      "ProblemReference": "CodeCampus Problem: .../"
     }
   ],
   "Project_Idea": {
@@ -1478,7 +1478,7 @@ SCHEMA:
 
 CONTENT RULES:
 - LearningPath must be week-by-week and practical for placements.
-- DSA_Problems must contain exactly 5 stack-relevant problems with valid LeetCode URLs.
+- DSA_Problems must contain exactly 5 stack-relevant problems with valid coding platform URLs.
 - Project_Idea must be advanced and portfolio-worthy for the given stack.
 - BoilerplateCode can be a short snippet or clean folder structure text.
 """
@@ -1503,31 +1503,31 @@ Generate the roadmap JSON now."""
                         "Title": "Two Sum",
                         "Topic": "Arrays",
                         "Difficulty": "Easy",
-                        "LeetCodeLink": "https://leetcode.com/problems/two-sum/"
+                        "ProblemReference": "CodeCampus Problem: two-sum/"
                     },
                     {
                         "Title": "Best Time to Buy and Sell Stock",
                         "Topic": "Arrays",
                         "Difficulty": "Easy",
-                        "LeetCodeLink": "https://leetcode.com/problems/best-time-to-buy-and-sell-stock/"
+                        "ProblemReference": "CodeCampus Problem: best-time-to-buy-and-sell-stock/"
                     },
                     {
                         "Title": "Longest Substring Without Repeating Characters",
                         "Topic": "Strings",
                         "Difficulty": "Medium",
-                        "LeetCodeLink": "https://leetcode.com/problems/longest-substring-without-repeating-characters/"
+                        "ProblemReference": "CodeCampus Problem: longest-substring-without-repeating-characters/"
                     },
                     {
                         "Title": "Binary Tree Level Order Traversal",
                         "Topic": "Trees",
                         "Difficulty": "Medium",
-                        "LeetCodeLink": "https://leetcode.com/problems/binary-tree-level-order-traversal/"
+                        "ProblemReference": "CodeCampus Problem: binary-tree-level-order-traversal/"
                     },
                     {
                         "Title": "Course Schedule",
                         "Topic": "Graphs",
                         "Difficulty": "Medium",
-                        "LeetCodeLink": "https://leetcode.com/problems/course-schedule/"
+                        "ProblemReference": "CodeCampus Problem: course-schedule/"
                     }
                 ],
                 "Project_Idea": {
@@ -1677,7 +1677,7 @@ Provide:
    - Common mistakes to avoid
    - Which companies (Amazon/Microsoft/Google) ask this
 
-6. **Similar Problems** (3 LeetCode problems)
+6. **Similar Problems** (3 coding platform problems)
 
 Format with markdown headers and code blocks."""
 
@@ -1873,19 +1873,19 @@ def print_triangle(numRows):
 
 ## 8. Similar Problems
 
-1. **Pascal's Triangle II** (LeetCode 119)
+1. **Pascal's Triangle II** (coding platform 119)
    - Get specific row with O(k) space
    - Difficulty: Easy
 
-2. **Triangle** (LeetCode 120)
+2. **Triangle** (coding platform 120)
    - Minimum path sum in triangle
    - Difficulty: Medium
 
-3. **Combination Sum** (LeetCode 39)
+3. **Combination Sum** (coding platform 39)
    - Uses combinatorics like Pascal's
    - Difficulty: Medium
 
-4. **Unique Paths** (LeetCode 62)
+4. **Unique Paths** (coding platform 62)
    - Related to Pascal's triangle values
    - Difficulty: Medium
 

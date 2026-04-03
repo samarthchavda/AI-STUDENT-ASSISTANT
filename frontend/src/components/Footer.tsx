@@ -247,17 +247,22 @@ export default function Footer() {
 
       {/* Bottom bar */}
       <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8">
-        <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
+        <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
           <div className="flex flex-wrap items-center gap-5 text-xs text-slate-500">
             <Link to="/privacy" className="transition-colors hover:text-slate-300">Privacy Policy</Link>
             <Link to="/cookies" className="transition-colors hover:text-slate-300">Cookie Policy</Link>
             <Link to="/terms" className="transition-colors hover:text-slate-300">Terms of Service</Link>
           </div>
-          <p className="text-xs text-slate-500">
-            Made with{' '}
-            <span className="text-red-500">♥</span>
-            {' '}by Team CodeCampus AI © {new Date().getFullYear()}
-          </p>
+          <div className="flex flex-col items-center gap-2 text-center sm:items-end sm:text-right">
+            <p className="text-xs text-slate-500">
+              Made with{' '}
+              <span className="text-red-500">♥</span>
+              {' '}by Team CodeCampus AI © {new Date().getFullYear()}
+            </p>
+            <p className="text-xs text-slate-600 max-w-2xl">
+              All practice problems are original educational content. Not affiliated with or endorsed by any external coding platform.
+            </p>
+          </div>
         </div>
       </div>
     </footer>

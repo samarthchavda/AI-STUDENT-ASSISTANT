@@ -21,7 +21,7 @@ from app.core.config import settings
 genai.configure(api_key=settings.gemini_api_key)
 model = genai.GenerativeModel('gemini-2.5-flash')
 
-# Curated 1000+ LeetCode-style problems
+# Curated 1000+ interview-style problems
 PROBLEM_DATASET = {
     "arrays": {
         "easy": [

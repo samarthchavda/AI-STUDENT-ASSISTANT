@@ -456,7 +456,7 @@ A complete competitive coding platform with:
 
 ## 🎯 Mission Accomplished
 
-Your DSA module is now a production-ready competitive coding platform that rivals LeetCode, HackerRank, and CodeChef in features and user experience.
+Your DSA module is now a production-ready competitive coding platform that provides comprehensive coding practice in features and user experience.
 
 **Status**: ✅ COMPLETE
 **Quality**: Production-ready
