@@ -1,4 +1,4 @@
-import apiClient from '../api/client';
+import { api } from '../api/client';
 
 // ============= TYPES =============
 
@@ -111,12 +111,12 @@ export interface AIAnalytics {
 // ============= USER DASHBOARD =============
 
 export async function getDashboardStats(): Promise<DashboardStats> {
-  const response = await apiClient.get('/api/dsa/dashboard');
+  const response = await api.get('/dsa/dashboard');
   return response.data;
 }
 
 export async function getStreakData(): Promise<StreakData> {
-  const response = await apiClient.get('/api/dsa/streak');
+  const response = await api.get('/dsa/streak');
   return response.data;
 }
 
@@ -126,7 +126,7 @@ export async function getLeaderboard(
   period: 'all' | 'week' | 'month' = 'all',
   limit: number = 100
 ): Promise<LeaderboardResponse> {
-  const response = await apiClient.get('/api/dsa/leaderboard', {
+  const response = await api.get('/dsa/leaderboard', {
     params: { period, limit }
   });
   return response.data;
@@ -135,11 +135,11 @@ export async function getLeaderboard(
 // ============= ADMIN ANALYTICS =============
 
 export async function getDSAAnalytics(): Promise<DSAAnalytics> {
-  const response = await apiClient.get('/api/dsa/admin/analytics');
+  const response = await api.get('/dsa/admin/analytics');
   return response.data;
 }
 
 export async function getAIAnalytics(): Promise<AIAnalytics> {
-  const response = await apiClient.get('/api/dsa/admin/ai-analytics');
+  const response = await api.get('/dsa/admin/ai-analytics');
   return response.data;
 }
