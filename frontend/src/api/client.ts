@@ -2,20 +2,21 @@ import axios from 'axios'
 
 const resolveApiOrigin = (rawUrl: string) => {
   const trimmed = rawUrl.trim()
-  if (!trimmed) return 'http://localhost:8000'
+  if (!trimmed) return ''
 
   try {
     const urlWithProtocol = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`
     const parsed = new URL(urlWithProtocol)
     return `${parsed.protocol}//${parsed.host}`
   } catch {
-    return 'http://localhost:8000'
+    return ''
   }
 }
 
-const API_ORIGIN = resolveApiOrigin(import.meta.env.VITE_API_URL || 'http://localhost:8000')
+// Use relative URL in development to leverage Vite proxy, full URL in production
+const API_ORIGIN = resolveApiOrigin(import.meta.env.VITE_API_URL || '')
 const API_PREFIX = '/api'
-const API_BASE_URL = `${API_ORIGIN}${API_PREFIX}`
+const API_BASE_URL = API_ORIGIN ? `${API_ORIGIN}${API_PREFIX}` : API_PREFIX
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -222,7 +223,9 @@ export const chatAPI = {
       return
     }
 
-    const response = await fetch(`${API_BASE_URL}/chat/stream`, {
+    // Use relative URL for streaming to work with proxy
+    const streamUrl = API_ORIGIN ? `${API_BASE_URL}/chat/stream` : `${API_PREFIX}/chat/stream`
+    const response = await fetch(streamUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

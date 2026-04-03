@@ -2,19 +2,20 @@ import axios from 'axios';
 
 const resolveApiOrigin = (rawUrl: string) => {
   const trimmed = rawUrl.trim();
-  if (!trimmed) return 'http://localhost:8000';
+  if (!trimmed) return '';
 
   try {
     const urlWithProtocol = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
     const parsed = new URL(urlWithProtocol);
     return `${parsed.protocol}//${parsed.host}`;
   } catch {
-    return 'http://localhost:8000';
+    return '';
   }
 };
 
 const API_PREFIX = '/api';
-const API_URL = `${resolveApiOrigin(import.meta.env.VITE_API_URL || 'http://localhost:8000')}${API_PREFIX}`;
+const API_ORIGIN = resolveApiOrigin(import.meta.env.VITE_API_URL || '');
+const API_URL = API_ORIGIN ? `${API_ORIGIN}${API_PREFIX}` : API_PREFIX;
 
 const api = axios.create({
   baseURL: API_URL,
