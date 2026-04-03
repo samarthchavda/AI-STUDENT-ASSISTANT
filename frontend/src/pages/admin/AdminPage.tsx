@@ -782,6 +782,22 @@ const AdminPage = () => {
                   <Settings className="w-5 h-5" />
                   <span className="text-sm">AI Settings</span>
                 </button>
+                
+                {/* Divider */}
+                <div className="my-4 border-t border-gray-200"></div>
+                
+                {/* DSA Admin */}
+                <p className="px-4 text-xs font-semibold text-gray-400 uppercase mb-2">DSA Module</p>
+                <button
+                  onClick={() => {
+                    handleNavigateToPage('/admin/dsa-analytics')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+                >
+                  <Code2 className="w-5 h-5" />
+                  <span className="text-sm">DSA Analytics</span>
+                </button>
               </nav>
             </aside>
           </div>
@@ -915,6 +931,19 @@ const AdminPage = () => {
             >
               <Settings className="w-5 h-5" />
               <span className="text-sm">AI Settings</span>
+            </button>
+            
+            {/* Divider */}
+            <div className="my-4 border-t border-gray-200"></div>
+            
+            {/* DSA Admin */}
+            <p className="px-4 text-xs font-semibold text-gray-400 uppercase mb-2">DSA Module</p>
+            <button
+              onClick={() => handleNavigateToPage('/admin/dsa-analytics')}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+            >
+              <Code2 className="w-5 h-5" />
+              <span className="text-sm">DSA Analytics</span>
             </button>
           </nav>
         </aside>

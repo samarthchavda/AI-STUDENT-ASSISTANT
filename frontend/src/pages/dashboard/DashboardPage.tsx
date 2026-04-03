@@ -20,10 +20,13 @@ import {
   BookOpenCheck,
   Activity,
   Menu,
+  Flame,
+  Zap,
   type LucideIcon
 } from 'lucide-react'
 import Header from '../../components/Header'
 import { useAppStore } from '../../store/useAppStore'
+import { getDashboardStats, getStreakData, DashboardStats, StreakData } from '../../services/dsaAnalyticsService'
 
 interface SidebarItem {
   id: string
@@ -122,11 +125,30 @@ export default function DashboardPageNew() {
     placementReadiness: 0,
     resumeScore: 0
   })
+  const [dsaStats, setDsaStats] = useState<DashboardStats | null>(null)
+  const [streakData, setStreakData] = useState<StreakData | null>(null)
+  const [loadingDSA, setLoadingDSA] = useState(true)
 
   // Load exam history and stats on mount
   useEffect(() => {
     loadExamHistory()
+    loadDSAStats()
   }, [])
+
+  const loadDSAStats = async () => {
+    try {
+      const [stats, streak] = await Promise.all([
+        getDashboardStats(),
+        getStreakData()
+      ])
+      setDsaStats(stats)
+      setStreakData(streak)
+    } catch (error) {
+      console.error('Failed to load DSA stats:', error)
+    } finally {
+      setLoadingDSA(false)
+    }
+  }
 
   const loadExamHistory = async () => {
     setLoadingActivities(true)
@@ -192,6 +214,7 @@ export default function DashboardPageNew() {
   // Sidebar navigation items
   const sidebarItems: SidebarItem[] = [
     { id: 'dashboard', label: 'Dashboard', icon: Home, route: '/dashboard' },
+    { id: 'dsa', label: 'DSA Practice', icon: Code2, route: '/dsa' },
     { id: 'aptitude', label: 'Aptitude', icon: BookOpen, route: '/exam-prep' },
     { id: 'copilot', label: 'AI Copilot', icon: MessageSquare, route: '/chat' },
     { id: 'resume', label: 'Resume', icon: FileText, route: '/career' },
@@ -561,6 +584,153 @@ export default function DashboardPageNew() {
               )
             })}
           </motion.div>
+
+          {/* DSA Progress Section */}
+          {!loadingDSA && dsaStats && (
+            <div className="mb-8">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                  <Code2 className="w-6 h-6 text-purple-600" />
+                  DSA Practice Progress
+                </h2>
+                <button
+                  onClick={() => navigate('/dsa')}
+                  className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold transition-colors"
+                >
+                  Practice DSA
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
+                {/* Total Solved */}
+                <motion.div
+                  variants={fadeInUp}
+                  className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <Trophy className="w-8 h-8 opacity-80" />
+                    <TrendingUp className="w-5 h-5 opacity-60" />
+                  </div>
+                  <div className="text-4xl font-bold mb-1">{dsaStats.total_solved}</div>
+                  <div className="text-green-100 text-sm">Problems Solved</div>
+                  <div className="mt-3 text-xs text-green-100">
+                    {dsaStats.easy_solved}E • {dsaStats.medium_solved}M • {dsaStats.hard_solved}H
+                  </div>
+                </motion.div>
+
+                {/* Current Streak */}
+                <motion.div
+                  variants={fadeInUp}
+                  className="bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <Flame className="w-8 h-8 opacity-80" />
+                    <Zap className="w-5 h-5 opacity-60" />
+                  </div>
+                  <div className="text-4xl font-bold mb-1">{streakData?.current_streak || 0}</div>
+                  <div className="text-orange-100 text-sm">Day Streak</div>
+                  <div className="mt-3 text-xs text-orange-100">
+                    Longest: {streakData?.longest_streak || 0} days
+                  </div>
+                </motion.div>
+
+                {/* Total Score */}
+                <motion.div
+                  variants={fadeInUp}
+                  className="bg-gradient-to-br from-purple-500 to-indigo-600 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <Award className="w-8 h-8 opacity-80" />
+                    <TrendingUp className="w-5 h-5 opacity-60" />
+                  </div>
+                  <div className="text-4xl font-bold mb-1">{dsaStats.total_score}</div>
+                  <div className="text-purple-100 text-sm">Total Score</div>
+                  <div className="mt-3 text-xs text-purple-100">
+                    {dsaStats.acceptance_rate}% acceptance rate
+                  </div>
+                </motion.div>
+
+                {/* Leaderboard Rank */}
+                <motion.div
+                  variants={fadeInUp}
+                  onClick={() => navigate('/dsa/leaderboard')}
+                  className="bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl p-6 text-white shadow-lg hover:shadow-xl transition-all cursor-pointer"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <Target className="w-8 h-8 opacity-80" />
+                    <ChevronRight className="w-5 h-5 opacity-60" />
+                  </div>
+                  <div className="text-4xl font-bold mb-1">{dsaStats.total_submissions}</div>
+                  <div className="text-blue-100 text-sm">Total Submissions</div>
+                  <div className="mt-3 text-xs text-blue-100">
+                    View Leaderboard →
+                  </div>
+                </motion.div>
+              </div>
+
+              {/* Recent Solved Problems */}
+              {dsaStats.recent_solved && dsaStats.recent_solved.length > 0 && (
+                <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-green-600" />
+                    Recently Solved
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {dsaStats.recent_solved.slice(0, 6).map((problem, idx) => (
+                      <div
+                        key={idx}
+                        onClick={() => navigate(`/dsa/problem/${problem.slug}`)}
+                        className="p-3 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 cursor-pointer transition-colors"
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-medium text-gray-900 truncate flex-1">
+                            {problem.title}
+                          </span>
+                          <span className={`text-xs px-2 py-0.5 rounded ${
+                            problem.difficulty === 'Easy' ? 'bg-green-100 text-green-700' :
+                            problem.difficulty === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-red-100 text-red-700'
+                          }`}>
+                            {problem.difficulty}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500">
+                          {problem.solved_at ? new Date(problem.solved_at).toLocaleDateString() : 'Recently'}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => navigate('/dsa/dashboard')}
+                    className="mt-4 w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+                  >
+                    View Full DSA Dashboard
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* DSA Loading State */}
+          {loadingDSA && (
+            <div className="mb-8">
+              <div className="flex items-center gap-2 mb-6">
+                <Code2 className="w-6 h-6 text-purple-600" />
+                <h2 className="text-2xl font-bold text-gray-900">DSA Practice Progress</h2>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                {Array.from({ length: 4 }).map((_, idx) => (
+                  <div key={idx} className="bg-white rounded-2xl border border-gray-100 p-6 animate-pulse">
+                    <div className="w-12 h-12 bg-gray-200 rounded-xl mb-4"></div>
+                    <div className="h-8 bg-gray-200 rounded w-20 mb-2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-32"></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Practice & Exam Arena */}
           <div className="mb-8">
