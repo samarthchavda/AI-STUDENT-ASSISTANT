@@ -190,7 +190,12 @@ async def verify_payment(
 ):
     """Verify Razorpay payment signature and activate subscription"""
     
+    import logging
+    logger = logging.getLogger(__name__)
+    
     try:
+        logger.info(f"[PAYMENT] Starting verification for user {current_user.email}, order {request.razorpay_order_id}")
+        
         # Verify signature
         generated_signature = hmac.new(
             RAZORPAY_KEY_SECRET.encode(),
@@ -199,10 +204,13 @@ async def verify_payment(
         ).hexdigest()
         
         if generated_signature != request.razorpay_signature:
+            logger.error(f"[PAYMENT] Signature verification failed for order {request.razorpay_order_id}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invalid payment signature"
             )
+        
+        logger.info(f"[PAYMENT] Signature verified successfully")
         
         # Find payment record
         payment = db.query(Payment).filter(
@@ -211,6 +219,7 @@ async def verify_payment(
         ).first()
         
         if not payment:
+            logger.error(f"[PAYMENT] Payment record not found for order {request.razorpay_order_id}")
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Payment record not found"
@@ -218,6 +227,7 @@ async def verify_payment(
         
         # Check if already processed
         if payment.status == "completed":
+            logger.warning(f"[PAYMENT] Payment already processed for order {request.razorpay_order_id}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Payment already processed"
@@ -227,6 +237,7 @@ async def verify_payment(
         payment.payment_id = request.razorpay_payment_id
         payment.signature = request.razorpay_signature
         payment.status = "completed"
+        logger.info(f"[PAYMENT] Payment record updated to completed")
         
         # Calculate dates
         start_date = datetime.utcnow()
@@ -248,11 +259,14 @@ async def verify_payment(
         )
         db.add(subscription)
         db.flush()  # Get subscription ID
+        logger.info(f"[PAYMENT] Subscription created: ID={subscription.id}, plan={request.plan}, cycle={request.billing_cycle}")
         
         # Update user plan
+        old_plan = current_user.plan
         current_user.plan = get_plan_enum(request.plan)
         current_user.subscription_source = 'payment'
         current_user.plan_updated_at = start_date
+        logger.info(f"[PAYMENT] User plan updated: {old_plan} -> {current_user.plan}")
         
         # Generate invoice
         invoice_number = generate_invoice_number()
@@ -275,11 +289,15 @@ async def verify_payment(
             validity_period=validity_period
         )
         db.add(invoice)
+        logger.info(f"[PAYMENT] Invoice generated: {invoice_number}")
         
+        # Commit all changes
         db.commit()
+        logger.info(f"[PAYMENT] All database changes committed successfully")
         
         # Send confirmation email
         try:
+            logger.info(f"[EMAIL] Attempting to send confirmation email to {current_user.email}")
             send_payment_confirmation_email(
                 user_email=current_user.email,
                 user_name=current_user.name,
@@ -291,9 +309,12 @@ async def verify_payment(
                 start_date=start_date,
                 expiry_date=expiry_date
             )
+            logger.info(f"[EMAIL] Confirmation email sent successfully to {current_user.email}")
         except Exception as email_error:
-            print(f"Failed to send confirmation email: {email_error}")
+            logger.error(f"[EMAIL] Failed to send confirmation email to {current_user.email}: {str(email_error)}", exc_info=True)
             # Don't fail the payment if email fails
+        
+        logger.info(f"[PAYMENT] Payment verification completed successfully for user {current_user.email}")
         
         return VerifyPaymentResponse(
             success=True,
@@ -305,6 +326,7 @@ async def verify_payment(
     except HTTPException:
         raise
     except Exception as e:
+        logger.error(f"[PAYMENT] Payment verification failed: {str(e)}", exc_info=True)
         db.rollback()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -326,6 +348,43 @@ def send_payment_confirmation_email(
     """Send payment confirmation email"""
     
     subject = f"Payment Successful - {plan.upper()} Plan Activated"
+    
+    # Plain text version
+    text_body = f"""
+Payment Successful!
+
+Hi {user_name},
+
+Thank you for upgrading to {plan.upper()} plan! Your payment has been processed successfully.
+
+Subscription Details:
+- Plan: {plan.upper()}
+- Billing Cycle: {billing_cycle.capitalize()}
+- Amount Paid: ₹{amount:.2f}
+- Payment ID: {payment_id}
+- Invoice Number: {invoice_number}
+- Start Date: {start_date.strftime('%d %B %Y')}
+- Expiry Date: {expiry_date.strftime('%d %B %Y')}
+
+Premium Features Unlocked:
+✓ Unlimited AI queries
+✓ Priority AI responses
+✓ Unlimited mock tests & code debugging
+✓ DSA practice with hints
+✓ Resume builder & analysis
+✓ Interview preparation tools
+✓ 24/7 priority support
+
+You can now access all premium features on your dashboard.
+
+Need help? Contact us at support@codecampus.ai
+
+Best regards,
+CodeCampus AI Team
+
+---
+This is an automated email. Please do not reply to this message.
+    """
     
     html_content = f"""
     <html>
@@ -390,7 +449,7 @@ def send_payment_confirmation_email(
                 <p>You can now access all premium features on your dashboard.</p>
                 
                 <div style="text-align: center; margin: 30px 0;">
-                    <a href="https://your-app-url.com/dashboard" style="background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
+                    <a href="http://localhost:3000/dashboard" style="background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">
                         Go to Dashboard
                     </a>
                 </div>
@@ -410,10 +469,12 @@ def send_payment_confirmation_email(
     </html>
     """
     
+    # Use the generic send_email function with both text and HTML
     send_email(
         to_email=user_email,
         subject=subject,
-        html_content=html_content
+        body=text_body,
+        html_body=html_content
     )
 
 
