@@ -60,10 +60,10 @@ class QuestionStatus(BaseModel):
 @router.post("/submissions")
 async def create_submission(
     submission: SubmissionCreate,
-    current_user: dict = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     """Save a code submission"""
-    user_id = current_user["id"]
+    user_id = current_user.id
     
     try:
         with engine.connect() as conn:
@@ -210,10 +210,10 @@ async def create_submission(
 async def get_submissions(
     question_slug: str,
     limit: int = 10,
-    current_user: dict = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     """Get submission history for a question"""
-    user_id = current_user["id"]
+    user_id = current_user.id
     
     try:
         with engine.connect() as conn:
@@ -253,9 +253,9 @@ async def get_submissions(
         raise HTTPException(status_code=500, detail=f"Failed to fetch submissions: {str(e)}")
 
 @router.get("/progress", response_model=ProgressSummary)
-async def get_progress(current_user: dict = Depends(get_current_user)):
+async def get_progress(current_user = Depends(get_current_user)):
     """Get user's overall DSA progress"""
-    user_id = current_user["id"]
+    user_id = current_user.id
     
     try:
         with engine.connect() as conn:
@@ -318,9 +318,9 @@ async def get_progress(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=f"Failed to fetch progress: {str(e)}")
 
 @router.get("/status-map")
-async def get_status_map(current_user: dict = Depends(get_current_user)):
+async def get_status_map(current_user = Depends(get_current_user)):
     """Get status map for all questions (for question list page)"""
-    user_id = current_user["id"]
+    user_id = current_user.id
     
     try:
         with engine.connect() as conn:
@@ -352,10 +352,10 @@ async def track_ai_usage(
     action_type: str,
     language: str,
     response_time: Optional[float] = None,
-    current_user: dict = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     """Track AI usage for analytics"""
-    user_id = current_user["id"]
+    user_id = current_user.id
     
     try:
         with engine.connect() as conn:

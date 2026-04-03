@@ -79,9 +79,9 @@ class AIAnalytics(BaseModel):
 # ============= USER DASHBOARD ENDPOINTS =============
 
 @router.get("/dashboard", response_model=DashboardStats)
-async def get_user_dashboard(current_user: dict = Depends(get_current_user)):
+async def get_user_dashboard(current_user = Depends(get_current_user)):
     """Get comprehensive DSA dashboard stats for user"""
-    user_id = current_user["id"]
+    user_id = current_user.id
     
     try:
         with engine.connect() as conn:
@@ -185,9 +185,9 @@ async def get_user_dashboard(current_user: dict = Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=f"Failed to fetch dashboard: {str(e)}")
 
 @router.get("/streak", response_model=StreakData)
-async def get_user_streak(current_user: dict = Depends(get_current_user)):
+async def get_user_streak(current_user = Depends(get_current_user)):
     """Get user's streak data"""
-    user_id = current_user["id"]
+    user_id = current_user.id
     
     try:
         with engine.connect() as conn:
@@ -223,10 +223,10 @@ async def get_user_streak(current_user: dict = Depends(get_current_user)):
 async def get_leaderboard(
     period: str = "all",  # all, week, month
     limit: int = 100,
-    current_user: dict = Depends(get_current_user)
+    current_user = Depends(get_current_user)
 ):
     """Get DSA leaderboard"""
-    user_id = current_user["id"]
+    user_id = current_user.id
     
     try:
         with engine.connect() as conn:
@@ -310,7 +310,7 @@ async def get_leaderboard(
 # ============= ADMIN ANALYTICS ENDPOINTS =============
 
 @router.get("/admin/analytics", response_model=DSAAnalytics)
-async def get_dsa_analytics(current_user: dict = Depends(require_admin)):
+async def get_dsa_analytics(current_user = Depends(require_admin)):
     """Get comprehensive DSA analytics for admin"""
     
     try:
@@ -470,7 +470,7 @@ async def get_dsa_analytics(current_user: dict = Depends(require_admin)):
         raise HTTPException(status_code=500, detail=f"Failed to fetch analytics: {str(e)}")
 
 @router.get("/admin/ai-analytics", response_model=AIAnalytics)
-async def get_ai_analytics(current_user: dict = Depends(require_admin)):
+async def get_ai_analytics(current_user = Depends(require_admin)):
     """Get AI usage analytics for admin"""
     
     try:
