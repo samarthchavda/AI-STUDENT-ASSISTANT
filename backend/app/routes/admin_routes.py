@@ -412,6 +412,74 @@ async def get_all_payments(
     
     return result
 
+# Get all subscriptions (all users with their plan status)
+class SubscriptionResponse(BaseModel):
+    user_id: int
+    user_name: str
+    user_email: str
+    plan: str
+    status: str
+    source: str
+    amount: int
+    payment_id: Optional[str]
+    start_date: datetime
+    expiry_date: Optional[datetime]
+    granted_by: Optional[str]
+    
+    class Config:
+        from_attributes = True
+
+@router.get("/subscriptions")
+async def get_all_subscriptions(
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    """Get all user subscriptions (plan status for all users)"""
+    users = db.query(User).offset(skip).limit(limit).all()
+    
+    result = []
+    for user in users:
+        # Get latest payment if exists
+        latest_payment = db.query(Payment).filter(
+            Payment.user_id == user.id,
+            Payment.status == "completed"
+        ).order_by(Payment.created_at.desc()).first()
+        
+        # Get admin who granted the plan
+        granted_by_admin = None
+        if user.plan_updated_by:
+            admin_user = db.query(User).filter(User.id == user.plan_updated_by).first()
+            if admin_user:
+                granted_by_admin = admin_user.name
+        
+        # Determine status
+        status = "Active" if user.plan != PlanType.FREE else "Free"
+        
+        # Determine amount and payment_id
+        amount = 0
+        payment_id = None
+        if user.subscription_source == 'payment' and latest_payment:
+            amount = latest_payment.amount
+            payment_id = latest_payment.payment_id
+        
+        result.append({
+            "user_id": user.id,
+            "user_name": user.name,
+            "user_email": user.email,
+            "plan": user.plan.value if hasattr(user.plan, 'value') else user.plan,
+            "status": status,
+            "source": user.subscription_source or 'free',
+            "amount": amount,
+            "payment_id": payment_id,
+            "start_date": user.plan_updated_at or user.created_at,
+            "expiry_date": None,  # TODO: Add expiry logic if needed
+            "granted_by": granted_by_admin
+        })
+    
+    return result
+
 # Update user plan
 class UpdatePlanRequest(BaseModel):
     plan: str
@@ -432,12 +500,19 @@ async def update_user_plan(
     plan_str = request.plan.lower()
     if plan_str == 'free':
         user.plan = PlanType.FREE
+        user.subscription_source = 'free'
     elif plan_str == 'basic':
         user.plan = PlanType.BASIC
+        user.subscription_source = 'admin_grant'
     elif plan_str == 'pro':
         user.plan = PlanType.PRO
+        user.subscription_source = 'admin_grant'
     else:
         raise HTTPException(status_code=400, detail=f"Invalid plan: {request.plan}. Must be 'free', 'basic', or 'pro'")
+    
+    # Track admin who updated the plan
+    user.plan_updated_by = admin.id
+    user.plan_updated_at = datetime.utcnow()
     
     db.commit()
     

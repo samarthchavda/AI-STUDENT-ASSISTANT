@@ -1,7 +1,7 @@
 import { useEffect, useState, Fragment } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '../../store/useAppStore';
-import { adminAPI, AdminStats, AdminUser, AdminChat, AdminChatUserSummary, AdminPayment, AdminProgress, CompanyQuestion } from '../../services/adminAPI';
+import { adminAPI, AdminStats, AdminUser, AdminChat, AdminChatUserSummary, AdminSubscription, AdminProgress, CompanyQuestion } from '../../services/adminAPI';
 import Header from '../../components/Header';
 import { 
   BarChart3, 
@@ -69,7 +69,7 @@ const AdminPage = () => {
   const [chatUsersSummary, setChatUsersSummary] = useState<AdminChatUserSummary[]>([]);
   const [selectedChatUser, setSelectedChatUser] = useState<AdminChatUserSummary | null>(null);
   const [userChats, setUserChats] = useState<AdminChat[]>([]);
-  const [payments, setPayments] = useState<AdminPayment[]>([]);
+  const [subscriptions, setSubscriptions] = useState<AdminSubscription[]>([]);
   const [progress, setProgress] = useState<AdminProgress[]>([]);
   const [companyQuestions, setCompanyQuestions] = useState<CompanyQuestion[]>([]);
   const [uploadFile, setUploadFile] = useState<File | null>(null);
@@ -221,14 +221,14 @@ const AdminPage = () => {
     }
   };
 
-  const loadPayments = async () => {
+  const loadSubscriptions = async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await adminAPI.getAllPayments();
-      setPayments(data);
+      const data = await adminAPI.getAllSubscriptions();
+      setSubscriptions(data);
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to load payments');
+      setError(err.response?.data?.detail || 'Failed to load subscriptions');
     } finally {
       setLoading(false);
     }
@@ -501,7 +501,7 @@ const AdminPage = () => {
         loadChats();
         break;
       case 'payments':
-        loadPayments();
+        loadSubscriptions();
         break;
       case 'progress':
         loadProgress();
@@ -1474,7 +1474,7 @@ const AdminPage = () => {
           </div>
         )}
 
-        {/* Payments Tab */}
+        {/* Subscriptions Tab */}
         {activeTab === 'payments' && !loading && (
           <div className="bg-white rounded-lg shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
@@ -1482,69 +1482,92 @@ const AdminPage = () => {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      ID
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       User
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Plan
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Amount
+                      Status
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
+                      Source
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Amount
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Payment ID
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Date
+                      Start Date
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Granted By
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {payments.map((payment) => (
-                    <tr key={payment.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {payment.id}
-                      </td>
+                  {subscriptions.map((subscription) => (
+                    <tr key={subscription.user_id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <div className="font-medium text-gray-900">{payment.user_name}</div>
-                        <div className="text-gray-500">{payment.user_email}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
-                          {payment.plan.toUpperCase()}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatCurrency(payment.amount, payment.currency)}
+                        <div className="font-medium text-gray-900">{subscription.user_name}</div>
+                        <div className="text-gray-500">{subscription.user_email}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                          payment.status === 'completed' ? 'bg-green-100 text-green-800' :
-                          payment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
+                          subscription.plan === 'pro' ? 'bg-purple-100 text-purple-800' :
+                          subscription.plan === 'basic' ? 'bg-blue-100 text-blue-800' :
+                          'bg-gray-100 text-gray-800'
                         }`}>
-                          {payment.status}
+                          {subscription.plan.toUpperCase()}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {payment.payment_id}
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                          subscription.status === 'Active' ? 'bg-green-100 text-green-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {subscription.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                          subscription.source === 'payment' ? 'bg-green-100 text-green-800' :
+                          subscription.source === 'admin_grant' ? 'bg-blue-100 text-blue-800' :
+                          subscription.source === 'promo' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {subscription.source === 'admin_grant' ? 'Admin Grant' :
+                           subscription.source === 'payment' ? 'Payment' :
+                           subscription.source === 'promo' ? 'Promo' :
+                           'Free'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {subscription.source === 'admin_grant' || subscription.source === 'free' ? (
+                          <span className="text-gray-500">Free</span>
+                        ) : (
+                          `₹${subscription.amount}`
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {formatDate(payment.created_at)}
+                        {subscription.payment_id || '—'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                        {formatDate(subscription.start_date)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                        {subscription.granted_by || '—'}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
-            {payments.length === 0 && (
+            {subscriptions.length === 0 && (
               <div className="text-center py-12 text-gray-500">
-                No payments found
+                No subscriptions found
               </div>
             )}
           </div>

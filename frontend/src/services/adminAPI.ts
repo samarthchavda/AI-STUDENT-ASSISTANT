@@ -96,6 +96,20 @@ export interface AdminPayment {
   created_at: string;
 }
 
+export interface AdminSubscription {
+  user_id: number;
+  user_name: string;
+  user_email: string;
+  plan: string;
+  status: string;
+  source: string;
+  amount: number;
+  payment_id: string | null;
+  start_date: string;
+  expiry_date: string | null;
+  granted_by: string | null;
+}
+
 export interface AdminProgress {
   id: number;
   user_id: number;
@@ -157,6 +171,11 @@ export const adminAPI = {
 
   getAllPayments: async (): Promise<AdminPayment[]> => {
     const response = await api.get('/admin/payments');
+    return response.data;
+  },
+
+  getAllSubscriptions: async (): Promise<AdminSubscription[]> => {
+    const response = await api.get('/admin/subscriptions');
     return response.data;
   },
 

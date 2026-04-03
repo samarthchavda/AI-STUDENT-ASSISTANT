@@ -52,6 +52,11 @@ class User(Base):
     # DSA Solution tracking
     solutions_viewed = Column(Integer, default=0)
     
+    # Subscription tracking
+    subscription_source = Column(String, default='free')  # 'free', 'payment', 'admin_grant', 'promo'
+    plan_updated_by = Column(Integer, ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    plan_updated_at = Column(DateTime, nullable=True)
+    
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
