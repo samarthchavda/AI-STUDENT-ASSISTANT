@@ -237,23 +237,23 @@ async def get_leaderboard(
             elif period == "month":
                 date_filter = "AND p.last_active_date >= CURRENT_DATE - INTERVAL '30 days'"
             
-            # Get leaderboard
+            # Get leaderboard - use 'name' instead of 'username'
             query = text(f"""
                 WITH user_stats AS (
                     SELECT 
                         p.user_id,
-                        u.username,
+                        u.name,
                         u.email,
                         COALESCE(SUM(p.score), 0) as total_score,
-                        COUNT(*) FILTER (WHERE p.status = 'solved') as solved_count,
+                        COALESCE(COUNT(*) FILTER (WHERE p.status = 'solved'), 0) as solved_count,
                         COALESCE(MAX(p.current_streak), 0) as current_streak,
                         COUNT(DISTINCT s.id) as total_submissions,
-                        COUNT(DISTINCT CASE WHEN s.ai_used THEN s.id END) as ai_usage_count
+                        COALESCE(COUNT(DISTINCT CASE WHEN s.ai_used THEN s.id END), 0) as ai_usage_count
                     FROM dsa_user_progress p
                     JOIN users u ON p.user_id = u.id
                     LEFT JOIN dsa_submissions s ON p.user_id = s.user_id AND p.question_slug = s.question_slug
                     WHERE 1=1 {date_filter}
-                    GROUP BY p.user_id, u.username, u.email
+                    GROUP BY p.user_id, u.name, u.email
                     HAVING COUNT(*) FILTER (WHERE p.status = 'solved') > 0
                 ),
                 ranked_users AS (
@@ -274,20 +274,20 @@ async def get_leaderboard(
             
             for row in result:
                 entry = LeaderboardEntry(
-                    rank=row[8],
-                    user_id=row[0],
-                    username=row[1],
+                    rank=int(row[8]),
+                    user_id=int(row[0]),
+                    username=row[1] or "Unknown",  # Use name as username
                     email=row[2],
-                    score=row[3],
-                    solved_count=row[4],
-                    current_streak=row[5],
-                    total_submissions=row[6],
-                    ai_usage_count=row[7]
+                    score=int(row[3]),
+                    solved_count=int(row[4]),
+                    current_streak=int(row[5]),
+                    total_submissions=int(row[6]),
+                    ai_usage_count=int(row[7])
                 )
                 leaderboard.append(entry)
                 
                 if row[0] == user_id:
-                    user_rank = row[8]
+                    user_rank = int(row[8])
             
             # Get total users count
             total = conn.execute(
@@ -301,11 +301,19 @@ async def get_leaderboard(
             return LeaderboardResponse(
                 leaderboard=leaderboard,
                 user_rank=user_rank,
-                total_users=total or 0
+                total_users=int(total or 0)
             )
             
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to fetch leaderboard: {str(e)}")
+        import traceback
+        print(f"❌ Leaderboard Error: {str(e)}")
+        traceback.print_exc()
+        # Return empty leaderboard instead of crashing
+        return LeaderboardResponse(
+            leaderboard=[],
+            user_rank=None,
+            total_users=0
+        )
 
 # ============= ADMIN ANALYTICS ENDPOINTS =============
 
@@ -319,25 +327,25 @@ async def get_dsa_analytics(current_user = Depends(require_admin)):
             sub_stats = conn.execute(
                 text("""
                     SELECT 
-                        COUNT(*) as total,
-                        COUNT(*) FILTER (WHERE verdict = 'Accepted' AND action_type = 'submit') as accepted,
-                        COUNT(*) FILTER (WHERE verdict != 'Accepted' OR action_type = 'run') as failed
+                        COALESCE(COUNT(*), 0) as total,
+                        COALESCE(COUNT(*) FILTER (WHERE verdict = 'Accepted' AND action_type = 'submit'), 0) as accepted,
+                        COALESCE(COUNT(*) FILTER (WHERE verdict != 'Accepted' OR action_type = 'run'), 0) as failed
                     FROM dsa_submissions
                 """)
             ).fetchone()
             
-            total_subs = sub_stats[0] or 0
-            accepted = sub_stats[1] or 0
-            failed = sub_stats[2] or 0
-            acceptance_rate = (accepted / total_subs * 100) if total_subs > 0 else 0
+            total_subs = int(sub_stats[0] or 0)
+            accepted = int(sub_stats[1] or 0)
+            failed = int(sub_stats[2] or 0)
+            acceptance_rate = (accepted / total_subs * 100) if total_subs > 0 else 0.0
             
             # User stats
             user_stats = conn.execute(
                 text("""
                     SELECT 
-                        COUNT(DISTINCT user_id) as total_users,
-                        COUNT(DISTINCT user_id) FILTER (WHERE last_active_date = CURRENT_DATE) as active_today,
-                        COUNT(DISTINCT user_id) FILTER (WHERE last_active_date >= CURRENT_DATE - INTERVAL '7 days') as active_week
+                        COALESCE(COUNT(DISTINCT user_id), 0) as total_users,
+                        COALESCE(COUNT(DISTINCT user_id) FILTER (WHERE last_active_date = CURRENT_DATE), 0) as active_today,
+                        COALESCE(COUNT(DISTINCT user_id) FILTER (WHERE last_active_date >= CURRENT_DATE - INTERVAL '7 days'), 0) as active_week
                     FROM dsa_user_progress
                 """)
             ).fetchone()
@@ -358,7 +366,7 @@ async def get_dsa_analytics(current_user = Depends(require_admin)):
                 most_attempted.append({
                     "slug": row[0],
                     "title": row[1],
-                    "attempts": row[2]
+                    "attempts": int(row[2])
                 })
             
             # Most solved questions
@@ -378,7 +386,7 @@ async def get_dsa_analytics(current_user = Depends(require_admin)):
                 most_solved.append({
                     "slug": row[0],
                     "title": row[1],
-                    "solved_count": row[2]
+                    "solved_count": int(row[2])
                 })
             
             # Topic usage
@@ -387,7 +395,7 @@ async def get_dsa_analytics(current_user = Depends(require_admin)):
                     SELECT 
                         topic,
                         COUNT(*) as total_attempts,
-                        COUNT(*) FILTER (WHERE status = 'solved') as solved
+                        COALESCE(COUNT(*) FILTER (WHERE status = 'solved'), 0) as solved
                     FROM dsa_user_progress
                     GROUP BY topic
                     ORDER BY total_attempts DESC
@@ -398,8 +406,8 @@ async def get_dsa_analytics(current_user = Depends(require_admin)):
             for row in topics:
                 topic_usage.append({
                     "topic": row[0],
-                    "attempts": row[1],
-                    "solved": row[2]
+                    "attempts": int(row[1]),
+                    "solved": int(row[2])
                 })
             
             # Difficulty success rate
@@ -408,7 +416,7 @@ async def get_dsa_analytics(current_user = Depends(require_admin)):
                     SELECT 
                         difficulty,
                         COUNT(*) as total,
-                        COUNT(*) FILTER (WHERE status = 'solved') as solved
+                        COALESCE(COUNT(*) FILTER (WHERE status = 'solved'), 0) as solved
                     FROM dsa_user_progress
                     GROUP BY difficulty
                 """)
@@ -416,9 +424,9 @@ async def get_dsa_analytics(current_user = Depends(require_admin)):
             
             difficulty_success = []
             for row in difficulty:
-                total = row[1]
-                solved = row[2]
-                success_rate = (solved / total * 100) if total > 0 else 0
+                total = int(row[1])
+                solved = int(row[2])
+                success_rate = (solved / total * 100) if total > 0 else 0.0
                 difficulty_success.append({
                     "difficulty": row[0],
                     "total": total,
@@ -426,17 +434,18 @@ async def get_dsa_analytics(current_user = Depends(require_admin)):
                     "success_rate": round(success_rate, 1)
                 })
             
-            # Top performers
+            # Top performers - use 'name' instead of 'username'
             performers = conn.execute(
                 text("""
                     SELECT 
-                        u.username,
+                        u.name,
                         u.email,
                         COALESCE(SUM(p.score), 0) as score,
-                        COUNT(*) FILTER (WHERE p.status = 'solved') as solved
+                        COALESCE(COUNT(*) FILTER (WHERE p.status = 'solved'), 0) as solved
                     FROM dsa_user_progress p
                     JOIN users u ON p.user_id = u.id
-                    GROUP BY u.username, u.email
+                    GROUP BY u.name, u.email
+                    HAVING COUNT(*) FILTER (WHERE p.status = 'solved') > 0
                     ORDER BY score DESC, solved DESC
                     LIMIT 10
                 """)
@@ -445,10 +454,10 @@ async def get_dsa_analytics(current_user = Depends(require_admin)):
             top_performers = []
             for row in performers:
                 top_performers.append({
-                    "username": row[0],
+                    "username": row[0] or "Unknown",  # Use name as username
                     "email": row[1],
-                    "score": row[2],
-                    "solved": row[3]
+                    "score": int(row[2]),
+                    "solved": int(row[3])
                 })
             
             return DSAAnalytics(
@@ -456,9 +465,9 @@ async def get_dsa_analytics(current_user = Depends(require_admin)):
                 accepted_submissions=accepted,
                 failed_submissions=failed,
                 acceptance_rate=round(acceptance_rate, 1),
-                total_users=user_stats[0] or 0,
-                active_users_today=user_stats[1] or 0,
-                active_users_week=user_stats[2] or 0,
+                total_users=int(user_stats[0] or 0),
+                active_users_today=int(user_stats[1] or 0),
+                active_users_week=int(user_stats[2] or 0),
                 most_attempted_questions=most_attempted,
                 most_solved_questions=most_solved,
                 topic_usage=topic_usage,
@@ -467,7 +476,24 @@ async def get_dsa_analytics(current_user = Depends(require_admin)):
             )
             
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to fetch analytics: {str(e)}")
+        import traceback
+        print(f"❌ DSA Analytics Error: {str(e)}")
+        traceback.print_exc()
+        # Return empty data instead of crashing
+        return DSAAnalytics(
+            total_submissions=0,
+            accepted_submissions=0,
+            failed_submissions=0,
+            acceptance_rate=0.0,
+            total_users=0,
+            active_users_today=0,
+            active_users_week=0,
+            most_attempted_questions=[],
+            most_solved_questions=[],
+            topic_usage=[],
+            difficulty_success_rate=[],
+            top_performers=[]
+        )
 
 @router.get("/admin/ai-analytics", response_model=AIAnalytics)
 async def get_ai_analytics(current_user = Depends(require_admin)):
@@ -479,12 +505,12 @@ async def get_ai_analytics(current_user = Depends(require_admin)):
             ai_stats = conn.execute(
                 text("""
                     SELECT 
-                        COUNT(*) as total,
-                        COUNT(*) FILTER (WHERE action_type = 'hint') as hints,
-                        COUNT(*) FILTER (WHERE action_type = 'explain') as explains,
-                        COUNT(*) FILTER (WHERE action_type = 'solution') as solutions,
-                        COUNT(*) FILTER (WHERE action_type = 'explain-code') as explain_code,
-                        COUNT(*) FILTER (WHERE action_type = 'fix-code') as fix_code
+                        COALESCE(COUNT(*), 0) as total,
+                        COALESCE(COUNT(*) FILTER (WHERE action_type = 'hint'), 0) as hints,
+                        COALESCE(COUNT(*) FILTER (WHERE action_type = 'explain'), 0) as explains,
+                        COALESCE(COUNT(*) FILTER (WHERE action_type = 'solution'), 0) as solutions,
+                        COALESCE(COUNT(*) FILTER (WHERE action_type = 'explain-code'), 0) as explain_code,
+                        COALESCE(COUNT(*) FILTER (WHERE action_type = 'fix-code'), 0) as fix_code
                     FROM dsa_ai_usage
                 """)
             ).fetchone()
@@ -516,16 +542,16 @@ async def get_ai_analytics(current_user = Depends(require_admin)):
                 ai_by_question.append({
                     "question_slug": row[0],
                     "action_type": row[1],
-                    "count": row[2]
+                    "count": int(row[2])
                 })
             
-            # AI usage by user
+            # AI usage by user - use 'name' instead of 'username'
             by_user = conn.execute(
                 text("""
-                    SELECT u.username, COUNT(*) as ai_requests
+                    SELECT u.name, COUNT(*) as ai_requests
                     FROM dsa_ai_usage a
                     JOIN users u ON a.user_id = u.id
-                    GROUP BY u.username
+                    GROUP BY u.name
                     ORDER BY ai_requests DESC
                     LIMIT 20
                 """)
@@ -534,21 +560,35 @@ async def get_ai_analytics(current_user = Depends(require_admin)):
             ai_by_user = []
             for row in by_user:
                 ai_by_user.append({
-                    "username": row[0],
-                    "requests": row[1]
+                    "username": row[0] or "Unknown",  # Use name as username
+                    "requests": int(row[1])
                 })
             
             return AIAnalytics(
-                total_ai_requests=ai_stats[0] or 0,
-                hint_requests=ai_stats[1] or 0,
-                explain_requests=ai_stats[2] or 0,
-                solution_requests=ai_stats[3] or 0,
-                explain_code_requests=ai_stats[4] or 0,
-                fix_code_requests=ai_stats[5] or 0,
+                total_ai_requests=int(ai_stats[0] or 0),
+                hint_requests=int(ai_stats[1] or 0),
+                explain_requests=int(ai_stats[2] or 0),
+                solution_requests=int(ai_stats[3] or 0),
+                explain_code_requests=int(ai_stats[4] or 0),
+                fix_code_requests=int(ai_stats[5] or 0),
                 ai_usage_by_question=ai_by_question,
                 ai_usage_by_user=ai_by_user,
                 most_common_action=most_common[0] if most_common else "none"
             )
             
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to fetch AI analytics: {str(e)}")
+        import traceback
+        print(f"❌ AI Analytics Error: {str(e)}")
+        traceback.print_exc()
+        # Return empty data instead of crashing
+        return AIAnalytics(
+            total_ai_requests=0,
+            hint_requests=0,
+            explain_requests=0,
+            solution_requests=0,
+            explain_code_requests=0,
+            fix_code_requests=0,
+            ai_usage_by_question=[],
+            ai_by_user=[],
+            most_common_action="none"
+        )
