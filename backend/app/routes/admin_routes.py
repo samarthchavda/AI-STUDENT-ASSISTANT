@@ -10,7 +10,7 @@ import io
 import json
 
 from app.core.database import get_db
-from app.models import User, ChatHistory, UserProgress, Payment, PlanType, CompanyQuestion, QuestionCategory, DifficultyLevel
+from app.models import User, ChatHistory, UserProgress, Payment, PlanType, CompanyQuestion, QuestionCategory, DifficultyLevel, Subscription, Invoice
 from app.core.auth import get_current_user
 
 router = APIRouter()
@@ -438,7 +438,6 @@ async def get_all_invoices(
     admin: User = Depends(get_admin_user)
 ):
     """Get all invoices"""
-    from app.models import Invoice
     
     invoices = db.query(Invoice).order_by(Invoice.created_at.desc()).offset(skip).limit(limit).all()
     
@@ -469,7 +468,6 @@ async def get_all_subscriptions(
     admin: User = Depends(get_admin_user)
 ):
     """Get all user subscriptions (plan status for all users)"""
-    from app.models import Subscription
     
     users = db.query(User).offset(skip).limit(limit).all()
     
