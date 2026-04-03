@@ -98,7 +98,7 @@ class CompanyQuestionResponse(BaseModel):
         from_attributes = True
     
 # Dependency to check if user is admin
-async def get_admin_user(current_user: User = Depends(get_current_user)):
+async def get_admin_user(current_user = Depends(get_current_user)):
     if not current_user.is_admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

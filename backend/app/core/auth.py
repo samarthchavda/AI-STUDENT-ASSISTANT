@@ -165,7 +165,7 @@ def reset_failed_login_attempts(user, db: Session):
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security)
 ):
-    """Get current user from JWT token and return as dict"""
+    """Get current user from JWT token"""
     from app.core.database import SessionLocal
     from app.models import User
     
@@ -213,18 +213,13 @@ def get_current_user(
     
     db.close()
     
-    # Return user as dict for consistency
-    return {
-        "id": user.id,
-        "email": user.email,
-        "name": user.name,
-        "is_admin": user.is_admin
-    }
+    # Return user object
+    return user
 
 
-def require_admin(current_user: dict = Depends(get_current_user)):
+def require_admin(current_user = Depends(get_current_user)):
     """Require admin role for endpoint access"""
-    if not current_user.get("is_admin", False):
+    if not current_user.is_admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin access required"
