@@ -1,10 +1,10 @@
-// Code Execution Service using Judge0 API
-// Judge0 is a free, open-source code execution system
+// Code Execution Service - Uses backend API for real code execution
+// Backend handles Judge0 integration or other execution engines
 
-const JUDGE0_API_URL = 'https://judge0-ce.p.rapidapi.com';
-const JUDGE0_API_KEY = import.meta.env.VITE_JUDGE0_API_KEY || 'test-key';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const USE_MOCK = import.meta.env.VITE_USE_MOCK_EXECUTION === 'true';
 
-// Language IDs for Judge0
+// Language IDs for Judge0 (kept for reference)
 export const LANGUAGE_IDS = {
   python: 71,      // Python 3
   javascript: 63,  // JavaScript (Node.js)
@@ -43,57 +43,43 @@ interface Judge0Response {
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function executeCode(code: string, language: keyof typeof LANGUAGE_IDS, input: string = ''): Promise<Judge0Response> {
-  const languageId = LANGUAGE_IDS[language];
+  console.log(`🚀 [CODE EXECUTION] Starting execution - Language: ${language}, Mock Mode: ${USE_MOCK}`);
   
-  // For demo/development without API key, use mock execution
-  if (JUDGE0_API_KEY === 'test-key') {
+  // Use mock execution only if explicitly enabled
+  if (USE_MOCK) {
+    console.log('⚠️ [CODE EXECUTION] Using MOCK execution (VITE_USE_MOCK_EXECUTION=true)');
     return mockExecution(code, language, input);
   }
 
   try {
-    // Submit code
-    const submitResponse = await fetch(`${JUDGE0_API_URL}/submissions?base64_encoded=false&wait=false`, {
+    console.log(`📡 [CODE EXECUTION] Calling backend API: ${API_BASE_URL}/api/code/execute`);
+    
+    // Call backend API for real execution
+    const response = await fetch(`${API_BASE_URL}/api/code/execute`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-RapidAPI-Key': JUDGE0_API_KEY,
-        'X-RapidAPI-Host': 'judge0-ce.p.rapidapi.com'
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
       },
       body: JSON.stringify({
-        source_code: code,
-        language_id: languageId,
-        stdin: input,
-        cpu_time_limit: 2,
-        memory_limit: 128000
+        code,
+        language,
+        stdin: input
       })
     });
 
-    const { token } = await submitResponse.json();
-
-    // Poll for result
-    let attempts = 0;
-    while (attempts < 10) {
-      await sleep(1000);
-      
-      const resultResponse = await fetch(`${JUDGE0_API_URL}/submissions/${token}?base64_encoded=false`, {
-        headers: {
-          'X-RapidAPI-Key': JUDGE0_API_KEY,
-          'X-RapidAPI-Host': 'judge0-ce.p.rapidapi.com'
-        }
-      });
-
-      const result = await resultResponse.json();
-      
-      if (result.status.id > 2) {
-        return result;
-      }
-      
-      attempts++;
+    if (!response.ok) {
+      const error = await response.json();
+      console.error('❌ [CODE EXECUTION] Backend API error:', error);
+      throw new Error(error.detail || 'Execution failed');
     }
 
-    throw new Error('Execution timeout');
+    const result = await response.json();
+    console.log('✅ [CODE EXECUTION] Backend execution successful:', result.status?.description);
+    
+    return result;
   } catch (error) {
-    console.error('Judge0 execution error:', error);
+    console.error('❌ [CODE EXECUTION] Execution error:', error);
     throw error;
   }
 }
@@ -143,27 +129,39 @@ export async function runCode(
   language: keyof typeof LANGUAGE_IDS,
   testCases: Array<{ input: string; expected: string }>
 ): Promise<ExecutionResult> {
+  console.log(`▶️ [RUN CODE] Running code with ${testCases.length} visible test cases`);
+  
   try {
     if (testCases.length === 0) {
-      // Run with empty input
+      console.log('⚠️ [RUN CODE] No test cases provided, running with empty input');
       const result = await executeCode(code, language, '');
       return parseExecutionResult(result);
     }
 
-    // Run first test case only for "Run"
+    // Run first test case only for "Run" (visible test)
     const testCase = testCases[0];
+    console.log(`🧪 [RUN CODE] Testing with input: ${testCase.input.substring(0, 50)}...`);
+    
     const result = await executeCode(code, language, testCase.input);
+    const actual = result.stdout?.trim() || '';
+    const expected = testCase.expected.trim();
+    const passed = actual === expected;
+    
+    console.log(`📊 [RUN CODE] Result - Status: ${result.status.description}, Passed: ${passed}`);
+    console.log(`   Expected: ${expected}`);
+    console.log(`   Actual: ${actual}`);
     
     return {
       ...parseExecutionResult(result),
       testResults: [{
         input: testCase.input,
-        expected: testCase.expected,
-        actual: result.stdout?.trim() || '',
-        passed: result.stdout?.trim() === testCase.expected.trim()
+        expected,
+        actual,
+        passed
       }]
     };
   } catch (error) {
+    console.error('❌ [RUN CODE] Execution failed:', error);
     return {
       status: 'Runtime Error',
       error: error instanceof Error ? error.message : 'Execution failed'
@@ -176,20 +174,34 @@ export async function submitCode(
   language: keyof typeof LANGUAGE_IDS,
   testCases: Array<{ input: string; expected: string }>
 ): Promise<ExecutionResult> {
+  console.log(`📤 [SUBMIT CODE] Submitting code with ${testCases.length} total test cases (visible + hidden)`);
+  
   try {
     let passedCount = 0;
     const testResults: ExecutionResult['testResults'] = [];
+    let totalRuntime = 0;
+    let maxMemory = 0;
 
-    for (const testCase of testCases) {
+    for (let i = 0; i < testCases.length; i++) {
+      const testCase = testCases[i];
+      console.log(`🧪 [SUBMIT CODE] Running test case ${i + 1}/${testCases.length}`);
+      
       const result = await executeCode(code, language, testCase.input);
       
+      // Track runtime and memory
+      if (result.time) totalRuntime += parseFloat(result.time);
+      if (result.memory) maxMemory = Math.max(maxMemory, result.memory);
+      
+      // Check for compilation or runtime errors
       if (result.status.id !== 3) {
-        // Not accepted
+        console.log(`❌ [SUBMIT CODE] Test ${i + 1} failed with status: ${result.status.description}`);
         return {
           ...parseExecutionResult(result),
           passedTests: passedCount,
           totalTests: testCases.length,
-          testResults
+          testResults,
+          runtime: totalRuntime,
+          memory: maxMemory
         };
       }
 
@@ -206,25 +218,33 @@ export async function submitCode(
 
       if (passed) {
         passedCount++;
+        console.log(`✅ [SUBMIT CODE] Test ${i + 1} passed`);
       } else {
+        console.log(`❌ [SUBMIT CODE] Test ${i + 1} failed - Wrong Answer`);
+        console.log(`   Expected: ${expected}`);
+        console.log(`   Actual: ${actual}`);
         return {
           status: 'Wrong Answer',
           passedTests: passedCount,
           totalTests: testCases.length,
-          testResults
+          testResults,
+          runtime: totalRuntime,
+          memory: maxMemory
         };
       }
     }
 
+    console.log(`🎉 [SUBMIT CODE] All tests passed! ${passedCount}/${testCases.length}`);
     return {
       status: 'Accepted',
       passedTests: passedCount,
       totalTests: testCases.length,
-      runtime: 0.15,
-      memory: 4096,
+      runtime: totalRuntime,
+      memory: maxMemory,
       testResults
     };
   } catch (error) {
+    console.error('❌ [SUBMIT CODE] Submission failed:', error);
     return {
       status: 'Runtime Error',
       error: error instanceof Error ? error.message : 'Execution failed',

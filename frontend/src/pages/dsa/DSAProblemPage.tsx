@@ -204,6 +204,12 @@ export default function DSAProblemPage() {
   useEffect(() => {
     if (slug && legacyProblems[slug]) {
       const problemData = legacyProblems[slug];
+      console.log(`📖 [PROBLEM PAGE] Loading problem: ${slug}`);
+      console.log(`   Title: ${problemData.title}`);
+      console.log(`   Difficulty: ${problemData.difficulty}`);
+      console.log(`   Topic: ${problemData.topic}`);
+      console.log(`   Starter code available for: ${Object.keys(problemData.starterCode).join(', ')}`);
+      
       setProblem(problemData);
       setCode(problemData.starterCode[selectedLanguage]);
       setExecutionResult(null);
@@ -212,12 +218,24 @@ export default function DSAProblemPage() {
       
       // Load submission history
       loadSubmissionHistory(slug);
+    } else if (slug) {
+      console.error(`❌ [PROBLEM PAGE] Problem not found: ${slug}`);
     }
   }, [slug]);
 
   useEffect(() => {
     if (problem) {
-      setCode(problem.starterCode[selectedLanguage]);
+      console.log(`🔄 [PROBLEM PAGE] Language changed to: ${selectedLanguage}`);
+      console.log(`   Loading starter code for ${problem.slug}`);
+      
+      const starterCode = problem.starterCode[selectedLanguage];
+      if (starterCode) {
+        console.log(`✅ [PROBLEM PAGE] Starter code loaded (${starterCode.length} chars)`);
+        setCode(starterCode);
+      } else {
+        console.error(`❌ [PROBLEM PAGE] No starter code found for language: ${selectedLanguage}`);
+      }
+      
       setExecutionResult(null);
       setShowResult(false);
     }
@@ -279,17 +297,29 @@ export default function DSAProblemPage() {
   const handleSubmit = async () => {
     if (!problem) return;
     
+    console.log(`📤 [SUBMIT] Starting submission for: ${problem.slug}`);
+    console.log(`   Language: ${selectedLanguage}`);
+    console.log(`   Code length: ${code.length} chars`);
+    console.log(`   AI actions used: ${aiActionsUsed.join(', ') || 'none'}`);
+    
     setIsSubmitting(true);
     setShowResult(true);
     setExecutionResult({ status: 'Running' });
 
     try {
       const allTestCases = [...problem.testCases.visible, ...problem.testCases.hidden];
+      console.log(`🧪 [SUBMIT] Running against ${allTestCases.length} test cases (${problem.testCases.visible.length} visible + ${problem.testCases.hidden.length} hidden)`);
+      
       const result = await submitCode(code, selectedLanguage, allTestCases);
       setExecutionResult(result);
       
+      console.log(`📊 [SUBMIT] Result: ${result.status}`);
+      console.log(`   Passed: ${result.passedTests}/${result.totalTests}`);
+      
       // Save submission
       if (result.status !== 'Running') {
+        console.log(`💾 [SUBMIT] Saving submission to database...`);
+        
         await saveSubmission({
           question_slug: problem.slug,
           question_title: problem.title,
@@ -306,11 +336,25 @@ export default function DSAProblemPage() {
           ai_used: aiActionsUsed.length > 0,
           ai_actions: aiActionsUsed
         }).then(() => {
+          console.log(`✅ [SUBMIT] Submission saved successfully`);
+          
+          if (result.status === 'Accepted') {
+            console.log(`🎉 [SUBMIT] ACCEPTED! This should update:
+   - Solved count
+   - Score (${problem.difficulty === 'Easy' ? 1 : problem.difficulty === 'Medium' ? 2 : 3} points)
+   - Streak
+   - Leaderboard
+   - Progress summary`);
+          }
+          
           // Reload submission history
           loadSubmissionHistory(problem.slug);
-        }).catch(err => console.error('Failed to save submission:', err));
+        }).catch(err => {
+          console.error('❌ [SUBMIT] Failed to save submission:', err);
+        });
       }
     } catch (error) {
+      console.error('❌ [SUBMIT] Submission error:', error);
       setExecutionResult({
         status: 'Runtime Error',
         error: error instanceof Error ? error.message : 'Submission failed'

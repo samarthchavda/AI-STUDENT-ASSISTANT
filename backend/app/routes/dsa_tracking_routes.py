@@ -65,6 +65,12 @@ async def create_submission(
     """Save a code submission"""
     user_id = current_user.id
     
+    print(f"💾 [DSA TRACKING] Saving submission for user {user_id}")
+    print(f"   Question: {submission.question_slug}")
+    print(f"   Verdict: {submission.verdict}")
+    print(f"   Passed: {submission.passed_testcases}/{submission.total_testcases}")
+    print(f"   Action: {submission.action_type}")
+    
     try:
         with engine.connect() as conn:
             # Insert submission
@@ -98,14 +104,19 @@ async def create_submission(
                 }
             )
             submission_id = result.fetchone()[0]
+            print(f"✅ [DSA TRACKING] Submission saved with ID: {submission_id}")
             
             # Update user progress
             is_solved = submission.verdict == "Accepted" and submission.action_type == "submit"
             status = "solved" if is_solved else "attempted"
             
+            print(f"📊 [DSA TRACKING] Updating progress - Status: {status}, Is Solved: {is_solved}")
+            
             # Calculate score based on difficulty
             score_map = {"Easy": 1, "Medium": 2, "Hard": 3}
             question_score = score_map.get(submission.difficulty, 0)
+            
+            print(f"   Difficulty: {submission.difficulty}, Score: {question_score}")
             
             # Check if progress record exists
             existing = conn.execute(
@@ -118,6 +129,9 @@ async def create_submission(
             ).fetchone()
             
             if existing:
+                print(f"📝 [DSA TRACKING] Updating existing progress record")
+                print(f"   Current status: {existing[1]}, Current score: {existing[4]}")
+                
                 # Update existing progress
                 current_status = existing[1]
                 best_runtime = existing[2]
@@ -130,6 +144,8 @@ async def create_submission(
                 
                 # Update score only if newly solved
                 new_score = question_score if (is_solved and current_status != "solved") else current_score
+                
+                print(f"   New status: {new_status}, New score: {new_score}")
                 
                 conn.execute(
                     text("""
@@ -156,9 +172,14 @@ async def create_submission(
                         "is_solved": is_solved
                     }
                 )
+                print(f"✅ [DSA TRACKING] Progress updated - Attempts: {attempts + 1}")
             else:
+                print(f"📝 [DSA TRACKING] Creating new progress record")
+                
                 # Insert new progress record
                 initial_score = question_score if is_solved else 0
+                
+                print(f"   Initial score: {initial_score}")
                 
                 conn.execute(
                     text("""
@@ -187,15 +208,20 @@ async def create_submission(
                         "is_solved": is_solved
                     }
                 )
+                print(f"✅ [DSA TRACKING] New progress record created")
             
             # Update streak if solved
             if is_solved:
+                print(f"🔥 [DSA TRACKING] Updating streak for user {user_id}")
                 conn.execute(
                     text("SELECT update_dsa_streak(:user_id, CURRENT_DATE)"),
                     {"user_id": user_id}
                 )
+                print(f"✅ [DSA TRACKING] Streak updated")
             
             conn.commit()
+            
+            print(f"🎉 [DSA TRACKING] All updates committed successfully")
             
             return {
                 "id": submission_id,
@@ -204,6 +230,9 @@ async def create_submission(
             }
             
     except Exception as e:
+        print(f"❌ [DSA TRACKING] Error saving submission: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to save submission: {str(e)}")
 
 @router.get("/submissions/{question_slug}", response_model=List[Submission])

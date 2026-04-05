@@ -61,11 +61,19 @@ export interface StatusMap {
 
 // Save submission
 export async function saveSubmission(submission: SubmissionCreate): Promise<{ id: number; status: string }> {
+  console.log(`💾 [TRACKING SERVICE] Saving submission:`, {
+    slug: submission.question_slug,
+    verdict: submission.verdict,
+    passed: `${submission.passed_testcases}/${submission.total_testcases}`,
+    action: submission.action_type
+  });
+  
   try {
     const response = await api.post('/dsa/submissions', submission);
+    console.log(`✅ [TRACKING SERVICE] Submission saved:`, response.data);
     return response.data;
   } catch (error) {
-    console.error('Failed to save submission:', error);
+    console.error('❌ [TRACKING SERVICE] Failed to save submission:', error);
     throw error;
   }
 }

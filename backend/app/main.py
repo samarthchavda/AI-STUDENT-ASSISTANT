@@ -24,7 +24,7 @@ from app.routes import (
     payment_routes, admin_routes, company_routes, company_prep_routes, 
     public_routes, aptitude_routes, dsa_ai_routes, dsa_tracking_routes, 
     dsa_analytics_routes, daily_challenge_routes, company_sheet_routes,
-    subscription_routes, notification_routes
+    subscription_routes, notification_routes, code_execution_routes
 )
 
 logger = logging.getLogger(__name__)
@@ -182,6 +182,7 @@ app.include_router(aptitude_routes.router)  # Real aptitude questions from datab
 app.include_router(dsa_ai_routes.router, prefix="/api/dsa/ai", tags=["DSA AI"])  # DSA AI Assistant
 app.include_router(dsa_tracking_routes.router, prefix="/api/dsa", tags=["DSA Tracking"])  # DSA Progress Tracking
 app.include_router(dsa_analytics_routes.router, prefix="/api/dsa", tags=["DSA Analytics"])  # DSA Analytics & Leaderboard
+app.include_router(code_execution_routes.router, prefix="/api/code", tags=["Code Execution"])  # Real Code Execution
 app.include_router(daily_challenge_routes.router, prefix="/api/daily-challenge", tags=["Daily Challenge"])  # Daily Challenge System
 app.include_router(company_sheet_routes.router, prefix="/api/company-sheets", tags=["Company Sheets"])  # Company Preparation Sheets
 app.include_router(subscription_routes.router, prefix="/api/subscription", tags=["Subscription"])  # Premium/Subscription
