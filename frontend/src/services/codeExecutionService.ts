@@ -1,8 +1,7 @@
 // Code Execution Service - Uses backend API for real code execution
-// Backend handles Judge0 integration or other execution engines
+// Backend handles Judge0 integration or mock execution
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-const USE_MOCK = import.meta.env.VITE_USE_MOCK_EXECUTION === 'true';
 
 // Language IDs for Judge0 (kept for reference)
 export const LANGUAGE_IDS = {
@@ -43,18 +42,12 @@ interface Judge0Response {
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function executeCode(code: string, language: keyof typeof LANGUAGE_IDS, input: string = ''): Promise<Judge0Response> {
-  console.log(`🚀 [CODE EXECUTION] Starting execution - Language: ${language}, Mock Mode: ${USE_MOCK}`);
+  console.log(`🚀 [CODE EXECUTION] Starting execution - Language: ${language}`);
   
-  // Use mock execution only if explicitly enabled
-  if (USE_MOCK) {
-    console.log('⚠️ [CODE EXECUTION] Using MOCK execution (VITE_USE_MOCK_EXECUTION=true)');
-    return mockExecution(code, language, input);
-  }
-
   try {
     console.log(`📡 [CODE EXECUTION] Calling backend API: ${API_BASE_URL}/api/code/execute`);
     
-    // Call backend API for real execution
+    // Call backend API for execution (backend handles mock vs real)
     const response = await fetch(`${API_BASE_URL}/api/code/execute`, {
       method: 'POST',
       headers: {
@@ -75,53 +68,13 @@ async function executeCode(code: string, language: keyof typeof LANGUAGE_IDS, in
     }
 
     const result = await response.json();
-    console.log('✅ [CODE EXECUTION] Backend execution successful:', result.status?.description);
+    console.log('✅ [CODE EXECUTION] Execution successful:', result.status?.description);
     
     return result;
   } catch (error) {
     console.error('❌ [CODE EXECUTION] Execution error:', error);
     throw error;
   }
-}
-
-// Mock execution for development/demo
-function mockExecution(code: string, _language: keyof typeof LANGUAGE_IDS, input: string): Promise<Judge0Response> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      // Simple mock logic
-      const hasError = code.includes('throw') || code.includes('error') || code.includes('undefined');
-      const isEmpty = code.trim().length < 20;
-
-      if (hasError) {
-        resolve({
-          stdout: null,
-          stderr: 'Runtime Error: Execution failed',
-          compile_output: null,
-          status: { id: 6, description: 'Runtime Error' },
-          time: '0.05',
-          memory: 2048
-        });
-      } else if (isEmpty) {
-        resolve({
-          stdout: null,
-          stderr: null,
-          compile_output: 'Error: No implementation found',
-          status: { id: 6, description: 'Compilation Error' },
-          time: null,
-          memory: null
-        });
-      } else {
-        resolve({
-          stdout: 'Mock output: Code executed successfully\nInput: ' + (input || 'none'),
-          stderr: null,
-          compile_output: null,
-          status: { id: 3, description: 'Accepted' },
-          time: '0.12',
-          memory: 4096
-        });
-      }
-    }, 800);
-  });
 }
 
 export async function runCode(

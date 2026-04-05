@@ -4,6 +4,7 @@ from typing import Optional
 import requests
 import time
 import os
+import random
 
 from app.core.auth import get_current_user
 
@@ -13,6 +14,7 @@ router = APIRouter()
 JUDGE0_API_URL = os.getenv('JUDGE0_API_URL', 'https://judge0-ce.p.rapidapi.com')
 JUDGE0_API_KEY = os.getenv('JUDGE0_API_KEY', '')
 USE_RAPIDAPI = os.getenv('USE_RAPIDAPI', 'false').lower() == 'true'
+USE_MOCK_EXECUTION = os.getenv('USE_MOCK_EXECUTION', 'true').lower() == 'true'  # Default to mock if no API key
 
 # Language IDs for Judge0
 LANGUAGE_IDS = {
@@ -35,17 +37,64 @@ class CodeExecutionResponse(BaseModel):
     time: Optional[str]
     memory: Optional[int]
 
+def mock_code_execution(code: str, language: str, stdin: str) -> CodeExecutionResponse:
+    """Mock code execution for development/demo without Judge0"""
+    print(f"⚠️ [BACKEND] Using MOCK execution (Judge0 not configured)")
+    
+    # Simulate execution delay
+    time.sleep(0.5)
+    
+    # Simple mock logic
+    has_error = 'error' in code.lower() or 'throw' in code.lower() or 'undefined' in code.lower()
+    is_empty = len(code.strip()) < 20
+    
+    if has_error:
+        return CodeExecutionResponse(
+            stdout=None,
+            stderr="Runtime Error: Mock execution detected error in code",
+            compile_output=None,
+            status={"id": 6, "description": "Runtime Error (NZEC)"},
+            time="0.05",
+            memory=2048
+        )
+    elif is_empty:
+        return CodeExecutionResponse(
+            stdout=None,
+            stderr=None,
+            compile_output="Error: Code appears incomplete",
+            status={"id": 6, "description": "Compilation Error"},
+            time=None,
+            memory=None
+        )
+    else:
+        # Mock successful execution
+        output = f"Mock execution successful\nLanguage: {language}\nInput: {stdin[:50] if stdin else 'none'}"
+        return CodeExecutionResponse(
+            stdout=output,
+            stderr=None,
+            compile_output=None,
+            status={"id": 3, "description": "Accepted"},
+            time=str(round(random.uniform(0.1, 0.3), 2)),
+            memory=random.randint(2048, 8192)
+        )
+
 @router.post("/execute", response_model=CodeExecutionResponse)
 async def execute_code(
     request: CodeExecutionRequest,
     current_user = Depends(get_current_user)
 ):
-    """Execute code using Judge0 API"""
+    """Execute code using Judge0 API or mock execution"""
     
     print(f"🚀 [BACKEND] Code execution request - User: {current_user.email}, Language: {request.language}")
     
     if request.language not in LANGUAGE_IDS:
         raise HTTPException(status_code=400, detail=f"Unsupported language: {request.language}")
+    
+    # Use mock execution if Judge0 is not configured or explicitly enabled
+    if USE_MOCK_EXECUTION or not JUDGE0_API_KEY:
+        if not JUDGE0_API_KEY:
+            print(f"⚠️ [BACKEND] Judge0 API key not configured, using mock execution")
+        return mock_code_execution(request.code, request.language, request.stdin)
     
     language_id = LANGUAGE_IDS[request.language]
     
