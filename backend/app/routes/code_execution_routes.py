@@ -40,15 +40,18 @@ class CodeExecutionResponse(BaseModel):
 def mock_code_execution(code: str, language: str, stdin: str) -> CodeExecutionResponse:
     """Mock code execution for development/demo without Judge0"""
     print(f"⚠️ [BACKEND] Using MOCK execution (Judge0 not configured)")
+    print(f"   Code length: {len(code)} chars")
+    print(f"   Input: {stdin[:100] if stdin else 'none'}")
     
     # Simulate execution delay
-    time.sleep(0.5)
+    time.sleep(0.3)
     
     # Simple mock logic
     has_error = 'error' in code.lower() or 'throw' in code.lower()
     is_empty = len(code.strip()) < 20
     
     if has_error:
+        print(f"❌ [BACKEND] Mock detected error in code")
         return CodeExecutionResponse(
             stdout=None,
             stderr="Runtime Error: Mock execution detected error in code",
@@ -58,6 +61,7 @@ def mock_code_execution(code: str, language: str, stdin: str) -> CodeExecutionRe
             memory=2048
         )
     elif is_empty:
+        print(f"❌ [BACKEND] Mock detected empty/incomplete code")
         return CodeExecutionResponse(
             stdout=None,
             stderr=None,
@@ -67,9 +71,22 @@ def mock_code_execution(code: str, language: str, stdin: str) -> CodeExecutionRe
             memory=None
         )
     else:
-        # Try to extract expected output from test input
-        # For demo purposes, just return the input as output
+        # For demo purposes, parse the input and return expected output
+        # This simulates correct execution for common test cases
         output = stdin.strip() if stdin.strip() else "[]"
+        
+        # Try to parse JSON input and return it (for array/object inputs)
+        try:
+            import json
+            parsed = json.loads(stdin)
+            # For array inputs, return the input as-is (simulating correct solution)
+            output = json.dumps(parsed) if isinstance(parsed, (list, dict)) else str(parsed)
+        except:
+            # If not JSON, just return the input
+            output = stdin.strip() if stdin.strip() else "Demo output"
+        
+        print(f"✅ [BACKEND] Mock execution successful")
+        print(f"   Output: {output[:100]}")
         
         return CodeExecutionResponse(
             stdout=output,

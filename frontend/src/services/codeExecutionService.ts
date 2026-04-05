@@ -48,6 +48,10 @@ async function executeCode(code: string, language: keyof typeof LANGUAGE_IDS, in
     console.log(`📡 [CODE EXECUTION] Calling backend API: ${API_BASE_URL}/api/code/execute`);
     
     // Call backend API for execution (backend handles mock vs real)
+    // Use longer timeout for code execution (60 seconds)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+    
     const response = await fetch(`${API_BASE_URL}/api/code/execute`, {
       method: 'POST',
       headers: {
@@ -58,8 +62,11 @@ async function executeCode(code: string, language: keyof typeof LANGUAGE_IDS, in
         code,
         language,
         stdin: input
-      })
+      }),
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       const error = await response.json();
@@ -71,7 +78,11 @@ async function executeCode(code: string, language: keyof typeof LANGUAGE_IDS, in
     console.log('✅ [CODE EXECUTION] Execution successful:', result.status?.description);
     
     return result;
-  } catch (error) {
+  } catch (error: any) {
+    if (error.name === 'AbortError') {
+      console.error('❌ [CODE EXECUTION] Request timeout after 60 seconds');
+      throw new Error('Execution timeout - code took too long to run');
+    }
     console.error('❌ [CODE EXECUTION] Execution error:', error);
     throw error;
   }
