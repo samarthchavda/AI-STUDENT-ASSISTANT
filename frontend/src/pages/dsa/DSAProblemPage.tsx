@@ -833,6 +833,15 @@ export default function DSAProblemPage() {
 
             {showResult && executionResult && (
               <div className="border-t border-gray-700 bg-gray-800 p-4 max-h-64 overflow-y-auto">
+                {/* Demo Mode Indicator */}
+                {executionResult.status === 'Accepted' && (
+                  <div className="mb-3 px-3 py-2 bg-yellow-900/30 border border-yellow-700/50 rounded-lg">
+                    <p className="text-xs text-yellow-300">
+                      ⚠️ Demo Mode: Using simulated execution. For real code execution, configure Judge0 API in backend.
+                    </p>
+                  </div>
+                )}
+                
                 <div className="mb-3">
                   <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border font-medium ${getStatusColor(executionResult.status)}`}>
                     {getStatusIcon(executionResult.status)}

@@ -45,7 +45,7 @@ def mock_code_execution(code: str, language: str, stdin: str) -> CodeExecutionRe
     time.sleep(0.5)
     
     # Simple mock logic
-    has_error = 'error' in code.lower() or 'throw' in code.lower() or 'undefined' in code.lower()
+    has_error = 'error' in code.lower() or 'throw' in code.lower()
     is_empty = len(code.strip()) < 20
     
     if has_error:
@@ -67,8 +67,10 @@ def mock_code_execution(code: str, language: str, stdin: str) -> CodeExecutionRe
             memory=None
         )
     else:
-        # Mock successful execution
-        output = f"Mock execution successful\nLanguage: {language}\nInput: {stdin[:50] if stdin else 'none'}"
+        # Try to extract expected output from test input
+        # For demo purposes, just return the input as output
+        output = stdin.strip() if stdin.strip() else "[]"
+        
         return CodeExecutionResponse(
             stdout=output,
             stderr=None,
