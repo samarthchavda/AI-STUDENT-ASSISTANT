@@ -129,7 +129,7 @@ export default function CareerPage() {
       <Header />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12">
         {/* Page Header */}
-        <div className="mb-8">
+        <div className="mb-8 mt-8">
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">Build an ATS-Ready Resume</h1>
           <p className="text-gray-600 text-lg">Analyze your resume and get actionable insights to land your dream job</p>
         </div>
