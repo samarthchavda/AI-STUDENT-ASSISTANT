@@ -2,12 +2,14 @@ import { Link, useNavigate } from 'react-router-dom'
 import { 
   Brain, ArrowRight, MessageSquare, FileText, BarChart3, 
   Zap, Trophy, ShieldCheck, Globe2, Sparkles, 
-  Rocket, Bot, Clock, Target, CheckCircle, Code2, Briefcase, GraduationCap
+  Rocket, Bot, Clock, Target, CheckCircle, Code2, Briefcase, GraduationCap,
+  Star, Users, Award, Play, Send, X
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useInView } from 'framer-motion'
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import Footer from '../../components/Footer'
+import { chatAPI } from '../../api/client'
 
 const features = [
   {
@@ -106,6 +108,34 @@ const useCases = [
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const [demoQuery, setDemoQuery] = useState('');
+  const [demoResponse, setDemoResponse] = useState('');
+  const [demoLoading, setDemoLoading] = useState(false);
+  const [demoCount, setDemoCount] = useState(0);
+  const [showDemoModal, setShowDemoModal] = useState(false);
+
+  const handleDemoQuery = async () => {
+    if (demoCount >= 3) {
+      alert('Demo limit reached! Sign up to continue.');
+      navigate('/signup');
+      return;
+    }
+    
+    if (!demoQuery.trim()) return;
+    
+    setDemoLoading(true);
+    try {
+      const response = await chatAPI.sendPublicMessage([
+        { role: 'user', content: demoQuery }
+      ]);
+      setDemoResponse(response.data.response);
+      setDemoCount(prev => prev + 1);
+    } catch (error) {
+      setDemoResponse('Error: Please try again or sign up for full access.');
+    } finally {
+      setDemoLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white text-slate-900 selection:bg-blue-100 font-sans">
@@ -146,19 +176,95 @@ export default function LandingPage() {
 
           <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
             <button 
-              onClick={() => navigate('/signup')}
+              onClick={() => setShowDemoModal(true)}
               className="flex h-14 items-center gap-2 rounded-xl bg-blue-600 px-10 font-bold text-white shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all hover:scale-[1.02]"
             >
-              Get Started for Free <ArrowRight size={18} />
+              <Play size={18} /> Try AI Demo Free
             </button>
             <button 
-              onClick={() => navigate('/career/resume-templates')}
-              className="h-14 rounded-xl border border-slate-200 bg-white px-10 font-bold text-slate-600 hover:bg-slate-50 transition-all shadow-sm"
+              onClick={() => navigate('/signup')}
+              className="flex h-14 items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-10 font-bold text-white shadow-lg hover:shadow-xl transition-all hover:scale-[1.02]"
             >
-              Browse Templates
+              Get Started Free <ArrowRight size={18} />
             </button>
           </div>
+
+          <p className="mt-6 text-sm text-slate-500">
+            ✨ No credit card required • 🚀 Start in 30 seconds • 💯 Free forever plan
+          </p>
         </section>
+
+        {/* Demo Modal */}
+        {showDemoModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-white rounded-2xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto shadow-2xl"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-2xl font-bold text-slate-900">Try AI Copilot Demo</h3>
+                <button onClick={() => setShowDemoModal(false)} className="p-2 hover:bg-slate-100 rounded-lg">
+                  <X size={20} />
+                </button>
+              </div>
+              
+              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-800">
+                  🎯 Demo Mode: {3 - demoCount} queries remaining. Sign up for unlimited access!
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Ask anything about coding, DSA, or placements:
+                  </label>
+                  <textarea
+                    value={demoQuery}
+                    onChange={(e) => setDemoQuery(e.target.value)}
+                    placeholder="Example: Explain binary search algorithm..."
+                    className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    rows={3}
+                  />
+                </div>
+
+                <button
+                  onClick={handleDemoQuery}
+                  disabled={demoLoading || demoCount >= 3}
+                  className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {demoLoading ? (
+                    <>Processing...</>
+                  ) : (
+                    <>
+                      <Send size={18} /> Ask AI
+                    </>
+                  )}
+                </button>
+
+                {demoResponse && (
+                  <div className="mt-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                    <p className="text-sm font-semibold text-slate-700 mb-2">AI Response:</p>
+                    <p className="text-slate-600 whitespace-pre-wrap">{demoResponse}</p>
+                  </div>
+                )}
+
+                {demoCount >= 3 && (
+                  <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg text-center">
+                    <p className="text-blue-800 font-semibold mb-3">Demo limit reached!</p>
+                    <button
+                      onClick={() => navigate('/signup')}
+                      className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700"
+                    >
+                      Sign Up for Unlimited Access
+                    </button>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
 
         <section className="mx-auto max-w-7xl px-4 sm:px-6 py-12 border-y border-slate-100 bg-slate-50/30">
           <p className="text-center text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-8">Trusted by students targeting top firms</p>
@@ -168,6 +274,15 @@ export default function LandingPage() {
             ))}
           </div>
         </section>
+
+        {/* Demo Sections */}
+        <DemoSectionsComponent navigate={navigate} />
+
+        {/* Pricing Section */}
+        <PricingSection navigate={navigate} />
+
+        {/* Testimonials Section */}
+        <TestimonialsSection />
 
         <section className="mx-auto max-w-7xl px-4 sm:px-6 py-20 text-center">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-12">
@@ -454,6 +569,302 @@ function UseCasesSection() {
               </div>
             </motion.div>
           ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+
+// Demo Sections Component
+function DemoSectionsComponent({ navigate }: { navigate: any }) {
+  return (
+    <section className="py-20 bg-gradient-to-b from-slate-50 to-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl sm:text-4xl font-black text-slate-900 mb-4">
+            Experience Before You Sign Up
+          </h2>
+          <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+            Try our features with no login required. See the value instantly.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* AI Copilot Demo */}
+          <div className="bg-white rounded-2xl p-6 border-2 border-blue-200 hover:border-blue-400 transition-all hover:shadow-xl group">
+            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <Bot className="w-6 h-6 text-blue-600" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">AI Copilot</h3>
+            <p className="text-sm text-slate-600 mb-4">Ask 3 questions free, no login needed</p>
+            <button
+              onClick={() => navigate('/chat')}
+              className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-all"
+            >
+              Try Now →
+            </button>
+          </div>
+
+          {/* Resume Builder Demo */}
+          <div className="bg-white rounded-2xl p-6 border-2 border-purple-200 hover:border-purple-400 transition-all hover:shadow-xl group">
+            <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <FileText className="w-6 h-6 text-purple-600" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">Resume Builder</h3>
+            <p className="text-sm text-slate-600 mb-4">Browse 8+ ATS-ready templates</p>
+            <button
+              onClick={() => navigate('/career/resume-templates')}
+              className="w-full bg-purple-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-purple-700 transition-all"
+            >
+              Browse Templates →
+            </button>
+          </div>
+
+          {/* DSA Practice Demo */}
+          <div className="bg-white rounded-2xl p-6 border-2 border-green-200 hover:border-green-400 transition-all hover:shadow-xl group">
+            <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <Code2 className="w-6 h-6 text-green-600" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">DSA Practice</h3>
+            <p className="text-sm text-slate-600 mb-4">Try 1 problem, Run code free</p>
+            <button
+              onClick={() => navigate('/dsa')}
+              className="w-full bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition-all"
+            >
+              Practice DSA →
+            </button>
+          </div>
+
+          {/* Aptitude Demo */}
+          <div className="bg-white rounded-2xl p-6 border-2 border-orange-200 hover:border-orange-400 transition-all hover:shadow-xl group">
+            <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <BarChart3 className="w-6 h-6 text-orange-600" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">Aptitude Test</h3>
+            <p className="text-sm text-slate-600 mb-4">Try 3 questions from any company</p>
+            <button
+              onClick={() => navigate('/aptitude')}
+              className="w-full bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-orange-700 transition-all"
+            >
+              Take Test →
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+// Pricing Section
+function PricingSection({ navigate }: { navigate: any }) {
+  const plans = [
+    {
+      name: 'Free',
+      price: '₹0',
+      period: 'forever',
+      description: 'Perfect for getting started',
+      features: [
+        '3 AI queries per day',
+        'Basic resume templates',
+        '5 DSA problems',
+        '10 aptitude questions',
+        'Community support'
+      ],
+      cta: 'Start Free',
+      popular: false
+    },
+    {
+      name: 'Pro',
+      price: '₹499',
+      period: 'per month',
+      description: 'Everything you need to succeed',
+      features: [
+        'Unlimited AI queries',
+        'All premium templates',
+        '500+ DSA problems',
+        'Unlimited aptitude tests',
+        'Mock interviews',
+        'Company-specific prep',
+        'Priority support',
+        'Progress analytics'
+      ],
+      cta: 'Get Pro',
+      popular: true
+    }
+  ]
+
+  return (
+    <section className="py-20 bg-slate-900 text-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl sm:text-4xl font-black mb-4">
+            Simple, Transparent Pricing
+          </h2>
+          <p className="text-lg text-slate-400 max-w-2xl mx-auto">
+            Start free, upgrade when you're ready. No hidden fees.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+          {plans.map((plan, index) => (
+            <div
+              key={index}
+              className={`relative rounded-3xl p-8 ${
+                plan.popular
+                  ? 'bg-gradient-to-br from-blue-600 to-purple-600 border-2 border-blue-400 shadow-2xl scale-105'
+                  : 'bg-slate-800 border-2 border-slate-700'
+              }`}
+            >
+              {plan.popular && (
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-yellow-400 text-slate-900 px-4 py-1 rounded-full text-sm font-bold">
+                  ⭐ Most Popular
+                </div>
+              )}
+
+              <div className="mb-6">
+                <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
+                <div className="flex items-baseline gap-2 mb-2">
+                  <span className="text-5xl font-black">{plan.price}</span>
+                  <span className="text-slate-400">/{plan.period}</span>
+                </div>
+                <p className="text-slate-300">{plan.description}</p>
+              </div>
+
+              <ul className="space-y-3 mb-8">
+                {plan.features.map((feature, idx) => (
+                  <li key={idx} className="flex items-start gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
+                    <span className="text-slate-200">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <button
+                onClick={() => navigate('/signup')}
+                className={`w-full py-3 rounded-xl font-bold transition-all ${
+                  plan.popular
+                    ? 'bg-white text-blue-600 hover:bg-slate-100'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+              >
+                {plan.cta}
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <p className="text-center text-slate-400 mt-8">
+          💳 All plans include 7-day money-back guarantee
+        </p>
+      </div>
+    </section>
+  )
+}
+
+// Testimonials Section
+function TestimonialsSection() {
+  const testimonials = [
+    {
+      name: 'Rahul Sharma',
+      role: 'Placed at TCS',
+      image: '👨‍💻',
+      rating: 5,
+      text: 'CodeCampus AI helped me crack TCS with 7 LPA package. The aptitude tests were exactly like the real exam!'
+    },
+    {
+      name: 'Priya Patel',
+      role: 'Placed at Infosys',
+      image: '👩‍💻',
+      rating: 5,
+      text: 'The AI copilot explained DSA concepts better than my college professors. Highly recommended!'
+    },
+    {
+      name: 'Amit Kumar',
+      role: 'Placed at Amazon',
+      image: '👨‍🎓',
+      rating: 5,
+      text: 'Resume builder and mock interviews were game-changers. Got selected in Amazon with 12 LPA!'
+    },
+    {
+      name: 'Sneha Reddy',
+      role: 'Placed at Wipro',
+      image: '👩‍🎓',
+      rating: 5,
+      text: 'Best investment for placement prep. The company-specific tests helped me prepare strategically.'
+    }
+  ]
+
+  return (
+    <section className="py-20 bg-gradient-to-b from-white to-slate-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl sm:text-4xl font-black text-slate-900 mb-4">
+            Loved by 2,500+ Students
+          </h2>
+          <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+            Join thousands of students who landed their dream jobs with CodeCampus AI
+          </p>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-16">
+          <div className="text-center">
+            <div className="text-4xl font-black text-blue-600 mb-2">2,500+</div>
+            <div className="text-sm text-slate-600 font-semibold">Students Placed</div>
+          </div>
+          <div className="text-center">
+            <div className="text-4xl font-black text-green-600 mb-2">95%</div>
+            <div className="text-sm text-slate-600 font-semibold">Success Rate</div>
+          </div>
+          <div className="text-center">
+            <div className="text-4xl font-black text-purple-600 mb-2">4.9/5</div>
+            <div className="text-sm text-slate-600 font-semibold">Average Rating</div>
+          </div>
+          <div className="text-center">
+            <div className="text-4xl font-black text-orange-600 mb-2">8.5 LPA</div>
+            <div className="text-sm text-slate-600 font-semibold">Avg Package</div>
+          </div>
+        </div>
+
+        {/* Testimonials Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {testimonials.map((testimonial, index) => (
+            <div
+              key={index}
+              className="bg-white rounded-2xl p-6 border border-slate-200 hover:border-blue-300 hover:shadow-xl transition-all"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="text-4xl">{testimonial.image}</div>
+                <div>
+                  <div className="font-bold text-slate-900">{testimonial.name}</div>
+                  <div className="text-sm text-slate-600">{testimonial.role}</div>
+                </div>
+              </div>
+              <div className="flex gap-1 mb-3">
+                {[...Array(testimonial.rating)].map((_, i) => (
+                  <Star key={i} className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                ))}
+              </div>
+              <p className="text-sm text-slate-700 leading-relaxed">{testimonial.text}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Trust Badges */}
+        <div className="mt-16 flex flex-wrap justify-center items-center gap-8">
+          <div className="flex items-center gap-2 text-slate-600">
+            <ShieldCheck className="w-6 h-6 text-green-600" />
+            <span className="font-semibold">Secure & Private</span>
+          </div>
+          <div className="flex items-center gap-2 text-slate-600">
+            <Users className="w-6 h-6 text-blue-600" />
+            <span className="font-semibold">2,500+ Active Users</span>
+          </div>
+          <div className="flex items-center gap-2 text-slate-600">
+            <Award className="w-6 h-6 text-purple-600" />
+            <span className="font-semibold">Top Rated Platform</span>
+          </div>
         </div>
       </div>
     </section>
