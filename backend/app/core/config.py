@@ -40,6 +40,12 @@ class Settings(BaseSettings):
     mail_password: str = ""
     mail_from: str = ""
     mail_from_name: str = "CodeCampus AI"
+    
+    # Code Execution (Judge0)
+    use_mock_execution: str = "true"
+    judge0_api_key: str = ""
+    judge0_api_url: str = "https://judge0-ce.p.rapidapi.com"
+    use_rapidapi: str = "false"
 
     @field_validator("google_client_id", "frontend_urls", mode="before")
     @classmethod
