@@ -305,6 +305,13 @@ export const PRICING_PLANS = [
 **Fix:** Updated `backend/app/routes/payment_routes.py` PRICING_CONFIG  
 **Status:** ✅ Resolved and committed
 
+### Issue #2: Profile Update 404 Error ✅ FIXED
+**Problem:** Profile update failing with 404 error  
+**Root Cause:** Frontend calling `/api/user/profile` but backend route is at `/api/auth/user/profile`  
+**Impact:** Users unable to update profile information (phone, college, branch, etc.)  
+**Fix:** Updated `frontend/src/api/client.ts` to call correct endpoint `/auth/user/profile`  
+**Status:** ✅ Resolved and committed
+
 ---
 
 ## 9. System Health Summary
