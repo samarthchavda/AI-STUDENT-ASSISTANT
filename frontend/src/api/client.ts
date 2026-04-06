@@ -531,7 +531,7 @@ export const userAPI = {
     graduationYear?: string
     linkedinUrl?: string
     githubUrl?: string
-  }) => api.put('/user/profile', profileData),
+  }) => api.put('/auth/user/profile', profileData),
 }
 
 
