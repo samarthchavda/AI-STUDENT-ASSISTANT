@@ -3,13 +3,14 @@ import {
   Brain, ArrowRight, MessageSquare, FileText, BarChart3, 
   Zap, Trophy, ShieldCheck, Globe2, Sparkles, 
   Rocket, Bot, Clock, Target, CheckCircle, Code2, Briefcase, GraduationCap,
-  Star, Users, Award, Play, Send, X
+  Star, Users, Award, Play, Send, X, LogOut, LayoutDashboard, User
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useInView } from 'framer-motion'
 import { useRef, useState } from 'react'
 import Footer from '../../components/Footer'
 import { chatAPI } from '../../api/client'
+import { useAppStore } from '../../store/useAppStore'
 
 const features = [
   {
@@ -108,6 +109,7 @@ const useCases = [
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const { user, isAuthenticated, logout } = useAppStore();
   const [demoQuery, setDemoQuery] = useState('');
   const [demoResponse, setDemoResponse] = useState('');
   const [demoLoading, setDemoLoading] = useState(false);
@@ -137,6 +139,19 @@ export default function LandingPage() {
     }
   };
 
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
+  const handleGetStarted = () => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    } else {
+      navigate('/signup');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white text-slate-900 selection:bg-blue-100 font-sans">
       
@@ -148,11 +163,41 @@ export default function LandingPage() {
             </div>
             <span className="text-xl font-bold tracking-tight text-slate-900">CodeCampus AI</span>
           </Link>
-          <div className="flex items-center gap-6">
-            <Link to="/login" className="text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors">Login</Link>
-            <Link to="/signup" className="rounded-full bg-slate-900 px-5 py-2 text-sm font-bold text-white hover:bg-blue-600 transition-all shadow-sm">
-              Get Started
-            </Link>
+          
+          <div className="flex items-center gap-4">
+            {isAuthenticated ? (
+              <>
+                {/* Logged In State */}
+                <div className="hidden sm:flex items-center gap-2 text-sm text-slate-600">
+                  <User className="w-4 h-4" />
+                  <span className="font-medium">{user?.name || user?.email}</span>
+                </div>
+                <button
+                  onClick={() => navigate('/dashboard')}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-slate-700 hover:text-slate-900 transition-colors"
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  Dashboard
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200 transition-all"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                {/* Logged Out State */}
+                <Link to="/login" className="text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors">
+                  Login
+                </Link>
+                <Link to="/signup" className="rounded-full bg-slate-900 px-5 py-2 text-sm font-bold text-white hover:bg-blue-600 transition-all shadow-sm">
+                  Get Started
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -182,15 +227,27 @@ export default function LandingPage() {
               <Play size={18} /> Try AI Demo Free
             </button>
             <button 
-              onClick={() => navigate('/signup')}
+              onClick={handleGetStarted}
               className="flex h-14 items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-10 font-bold text-white shadow-lg hover:shadow-xl transition-all hover:scale-[1.02]"
             >
-              Get Started Free <ArrowRight size={18} />
+              {isAuthenticated ? (
+                <>
+                  <LayoutDashboard size={18} /> Go to Dashboard
+                </>
+              ) : (
+                <>
+                  Get Started Free <ArrowRight size={18} />
+                </>
+              )}
             </button>
           </div>
 
           <p className="mt-6 text-sm text-slate-500">
-            ✨ No credit card required • 🚀 Start in 30 seconds • 💯 Free forever plan
+            {isAuthenticated ? (
+              <>👋 Welcome back, {user?.name}! Continue your learning journey</>
+            ) : (
+              <>✨ No credit card required • 🚀 Start in 30 seconds • 💯 Free forever plan</>
+            )}
           </p>
         </section>
 
@@ -357,13 +414,21 @@ export default function LandingPage() {
           <div className="bg-slate-900 text-white rounded-[3rem] p-8 sm:p-12 md:p-16 lg:p-24 shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/20 rounded-full blur-3xl -mr-20 -mt-20" />
             <Brain className="mx-auto h-10 w-10 sm:h-12 sm:w-12 mb-8 text-blue-400" />
-            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-8 tracking-tight leading-tight">Ready to secure your future?</h2>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-8 tracking-tight leading-tight">
+              {isAuthenticated ? 'Continue Your Journey' : 'Ready to secure your future?'}
+            </h2>
             <p className="mb-10 text-lg sm:text-xl text-slate-400 max-w-xl mx-auto">
-              Join thousands of students who are already using AI to secure high-package roles.
+              {isAuthenticated 
+                ? 'Keep learning and practicing to achieve your placement goals.'
+                : 'Join thousands of students who are already using AI to secure high-package roles.'
+              }
             </p>
-            <Link to="/signup" className="inline-block bg-white text-slate-900 px-8 sm:px-12 py-4 sm:py-5 rounded-2xl font-black text-lg sm:text-xl hover:bg-blue-600 hover:text-white transition-all shadow-xl">
-              Start Free Trial
-            </Link>
+            <button
+              onClick={handleGetStarted}
+              className="inline-block bg-white text-slate-900 px-8 sm:px-12 py-4 sm:py-5 rounded-2xl font-black text-lg sm:text-xl hover:bg-blue-600 hover:text-white transition-all shadow-xl"
+            >
+              {isAuthenticated ? 'Go to Dashboard' : 'Start Free Trial'}
+            </button>
           </div>
         </section>
       </main>
