@@ -11,6 +11,7 @@ import { useRef, useState } from 'react'
 import Footer from '../../components/Footer'
 import { chatAPI } from '../../api/client'
 import { useAppStore } from '../../store/useAppStore'
+import { PRICING_PLANS, YEARLY_SAVINGS_PERCENT } from '../../config/pricing'
 
 const features = [
   {
@@ -723,41 +724,20 @@ function DemoSectionsComponent({ navigate }: { navigate: any }) {
 
 // Pricing Section
 function PricingSection({ navigate }: { navigate: any }) {
-  const plans = [
-    {
-      name: 'Free',
-      price: '₹0',
-      period: 'forever',
-      description: 'Perfect for getting started',
-      features: [
-        '3 AI queries per day',
-        'Basic resume templates',
-        '5 DSA problems',
-        '10 aptitude questions',
-        'Community support'
-      ],
-      cta: 'Start Free',
-      popular: false
-    },
-    {
-      name: 'Pro',
-      price: '₹499',
-      period: 'per month',
-      description: 'Everything you need to succeed',
-      features: [
-        'Unlimited AI queries',
-        'All premium templates',
-        '500+ DSA problems',
-        'Unlimited aptitude tests',
-        'Mock interviews',
-        'Company-specific prep',
-        'Priority support',
-        'Progress analytics'
-      ],
-      cta: 'Get Pro',
-      popular: true
-    }
-  ]
+  const plans = PRICING_PLANS.map(plan => ({
+    name: plan.name,
+    price: `₹${plan.price.monthly}`,
+    period: plan.price.monthly === 0 ? 'forever' : 'per month',
+    description: plan.id === 'free' 
+      ? 'Perfect for getting started' 
+      : plan.id === 'basic'
+      ? 'Great for regular practice'
+      : 'Everything you need to succeed',
+    features: plan.features,
+    limitations: plan.limitations,
+    cta: plan.id === 'free' ? 'Start Free' : `Get ${plan.name}`,
+    popular: plan.popular || false
+  }))
 
   return (
     <section className="py-20 bg-slate-900 text-white">
@@ -771,7 +751,7 @@ function PricingSection({ navigate }: { navigate: any }) {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {plans.map((plan, index) => (
             <div
               key={index}
@@ -803,6 +783,15 @@ function PricingSection({ navigate }: { navigate: any }) {
                     <span className="text-slate-200">{feature}</span>
                   </li>
                 ))}
+                {plan.limitations.length > 0 && (
+                  <>
+                    {plan.limitations.map((limitation, idx) => (
+                      <li key={`limit-${idx}`} className="flex items-start gap-3">
+                        <span className="text-slate-400 text-sm">✗ {limitation}</span>
+                      </li>
+                    ))}
+                  </>
+                )}
               </ul>
 
               <button
@@ -820,7 +809,7 @@ function PricingSection({ navigate }: { navigate: any }) {
         </div>
 
         <p className="text-center text-slate-400 mt-8">
-          💳 All plans include 7-day money-back guarantee
+          💳 All plans include 7-day money-back guarantee • Save {YEARLY_SAVINGS_PERCENT}% with yearly billing
         </p>
       </div>
     </section>

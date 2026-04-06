@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Check, Zap, Crown } from 'lucide-react'
+import { Check } from 'lucide-react'
 import { useAppStore } from '../../store/useAppStore'
 import Header from '../../components/Header'
 import { paymentService, openRazorpayCheckout } from '../../services/paymentService'
+import { PRICING_PLANS, YEARLY_SAVINGS_PERCENT } from '../../config/pricing'
 
 // Load Razorpay script
 const loadRazorpayScript = () => {
@@ -29,71 +30,7 @@ export default function PricingPage() {
     });
   }, []);
 
-  const plans = [
-    {
-      id: 'free',
-      name: 'Free',
-      icon: Zap,
-      color: 'text-gray-600',
-      price: { monthly: 0, yearly: 0 },
-      features: [
-        '25 AI queries per day',
-        'Basic topic explanations',
-        'Limited note generation',
-        'Community support',
-        'Access to learning resources'
-      ],
-      limitations: [
-        'No mock tests',
-        'No code debugging',
-        'No career tools',
-        'Ads supported'
-      ]
-    },
-    {
-      id: 'basic',
-      name: 'Basic',
-      icon: Zap,
-      color: 'text-blue-600',
-      price: { monthly: 259, yearly: 2599 },
-      popular: false,
-      features: [
-        '100 AI queries per day',
-        'Advanced explanations',
-        'Unlimited note generation',
-        'Mock tests & quizzes',
-        '5 code debugs per day',
-        'Email support',
-        'No ads'
-      ],
-      limitations: []
-    },
-    {
-      id: 'pro',
-      name: 'Pro',
-      icon: Crown,
-      color: 'text-purple-600',
-      price: { monthly: 599, yearly: 5999 },
-      popular: true,
-      features: [
-        'Unlimited AI queries',
-        'Priority AI responses',
-        'Unlimited mock tests',
-        'Unlimited code debugging',
-        'DSA practice with hints',
-        'Project guidance',
-        'Resume builder & analysis',
-        'Interview preparation',
-        'Company-specific prep',
-        '24/7 priority support',
-        'Study plan generator',
-        'Progress tracking',
-        'Multi-language support',
-        'No ads'
-      ],
-      limitations: []
-    }
-  ]
+  const plans = PRICING_PLANS
 
   const processUpgrade = async (planId: 'free' | 'basic' | 'pro') => {
     if (!razorpayLoaded) {
@@ -188,8 +125,6 @@ export default function PricingPage() {
     await processUpgrade('basic')
   }
 
-  const savingsPercent = 17 // ~17% savings on yearly
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50">
       <Header />
@@ -239,7 +174,7 @@ export default function PricingPage() {
             >
               Yearly
               <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
-                Save {savingsPercent}%
+                Save {YEARLY_SAVINGS_PERCENT}%
               </span>
             </button>
           </div>
