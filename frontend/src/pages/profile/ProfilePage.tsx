@@ -71,21 +71,36 @@ export default function ProfilePage() {
   const handleSaveProfile = async () => {
     setSaving(true)
     try {
-      await userAPI.updateProfile(formData)
+      const response = await userAPI.updateProfile(formData)
       
-      // Update local user state
-      if (user) {
+      console.log('✅ Profile update response:', response.data)
+      
+      // Update local user state with the returned user data
+      if (user && response.data.user) {
         setUser({
           ...user,
-          ...formData
+          phone: response.data.user.phone,
+          college: response.data.user.college,
+          branch: response.data.user.branch,
+          cgpa: response.data.user.cgpa,
+          graduationYear: response.data.user.graduationYear,
+          linkedinUrl: response.data.user.linkedinUrl,
+          githubUrl: response.data.user.githubUrl
         })
       }
       
       setShowEditModal(false)
-      alert('Profile updated successfully!')
+      
+      // Show success message with profile completion
+      const completionMsg = response.data.profile_completion 
+        ? ` Your profile is now ${response.data.profile_completion}% complete!`
+        : ''
+      alert(`✅ ${response.data.message}${completionMsg}`)
+      
     } catch (error: any) {
-      console.error('Error updating profile:', error)
-      alert(error?.response?.data?.detail || 'Failed to update profile')
+      console.error('❌ Error updating profile:', error)
+      const errorMsg = error?.response?.data?.detail || 'Failed to update profile. Please try again.'
+      alert(`Error: ${errorMsg}`)
     } finally {
       setSaving(false)
     }

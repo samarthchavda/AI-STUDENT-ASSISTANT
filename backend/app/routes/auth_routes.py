@@ -515,45 +515,91 @@ async def update_user_profile(
     db: Session = Depends(get_db)
 ):
     """Update user profile information"""
+    import logging
+    logger = logging.getLogger(__name__)
+    
     try:
-        # Update only provided fields - use setattr to handle missing columns gracefully
-        if profile_data.phone is not None:
-            setattr(current_user, 'phone', profile_data.phone)
-        if profile_data.college is not None:
-            setattr(current_user, 'college', profile_data.college)
-        if profile_data.branch is not None:
-            setattr(current_user, 'branch', profile_data.branch)
-        if profile_data.cgpa is not None:
-            setattr(current_user, 'cgpa', profile_data.cgpa)
-        if profile_data.graduation_year is not None:
-            setattr(current_user, 'graduation_year', profile_data.graduation_year)
-        if profile_data.linkedin_url is not None:
-            setattr(current_user, 'linkedin_url', profile_data.linkedin_url)
-        if profile_data.github_url is not None:
-            setattr(current_user, 'github_url', profile_data.github_url)
+        logger.info(f"[PROFILE UPDATE] Request received for user_id={current_user.id}, email={current_user.email}")
+        logger.info(f"[PROFILE UPDATE] Fields to update: {profile_data.dict(exclude_none=True)}")
         
+        # CRITICAL FIX: Query the user again using the SAME active db session
+        # This ensures we have a persistent instance attached to the current session
+        user = db.query(UserModel).filter(UserModel.id == current_user.id).first()
+        
+        if not user:
+            logger.error(f"[PROFILE UPDATE] User not found: user_id={current_user.id}")
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        # Update only provided fields
+        updated_fields = []
+        if profile_data.phone is not None:
+            user.phone = profile_data.phone
+            updated_fields.append('phone')
+        if profile_data.college is not None:
+            user.college = profile_data.college
+            updated_fields.append('college')
+        if profile_data.branch is not None:
+            user.branch = profile_data.branch
+            updated_fields.append('branch')
+        if profile_data.cgpa is not None:
+            user.cgpa = profile_data.cgpa
+            updated_fields.append('cgpa')
+        if profile_data.graduation_year is not None:
+            user.graduation_year = profile_data.graduation_year
+            updated_fields.append('graduation_year')
+        if profile_data.linkedin_url is not None:
+            user.linkedin_url = profile_data.linkedin_url
+            updated_fields.append('linkedin_url')
+        if profile_data.github_url is not None:
+            user.github_url = profile_data.github_url
+            updated_fields.append('github_url')
+        
+        logger.info(f"[PROFILE UPDATE] Updated fields: {updated_fields}")
+        
+        # Commit changes
         db.commit()
-        db.refresh(current_user)
+        db.refresh(user)
+        
+        logger.info(f"[PROFILE UPDATE] Successfully updated profile for user_id={user.id}")
+        
+        # Calculate profile completion
+        profile_fields = [
+            user.phone,
+            user.college,
+            user.branch,
+            user.cgpa,
+            user.graduation_year,
+            user.linkedin_url,
+            user.github_url
+        ]
+        filled_fields = sum(1 for field in profile_fields if field and str(field).strip())
+        profile_completion = int((filled_fields / len(profile_fields)) * 100)
+        
+        logger.info(f"[PROFILE UPDATE] Profile completion: {profile_completion}%")
         
         return {
             "message": "Profile updated successfully",
+            "profile_completion": profile_completion,
             "user": {
-                "id": current_user.id,
-                "email": current_user.email,
-                "name": current_user.name,
-                "plan_type": _user_plan_value(current_user),
-                "is_admin": current_user.is_admin,
-                "phone": getattr(current_user, 'phone', None),
-                "phone_verified": getattr(current_user, 'phone_verified', False),
-                "college": getattr(current_user, 'college', None),
-                "branch": getattr(current_user, 'branch', None),
-                "cgpa": getattr(current_user, 'cgpa', None),
-                "graduation_year": getattr(current_user, 'graduation_year', None),
-                "linkedin_url": getattr(current_user, 'linkedin_url', None),
-                "github_url": getattr(current_user, 'github_url', None)
+                "id": user.id,
+                "email": user.email,
+                "name": user.name,
+                "plan": _user_plan_value(user),
+                "isAdmin": user.is_admin,
+                "phone": user.phone,
+                "phoneVerified": getattr(user, 'phone_verified', False),
+                "college": user.college,
+                "branch": user.branch,
+                "cgpa": user.cgpa,
+                "graduationYear": user.graduation_year,
+                "linkedinUrl": user.linkedin_url,
+                "githubUrl": user.github_url
             }
         }
+    except HTTPException:
+        raise
     except Exception as e:
+        logger.error(f"[PROFILE UPDATE] Error: {str(e)}", exc_info=True)
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to update profile: {str(e)}")
 
