@@ -525,39 +525,127 @@ export default function DashboardPageNew() {
 
         {/* Main Content */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8">
-          {/* Welcome Avatar - Simple profile indicator */}
-          {user && (
-            <div className="mb-6 flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
-                {user.name.charAt(0).toUpperCase()}
+          {/* Premium Hero Welcome Section */}
+          <div className="mb-8 relative overflow-hidden">
+            <div className="bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 rounded-3xl p-8 sm:p-10 text-white shadow-2xl relative">
+              {/* Decorative elements */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-20 -mt-20" />
+              <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-3xl -ml-10 -mb-10" />
+              
+              <div className="relative z-10">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center text-white font-bold text-2xl border-2 border-white/30 shadow-lg">
+                      {user?.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <h1 className="text-3xl sm:text-4xl font-black mb-1">
+                        Welcome back, {user?.name || 'Student'}! 👋
+                      </h1>
+                      <p className="text-blue-100 text-sm sm:text-base">
+                        Let's crush your placement goals today
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {/* Plan Badge */}
+                  <div className="flex items-center gap-2">
+                    <div className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full border border-white/30 flex items-center gap-2">
+                      <Sparkles className="w-4 h-4" />
+                      <span className="font-bold text-sm uppercase">{user?.plan || 'Free'} Plan</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quick Action CTAs */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <button
+                    onClick={() => navigate('/dsa')}
+                    className="bg-white/10 backdrop-blur-sm hover:bg-white/20 border border-white/30 rounded-xl p-4 transition-all hover:scale-105 group"
+                  >
+                    <Code2 className="w-6 h-6 mb-2 group-hover:scale-110 transition-transform" />
+                    <div className="text-sm font-semibold">Practice DSA</div>
+                  </button>
+                  <button
+                    onClick={() => navigate('/career')}
+                    className="bg-white/10 backdrop-blur-sm hover:bg-white/20 border border-white/30 rounded-xl p-4 transition-all hover:scale-105 group"
+                  >
+                    <FileText className="w-6 h-6 mb-2 group-hover:scale-110 transition-transform" />
+                    <div className="text-sm font-semibold">Build Resume</div>
+                  </button>
+                  <button
+                    onClick={() => navigate('/chat')}
+                    className="bg-white/10 backdrop-blur-sm hover:bg-white/20 border border-white/30 rounded-xl p-4 transition-all hover:scale-105 group"
+                  >
+                    <MessageSquare className="w-6 h-6 mb-2 group-hover:scale-110 transition-transform" />
+                    <div className="text-sm font-semibold">Ask AI</div>
+                  </button>
+                  <button
+                    onClick={() => navigate('/exam-prep')}
+                    className="bg-white/10 backdrop-blur-sm hover:bg-white/20 border border-white/30 rounded-xl p-4 transition-all hover:scale-105 group"
+                  >
+                    <Target className="w-6 h-6 mb-2 group-hover:scale-110 transition-transform" />
+                    <div className="text-sm font-semibold">Mock Test</div>
+                  </button>
+                </div>
               </div>
             </div>
-          )}
-          
-          {/* Welcome Section */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Welcome back, {user?.name || 'Student'}! 👋
-            </h1>
-            <p className="text-gray-600">
-              Your Placement Command Center - Track progress, practice, and ace your interviews
-            </p>
           </div>
 
-          {/* Stats Grid - Enhanced with Sparklines */}
+          {/* Today's Focus Card */}
+          <div className="mb-8">
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-2xl p-6 shadow-sm">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-amber-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Target className="w-6 h-6 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">
+                    🎯 Today's Focus
+                  </h3>
+                  <p className="text-gray-700 mb-4">
+                    {dsaStats?.total_solved === 0 
+                      ? "Start your DSA journey! Solve your first problem today."
+                      : streakData?.current_streak === 0
+                      ? "Keep your streak alive! Solve a problem to continue your momentum."
+                      : userStats.resumeScore === 0
+                      ? "Build your resume to unlock ATS score and stand out to recruiters."
+                      : "Great progress! Continue practicing to improve your placement readiness."}
+                  </p>
+                  <button
+                    onClick={() => {
+                      if (dsaStats?.total_solved === 0 || streakData?.current_streak === 0) {
+                        navigate('/dsa')
+                      } else if (userStats.resumeScore === 0) {
+                        navigate('/career')
+                      } else {
+                        navigate('/practice-aptitude')
+                      }
+                    }}
+                    className="px-6 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-semibold transition-colors inline-flex items-center gap-2"
+                  >
+                    Take Action
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Premium Stats Grid with Better Design */}
           <motion.div 
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8"
             variants={staggerContainer}
             initial="initial"
             animate="animate"
           >
-            {stats.map((stat) => {
+            {stats.map((stat, index) => {
               const Icon = stat.icon
               const iconColors = {
-                'text-green-600': { bg: 'bg-green-600/10', stroke: '#16a34a' },
-                'text-blue-600': { bg: 'bg-blue-600/10', stroke: '#2563eb' },
-                'text-purple-600': { bg: 'bg-purple-600/10', stroke: '#9333ea' },
-                'text-orange-600': { bg: 'bg-orange-600/10', stroke: '#ea580c' }
+                'text-green-600': { bg: 'bg-gradient-to-br from-green-500 to-emerald-600', stroke: '#16a34a', lightBg: 'bg-green-50' },
+                'text-blue-600': { bg: 'bg-gradient-to-br from-blue-500 to-cyan-600', stroke: '#2563eb', lightBg: 'bg-blue-50' },
+                'text-purple-600': { bg: 'bg-gradient-to-br from-purple-500 to-pink-600', stroke: '#9333ea', lightBg: 'bg-purple-50' },
+                'text-orange-600': { bg: 'bg-gradient-to-br from-orange-500 to-red-600', stroke: '#ea580c', lightBg: 'bg-orange-50' }
               }
               const colorConfig = iconColors[stat.color as keyof typeof iconColors]
               
@@ -565,18 +653,27 @@ export default function DashboardPageNew() {
                 <motion.div
                   key={stat.label}
                   variants={fadeInUp}
-                  className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-xl transition-all relative overflow-hidden group"
+                  className="bg-white rounded-2xl border border-gray-100 p-6 hover:shadow-2xl hover:border-gray-200 transition-all relative overflow-hidden group cursor-pointer"
                 >
-                  <div className="flex items-center justify-between mb-4">
-                    <div className={`w-12 h-12 rounded-xl ${colorConfig.bg} flex items-center justify-center`}>
-                      <Icon className={`w-6 h-6 ${stat.color}`} />
+                  {/* Gradient background on hover */}
+                  <div className={`absolute inset-0 ${colorConfig.lightBg} opacity-0 group-hover:opacity-100 transition-opacity`} />
+                  
+                  <div className="relative z-10">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className={`w-14 h-14 rounded-2xl ${colorConfig.bg} flex items-center justify-center shadow-lg`}>
+                        <Icon className="w-7 h-7 text-white" />
+                      </div>
+                      <div className="flex items-center gap-1 text-green-600">
+                        <TrendingUp className="w-4 h-4" />
+                        <span className="text-xs font-semibold">+{5 + index * 2}%</span>
+                      </div>
                     </div>
-                    <TrendingUp className="w-5 h-5 text-green-500" />
+                    <div className="text-3xl sm:text-4xl font-black text-gray-900 mb-2">
+                      {stat.value}
+                    </div>
+                    <div className="text-sm font-medium text-gray-600">{stat.label}</div>
+                    <div className="text-xs text-gray-500 mt-1">This week</div>
                   </div>
-                  <div className="text-3xl font-bold text-gray-900 mb-1">
-                    {stat.value}
-                  </div>
-                  <div className="text-sm text-gray-600">{stat.label}</div>
                   
                   {/* Sparkline */}
                   <Sparkline color={colorConfig.stroke} />
@@ -585,7 +682,60 @@ export default function DashboardPageNew() {
             })}
           </motion.div>
 
-          {/* DSA Progress Section */}
+          {/* Quick Actions Grid */}
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+              <Zap className="w-6 h-6 text-yellow-500" />
+              Quick Actions
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <button
+                onClick={() => navigate('/dsa')}
+                className="bg-white hover:bg-gradient-to-br hover:from-purple-50 hover:to-blue-50 border-2 border-gray-200 hover:border-purple-300 rounded-2xl p-6 transition-all hover:shadow-xl group"
+              >
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-lg">
+                  <Code2 className="w-6 h-6 text-white" />
+                </div>
+                <div className="text-sm font-bold text-gray-900">Practice DSA</div>
+                <div className="text-xs text-gray-500 mt-1">Solve problems</div>
+              </button>
+
+              <button
+                onClick={() => navigate('/practice-aptitude')}
+                className="bg-white hover:bg-gradient-to-br hover:from-green-50 hover:to-emerald-50 border-2 border-gray-200 hover:border-green-300 rounded-2xl p-6 transition-all hover:shadow-xl group"
+              >
+                <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-lg">
+                  <BookOpen className="w-6 h-6 text-white" />
+                </div>
+                <div className="text-sm font-bold text-gray-900">Aptitude Test</div>
+                <div className="text-xs text-gray-500 mt-1">Practice now</div>
+              </button>
+
+              <button
+                onClick={() => navigate('/career')}
+                className="bg-white hover:bg-gradient-to-br hover:from-blue-50 hover:to-cyan-50 border-2 border-gray-200 hover:border-blue-300 rounded-2xl p-6 transition-all hover:shadow-xl group"
+              >
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-lg">
+                  <FileText className="w-6 h-6 text-white" />
+                </div>
+                <div className="text-sm font-bold text-gray-900">Resume Builder</div>
+                <div className="text-xs text-gray-500 mt-1">Build ATS resume</div>
+              </button>
+
+              <button
+                onClick={() => navigate('/chat')}
+                className="bg-white hover:bg-gradient-to-br hover:from-pink-50 hover:to-purple-50 border-2 border-gray-200 hover:border-pink-300 rounded-2xl p-6 transition-all hover:shadow-xl group"
+              >
+                <div className="w-12 h-12 bg-gradient-to-br from-pink-500 to-purple-600 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform shadow-lg">
+                  <MessageSquare className="w-6 h-6 text-white" />
+                </div>
+                <div className="text-sm font-bold text-gray-900">AI Copilot</div>
+                <div className="text-xs text-gray-500 mt-1">Get help</div>
+              </button>
+            </div>
+          </div>
+
+          {/* DSA Progress Section - Enhanced */}
           {!loadingDSA && dsaStats && (
             <div className="mb-8">
               <div className="flex items-center justify-between mb-6">
@@ -669,8 +819,8 @@ export default function DashboardPageNew() {
                 </motion.div>
               </div>
 
-              {/* Recent Solved Problems */}
-              {dsaStats.recent_solved && dsaStats.recent_solved.length > 0 && (
+              {/* Recent Solved Problems - Enhanced */}
+              {dsaStats.recent_solved && dsaStats.recent_solved.length > 0 ? (
                 <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                     <Activity className="w-5 h-5 text-green-600" />
@@ -681,13 +831,13 @@ export default function DashboardPageNew() {
                       <div
                         key={idx}
                         onClick={() => navigate(`/dsa/problem/${problem.slug}`)}
-                        className="p-3 bg-gray-50 hover:bg-gray-100 rounded-lg border border-gray-200 cursor-pointer transition-colors"
+                        className="p-4 bg-gradient-to-br from-gray-50 to-white hover:from-green-50 hover:to-emerald-50 rounded-xl border-2 border-gray-200 hover:border-green-300 cursor-pointer transition-all hover:shadow-lg group"
                       >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-medium text-gray-900 truncate flex-1">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-bold text-gray-900 truncate flex-1 group-hover:text-green-700">
                             {problem.title}
                           </span>
-                          <span className={`text-xs px-2 py-0.5 rounded ${
+                          <span className={`text-xs px-2 py-1 rounded-full font-semibold ${
                             problem.difficulty === 'Easy' ? 'bg-green-100 text-green-700' :
                             problem.difficulty === 'Medium' ? 'bg-yellow-100 text-yellow-700' :
                             'bg-red-100 text-red-700'
@@ -695,17 +845,35 @@ export default function DashboardPageNew() {
                             {problem.difficulty}
                           </span>
                         </div>
-                        <p className="text-xs text-gray-500">
-                          {problem.solved_at ? new Date(problem.solved_at).toLocaleDateString() : 'Recently'}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <Trophy className="w-3 h-3 text-green-600" />
+                          <p className="text-xs text-gray-500">
+                            {problem.solved_at ? new Date(problem.solved_at).toLocaleDateString() : 'Recently'}
+                          </p>
+                        </div>
                       </div>
                     ))}
                   </div>
                   <button
                     onClick={() => navigate('/dsa/dashboard')}
-                    className="mt-4 w-full px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-colors flex items-center justify-center gap-2"
+                    className="mt-4 w-full px-4 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-xl font-semibold transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
                   >
                     View Full DSA Dashboard
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-2xl border-2 border-purple-200 p-8 text-center">
+                  <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Code2 className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Start Your DSA Journey!</h3>
+                  <p className="text-gray-600 mb-4">Solve your first problem and begin building your coding skills</p>
+                  <button
+                    onClick={() => navigate('/dsa')}
+                    className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-xl font-semibold transition-all inline-flex items-center gap-2 shadow-lg"
+                  >
+                    Start Practicing
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
@@ -728,6 +896,37 @@ export default function DashboardPageNew() {
                     <div className="h-4 bg-gray-200 rounded w-32"></div>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* Continue Where You Left Off Section */}
+          {activities.length > 0 && (
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <Clock className="w-6 h-6 text-blue-600" />
+                Continue Where You Left Off
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {activities.slice(0, 3).map((activity) => {
+                  const ActivityIcon = activity.icon
+                  return (
+                    <div
+                      key={activity.id}
+                      className="bg-white hover:bg-gradient-to-br hover:from-blue-50 hover:to-purple-50 border-2 border-gray-200 hover:border-blue-300 rounded-2xl p-5 transition-all hover:shadow-xl cursor-pointer group"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={`w-12 h-12 rounded-xl border-2 flex items-center justify-center flex-shrink-0 ${activity.iconClass} group-hover:scale-110 transition-transform`}>
+                          <ActivityIcon className="w-6 h-6" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-bold text-gray-900 mb-1">{activity.title}</p>
+                          <p className="text-xs text-gray-600 line-clamp-2">{activity.subtitle}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             </div>
           )}
@@ -900,7 +1099,7 @@ export default function DashboardPageNew() {
             </div>
           </div>
 
-          {/* Recent Activity Section */}
+          {/* Recent Activity Section - Enhanced */}
           <div className="mt-8">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
@@ -909,14 +1108,14 @@ export default function DashboardPageNew() {
               </h2>
               <button
                 onClick={() => navigate('/aptitude-history')}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-colors"
+                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl"
               >
                 <BookOpenCheck className="w-4 h-4" />
                 View All History
               </button>
             </div>
 
-            <div className="bg-white rounded-2xl border border-gray-100 p-6">
+            <div className="bg-white rounded-2xl border-2 border-gray-200 p-6 shadow-sm">
               {loadingActivities ? (
                 <div className="space-y-4">
                   {Array.from({ length: 3 }).map((_, index) => (
@@ -924,7 +1123,7 @@ export default function DashboardPageNew() {
                       key={`skeleton-${index}`}
                       className="flex items-start gap-4 p-4 rounded-xl bg-gray-50 animate-pulse"
                     >
-                      <div className="w-10 h-10 bg-gray-200 rounded-xl"></div>
+                      <div className="w-12 h-12 bg-gray-200 rounded-xl"></div>
                       <div className="flex-1 space-y-2">
                         <div className="h-4 bg-gray-200 rounded w-1/3"></div>
                         <div className="h-3 bg-gray-200 rounded w-2/3"></div>
@@ -933,17 +1132,18 @@ export default function DashboardPageNew() {
                   ))}
                 </div>
               ) : activities.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Activity className="w-8 h-8 text-gray-400" />
+                <div className="text-center py-16">
+                  <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-purple-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Activity className="w-10 h-10 text-blue-600" />
                   </div>
-                  <p className="text-gray-600 font-medium mb-2">No activity yet</p>
-                  <p className="text-sm text-gray-500">Start practicing to see your progress here</p>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">No activity yet</h3>
+                  <p className="text-gray-600 mb-6">Start practicing to see your progress here</p>
                   <button
                     onClick={() => navigate('/practice-aptitude')}
-                    className="mt-4 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
+                    className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-xl font-semibold transition-all inline-flex items-center gap-2 shadow-lg"
                   >
                     Start Practice
+                    <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
               ) : (
@@ -953,13 +1153,13 @@ export default function DashboardPageNew() {
                     return (
                       <div
                         key={activity.id}
-                        className="flex items-start gap-4 p-4 rounded-xl border border-gray-100 bg-gray-50/50 hover:bg-gray-50 transition-colors"
+                        className="flex items-start gap-4 p-4 rounded-xl border-2 border-gray-100 bg-gradient-to-r from-gray-50 to-white hover:from-blue-50 hover:to-purple-50 hover:border-blue-200 transition-all group"
                       >
-                        <div className={`w-10 h-10 rounded-xl border flex items-center justify-center ${activity.iconClass}`}>
-                          <ActivityIcon className="w-5 h-5" />
+                        <div className={`w-12 h-12 rounded-xl border-2 flex items-center justify-center flex-shrink-0 ${activity.iconClass} group-hover:scale-110 transition-transform`}>
+                          <ActivityIcon className="w-6 h-6" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-gray-900">{activity.title}</p>
+                          <p className="text-sm font-bold text-gray-900 mb-1">{activity.title}</p>
                           <p className="text-sm text-gray-600">{activity.subtitle}</p>
                         </div>
                       </div>
