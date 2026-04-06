@@ -44,8 +44,8 @@ export const PRICING_PLANS: PricingPlan[] = [
     icon: Zap,
     color: 'text-blue-600',
     price: {
-      monthly: 259,
-      yearly: 2599
+      monthly: 249,
+      yearly: 2490
     },
     popular: false,
     features: [
