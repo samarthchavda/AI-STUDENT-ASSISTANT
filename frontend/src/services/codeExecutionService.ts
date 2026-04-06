@@ -39,8 +39,6 @@ interface Judge0Response {
   memory: number | null;
 }
 
-const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
 async function executeCode(code: string, language: keyof typeof LANGUAGE_IDS, input: string = ''): Promise<Judge0Response> {
   console.log(`🚀 [CODE EXECUTION] Starting execution - Language: ${language}`);
   
