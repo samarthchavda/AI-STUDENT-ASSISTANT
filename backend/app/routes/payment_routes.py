@@ -28,15 +28,15 @@ if not RAZORPAY_KEY_ID or not RAZORPAY_KEY_SECRET:
 
 razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
 
-# Pricing configuration (matches frontend PricingPage.tsx)
+# Pricing configuration (matches frontend pricing.ts)
 PRICING_CONFIG = {
     'free': {
         'monthly': 0,
         'yearly': 0
     },
     'basic': {
-        'monthly': 259,
-        'yearly': 2599
+        'monthly': 249,
+        'yearly': 2490
     },
     'pro': {
         'monthly': 599,
