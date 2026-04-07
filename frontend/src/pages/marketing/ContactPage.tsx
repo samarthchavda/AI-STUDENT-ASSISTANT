@@ -78,16 +78,16 @@ export default function ContactPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-slate-50">
       <Header />
 
       {/* Hero Section */}
-      <section className="pt-32 pb-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      <section className="pt-32 pb-12 px-4 sm:px-6 lg:px-8 bg-white border-b border-slate-200">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
+          <h1 className="text-4xl sm:text-5xl font-bold text-slate-900 mb-4">
             Get in Touch
           </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <p className="text-lg text-slate-600 max-w-2xl mx-auto">
             Have questions about CodeCampus AI? We're here to help. Send us a message and we'll respond as soon as possible.
           </p>
         </div>
@@ -100,44 +100,44 @@ export default function ContactPage() {
             {/* Contact Info */}
             <div className="lg:col-span-1 space-y-6">
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Contact Information</h2>
-                <p className="text-gray-600 mb-8">
+                <h2 className="text-2xl font-bold text-slate-900 mb-3">Contact Information</h2>
+                <p className="text-slate-600 text-sm leading-relaxed">
                   Reach out to us through any of these channels. We're always happy to hear from you!
                 </p>
               </div>
 
-              <div className="space-y-4">
-                <div className="flex items-start gap-4 p-4 bg-blue-50 rounded-xl">
-                  <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Mail className="w-5 h-5 text-white" />
+              <div className="space-y-3">
+                <div className="flex items-start gap-4 p-4 bg-white rounded-xl border border-slate-200 hover:border-slate-300 transition-colors">
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Mail className="w-5 h-5 text-blue-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900 mb-1">Email</h3>
-                    <a href="mailto:support@codecampus.ai" className="text-blue-600 hover:underline">
+                    <h3 className="font-semibold text-slate-900 text-sm mb-1">Email</h3>
+                    <a href="mailto:support@codecampus.ai" className="text-sm text-blue-600 hover:text-blue-700 transition-colors">
                       support@codecampus.ai
                     </a>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-4 p-4 bg-green-50 rounded-xl">
-                  <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Phone className="w-5 h-5 text-white" />
+                <div className="flex items-start gap-4 p-4 bg-white rounded-xl border border-slate-200 hover:border-slate-300 transition-colors">
+                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Phone className="w-5 h-5 text-green-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900 mb-1">Phone</h3>
-                    <a href="tel:+911234567890" className="text-green-600 hover:underline">
+                    <h3 className="font-semibold text-slate-900 text-sm mb-1">Phone</h3>
+                    <a href="tel:+911234567890" className="text-sm text-green-600 hover:text-green-700 transition-colors">
                       +91 123 456 7890
                     </a>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-4 p-4 bg-purple-50 rounded-xl">
-                  <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <MapPin className="w-5 h-5 text-white" />
+                <div className="flex items-start gap-4 p-4 bg-white rounded-xl border border-slate-200 hover:border-slate-300 transition-colors">
+                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <MapPin className="w-5 h-5 text-purple-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900 mb-1">Location</h3>
-                    <p className="text-gray-600">
+                    <h3 className="font-semibold text-slate-900 text-sm mb-1">Location</h3>
+                    <p className="text-sm text-slate-600">
                       Bangalore, Karnataka<br />
                       India
                     </p>
@@ -145,9 +145,9 @@ export default function ContactPage() {
                 </div>
               </div>
 
-              <div className="mt-8 p-6 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl text-white">
-                <h3 className="font-bold text-lg mb-2">Quick Response</h3>
-                <p className="text-blue-100 text-sm">
+              <div className="mt-6 p-5 bg-slate-100 rounded-xl border-l-4 border-blue-600">
+                <h3 className="font-bold text-slate-900 text-sm mb-2">Quick Response</h3>
+                <p className="text-slate-600 text-sm leading-relaxed">
                   We typically respond within 24 hours during business days. For urgent matters, please call us directly.
                 </p>
               </div>
@@ -155,15 +155,15 @@ export default function ContactPage() {
 
             {/* Contact Form */}
             <div className="lg:col-span-2">
-              <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Send us a Message</h2>
+              <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm">
+                <h2 className="text-2xl font-bold text-slate-900 mb-6">Send us a Message</h2>
 
                 {/* Success Message */}
                 {success && (
                   <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
                     <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="font-semibold text-green-900">Message Sent Successfully!</h4>
+                      <h4 className="font-semibold text-green-900 text-sm">Message Sent Successfully!</h4>
                       <p className="text-sm text-green-700 mt-1">
                         Thank you for contacting us. We'll get back to you soon.
                       </p>
@@ -176,16 +176,16 @@ export default function ContactPage() {
                   <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
                     <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="font-semibold text-red-900">Error</h4>
+                      <h4 className="font-semibold text-red-900 text-sm">Error</h4>
                       <p className="text-sm text-red-700 mt-1">{error}</p>
                     </div>
                   </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div>
-                      <label htmlFor="full_name" className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label htmlFor="full_name" className="block text-sm font-medium text-slate-700 mb-2">
                         Full Name <span className="text-red-500">*</span>
                       </label>
                       <input
@@ -195,13 +195,13 @@ export default function ContactPage() {
                         value={formData.full_name}
                         onChange={handleChange}
                         required
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all outline-none"
                         placeholder="John Doe"
                       />
                     </div>
 
                     <div>
-                      <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
                         Email Address <span className="text-red-500">*</span>
                       </label>
                       <input
@@ -211,16 +211,16 @@ export default function ContactPage() {
                         value={formData.email}
                         onChange={handleChange}
                         required
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all outline-none"
                         placeholder="john@example.com"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div>
-                      <label htmlFor="phone" className="block text-sm font-semibold text-gray-700 mb-2">
-                        Phone Number <span className="text-gray-400 text-xs">(Optional)</span>
+                      <label htmlFor="phone" className="block text-sm font-medium text-slate-700 mb-2">
+                        Phone Number <span className="text-slate-400 text-xs">(Optional)</span>
                       </label>
                       <input
                         type="tel"
@@ -228,13 +228,13 @@ export default function ContactPage() {
                         name="phone"
                         value={formData.phone}
                         onChange={handleChange}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all outline-none"
                         placeholder="+91 98765 43210"
                       />
                     </div>
 
                     <div>
-                      <label htmlFor="subject" className="block text-sm font-semibold text-gray-700 mb-2">
+                      <label htmlFor="subject" className="block text-sm font-medium text-slate-700 mb-2">
                         Subject <span className="text-red-500">*</span>
                       </label>
                       <input
@@ -244,14 +244,14 @@ export default function ContactPage() {
                         value={formData.subject}
                         onChange={handleChange}
                         required
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all outline-none"
                         placeholder="How can we help?"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label htmlFor="message" className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label htmlFor="message" className="block text-sm font-medium text-slate-700 mb-2">
                       Message <span className="text-red-500">*</span>
                     </label>
                     <textarea
@@ -261,7 +261,7 @@ export default function ContactPage() {
                       onChange={handleChange}
                       required
                       rows={6}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition resize-none"
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 transition-all outline-none resize-none"
                       placeholder="Tell us more about your inquiry..."
                     />
                   </div>
@@ -269,7 +269,7 @@ export default function ContactPage() {
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="w-full sm:w-auto px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-lg hover:shadow-lg hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
                   >
                     {loading ? (
                       <>
@@ -278,7 +278,7 @@ export default function ContactPage() {
                       </>
                     ) : (
                       <>
-                        <Send className="w-5 h-5" />
+                        <Send className="w-4 h-4" />
                         Send Message
                       </>
                     )}
@@ -291,48 +291,48 @@ export default function ContactPage() {
       </section>
 
       {/* FAQ Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gray-50">
+      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white border-t border-slate-200">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h2>
-            <p className="text-gray-600">
+            <h2 className="text-3xl font-bold text-slate-900 mb-3">Frequently Asked Questions</h2>
+            <p className="text-slate-600">
               Quick answers to common questions. Can't find what you're looking for? Contact us!
             </p>
           </div>
 
-          <div className="space-y-4">
-            <details className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-              <summary className="font-semibold text-gray-900 cursor-pointer">
+          <div className="space-y-3">
+            <details className="bg-white rounded-lg p-5 border border-slate-200 hover:border-slate-300 transition-colors group">
+              <summary className="font-semibold text-slate-900 cursor-pointer text-sm">
                 How quickly will I receive a response?
               </summary>
-              <p className="mt-3 text-gray-600">
+              <p className="mt-3 text-sm text-slate-600 leading-relaxed">
                 We typically respond within 24 hours during business days (Monday-Friday). For urgent matters, please call us directly.
               </p>
             </details>
 
-            <details className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-              <summary className="font-semibold text-gray-900 cursor-pointer">
+            <details className="bg-white rounded-lg p-5 border border-slate-200 hover:border-slate-300 transition-colors group">
+              <summary className="font-semibold text-slate-900 cursor-pointer text-sm">
                 What information should I include in my message?
               </summary>
-              <p className="mt-3 text-gray-600">
+              <p className="mt-3 text-sm text-slate-600 leading-relaxed">
                 Please provide as much detail as possible about your inquiry, including your account email if you're an existing user, and any relevant screenshots or error messages.
               </p>
             </details>
 
-            <details className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-              <summary className="font-semibold text-gray-900 cursor-pointer">
+            <details className="bg-white rounded-lg p-5 border border-slate-200 hover:border-slate-300 transition-colors group">
+              <summary className="font-semibold text-slate-900 cursor-pointer text-sm">
                 Do you offer phone support?
               </summary>
-              <p className="mt-3 text-gray-600">
+              <p className="mt-3 text-sm text-slate-600 leading-relaxed">
                 Yes! You can reach us at +91 123 456 7890 during business hours (10 AM - 6 PM IST, Monday-Friday).
               </p>
             </details>
 
-            <details className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-              <summary className="font-semibold text-gray-900 cursor-pointer">
+            <details className="bg-white rounded-lg p-5 border border-slate-200 hover:border-slate-300 transition-colors group">
+              <summary className="font-semibold text-slate-900 cursor-pointer text-sm">
                 Can I schedule a demo or consultation?
               </summary>
-              <p className="mt-3 text-gray-600">
+              <p className="mt-3 text-sm text-slate-600 leading-relaxed">
                 Absolutely! Mention "Demo Request" in your subject line, and we'll arrange a convenient time to walk you through the platform.
               </p>
             </details>
@@ -341,17 +341,17 @@ export default function ContactPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-600 to-purple-600">
-        <div className="max-w-4xl mx-auto text-center text-white">
-          <h2 className="text-3xl font-bold mb-4">
+      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-slate-50 border-t border-slate-200">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl font-bold text-slate-900 mb-3">
             Ready to Start Your Journey?
           </h2>
-          <p className="text-xl text-blue-100 mb-8">
+          <p className="text-lg text-slate-600 mb-8">
             Join thousands of students preparing for their dream placements with CodeCampus AI.
           </p>
           <Link
             to="/signup"
-            className="inline-block px-8 py-4 bg-white text-blue-600 rounded-xl font-bold hover:bg-blue-50 transition-colors"
+            className="inline-block px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-lg hover:shadow-lg hover:scale-[1.02] transition-all"
           >
             Get Started Free
           </Link>
