@@ -633,3 +633,27 @@ class RevenueAnalytics(Base):
     arr = Column(Integer, default=0)  # Annual Recurring Revenue
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+# ============================================================================
+# CONTACT MESSAGES
+# ============================================================================
+
+class ContactMessageStatus(str, enum.Enum):
+    NEW = "new"
+    READ = "read"
+    ARCHIVED = "archived"
+
+class ContactMessage(Base):
+    """Store contact form submissions from public users"""
+    __tablename__ = "contact_messages"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    full_name = Column(String, nullable=False)
+    email = Column(String, nullable=False, index=True)
+    phone = Column(String, nullable=True)
+    subject = Column(String, nullable=False)
+    message = Column(Text, nullable=False)
+    status = Column(Enum(ContactMessageStatus), default=ContactMessageStatus.NEW, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, index=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

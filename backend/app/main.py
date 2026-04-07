@@ -24,7 +24,7 @@ from app.routes import (
     payment_routes, admin_routes, company_routes, company_prep_routes, 
     public_routes, aptitude_routes, dsa_ai_routes, dsa_tracking_routes, 
     dsa_analytics_routes, daily_challenge_routes, company_sheet_routes,
-    subscription_routes, notification_routes, code_execution_routes
+    subscription_routes, notification_routes, code_execution_routes, contact_routes
 )
 
 logger = logging.getLogger(__name__)
@@ -187,6 +187,7 @@ app.include_router(daily_challenge_routes.router, prefix="/api/daily-challenge",
 app.include_router(company_sheet_routes.router, prefix="/api/company-sheets", tags=["Company Sheets"])  # Company Preparation Sheets
 app.include_router(subscription_routes.router, prefix="/api/subscription", tags=["Subscription"])  # Premium/Subscription
 app.include_router(notification_routes.router, prefix="/api/notifications", tags=["Notifications"])  # User Notifications
+app.include_router(contact_routes.router, prefix="/api/contact", tags=["Contact"])  # Contact Form
 
 # Import admin enhancements routes
 from app.routes import admin_enhancements_routes

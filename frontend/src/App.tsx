@@ -18,6 +18,7 @@ import ResumeTemplatesPage from './pages/admin/ResumeTemplatesPage'
 import UserResumesPage from './pages/admin/UserResumesPage'
 import AIResumeMonitorPage from './pages/admin/AIResumeMonitorPage'
 import AISettingsPage from './pages/admin/AISettingsPage'
+import ContactMessagesPage from './pages/admin/ContactMessagesPage'
 import CareerPage from './pages/resume/CareerPage'
 import ResumeTemplateGalleryPage from './pages/resume/ResumeTemplateGalleryPage'
 import CompanyPrepPage from './pages/aptitude/CompanyPrepPage'
@@ -26,6 +27,7 @@ import DashboardPage from './pages/dashboard/DashboardPage'
 import AdminPage from './pages/admin/AdminPage'
 import ServicesPage from './pages/marketing/ServicesPage'
 import AboutPage from './pages/marketing/AboutPage'
+import ContactPage from './pages/marketing/ContactPage'
 import ProfilePage from './pages/profile/ProfilePage'
 import DSAQuestionListPage from './pages/dsa/DSAQuestionListPage'
 import DSAProblemPage from './pages/dsa/DSAProblemPage'
@@ -48,6 +50,7 @@ function AppRoutes() {
       <Route path="/signup" element={<AuthPage />} />
       <Route path="/services" element={<ServicesPage />} />
       <Route path="/about" element={<AboutPage />} />
+      <Route path="/contact" element={<ContactPage />} />
       <Route path="/pricing" element={<PricingPage />} />
       <Route path="/career/resume-templates" element={<ResumeTemplateGalleryPage />} />
       
@@ -89,6 +92,7 @@ function AppRoutes() {
       <Route path="/admin/dsa-analytics" element={<ProtectedRoute requireAdmin><DSAAnalyticsPage /></ProtectedRoute>} />
       <Route path="/admin/ai-resume-monitor" element={<ProtectedRoute requireAdmin><AIResumeMonitorPage /></ProtectedRoute>} />
       <Route path="/admin/ai-settings" element={<ProtectedRoute requireAdmin><AISettingsPage /></ProtectedRoute>} />
+      <Route path="/admin/contact-messages" element={<ProtectedRoute requireAdmin><ContactMessagesPage /></ProtectedRoute>} />
     </Routes>
   )
 }

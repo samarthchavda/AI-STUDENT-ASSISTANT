@@ -1,208 +1,212 @@
-import { Target, Users, Award, Zap, Heart, TrendingUp } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Brain, Code2, FileText, Target, Users, Award, Zap, TrendingUp, MessageSquare, BookOpen } from 'lucide-react'
 import Header from '../../components/Header'
+import Footer from '../../components/Footer'
 
 export default function AboutPage() {
+  const features = [
+    {
+      icon: MessageSquare,
+      title: 'AI Career Copilot',
+      description: 'Get instant answers to coding questions, placement theory, and career guidance 24/7 with our advanced AI assistant.',
+      color: 'from-blue-500 to-cyan-500'
+    },
+    {
+      icon: Code2,
+      title: 'DSA Practice',
+      description: 'Master Data Structures & Algorithms with curated problems, real-time code execution, and AI-powered hints.',
+      color: 'from-purple-500 to-pink-500'
+    },
+    {
+      icon: Target,
+      title: 'Aptitude Preparation',
+      description: 'Practice with company-specific aptitude tests from TCS, Infosys, Amazon, and more with detailed analytics.',
+      color: 'from-green-500 to-emerald-500'
+    },
+    {
+      icon: FileText,
+      title: 'Resume Builder & ATS Analysis',
+      description: 'Create ATS-optimized resumes with 8+ professional templates and get real-time scoring to beat applicant tracking systems.',
+      color: 'from-orange-500 to-red-500'
+    }
+  ]
+
   const stats = [
-    { number: '5000+', label: 'Students Placed', icon: Users },
-    { number: '200+', label: 'Partner Companies', icon: Award },
-    { number: '90%', label: 'Success Rate', icon: TrendingUp },
-    { number: '24/7', label: 'AI Support', icon: Zap }
+    { value: '2,500+', label: 'Students Placed' },
+    { value: '95%', label: 'Success Rate' },
+    { value: '8.5 LPA', label: 'Avg Package' },
+    { value: '24/7', label: 'AI Support' }
   ]
 
   const values = [
     {
-      icon: Target,
-      title: 'Mission-Driven',
-      description: 'Our mission is to make quality placement preparation accessible to every engineering student, regardless of their background or location.'
-    },
-    {
-      icon: Heart,
-      title: 'Student-First',
-      description: 'We put students at the center of everything we do. Every feature is designed with your success in mind.'
+      icon: Users,
+      title: 'Student-First Approach',
+      description: 'Every feature is designed with student success in mind, making placement preparation accessible and effective.'
     },
     {
       icon: Zap,
-      title: 'Innovation',
-      description: 'We leverage cutting-edge AI technology to provide personalized, effective learning experiences.'
-    }
-  ]
-
-  const team = [
-    {
-      name: 'AI-Powered Platform',
-      role: 'Technology',
-      description: 'Built with Google Gemini AI for fast, intelligent responses'
+      title: 'AI-Powered Learning',
+      description: 'Leverage cutting-edge AI technology to get personalized guidance and instant feedback on your preparation.'
     },
     {
-      name: 'Expert Content',
-      role: 'Curriculum',
-      description: 'Curated by industry professionals and placement experts'
+      icon: TrendingUp,
+      title: 'Continuous Improvement',
+      description: 'We constantly update our platform with new features, questions, and resources based on latest placement trends.'
     },
     {
-      name: 'Student Community',
-      role: 'Support',
-      description: '5000+ students helping each other succeed'
+      icon: Award,
+      title: 'Quality Content',
+      description: 'All our content is curated by industry experts and verified to match real interview patterns.'
     }
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-white">
       <Header />
 
       {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8">
-        <div className="text-center mb-16">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
-            About
-            <span className="gradient-text"> CodeCampus AI</span>
+      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-50 via-white to-purple-50">
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 rounded-full mb-6">
+            <Brain className="w-5 h-5 text-blue-600" />
+            <span className="text-sm font-semibold text-blue-600">About CodeCampus AI</span>
+          </div>
+          
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
+            Your AI-Powered Partner for
+            <span className="block text-blue-600 mt-2">Placement Success</span>
           </h1>
-          <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            We're on a mission to revolutionize placement preparation for engineering students 
-            through AI-powered personalized learning.
+          
+          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+            CodeCampus AI is a comprehensive placement preparation platform that combines artificial intelligence 
+            with proven learning methodologies to help engineering students land their dream jobs.
           </p>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-20">
-          {stats.map((stat, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-2xl p-6 text-center shadow-lg hover:shadow-xl transition-shadow"
-            >
-              <stat.icon className="w-8 h-8 mx-auto mb-3 text-blue-600" />
-              <div className="text-4xl font-bold gradient-text mb-2">{stat.number}</div>
-              <div className="text-gray-600 font-medium">{stat.label}</div>
-            </div>
-          ))}
         </div>
       </section>
 
-      {/* Our Story */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-12 items-center">
-          <div>
-            <h2 className="text-3xl sm:text-4xl font-bold mb-6">Our Story</h2>
-            <div className="space-y-4 text-gray-600 text-base sm:text-lg leading-relaxed">
-              <p>
-                CodeCampus AI was born from a simple observation: engineering students 
-                needed better, more personalized tools to prepare for campus placements.
-              </p>
-              <p>
-                Traditional coaching institutes were expensive and one-size-fits-all. 
-                Online resources were scattered and overwhelming. Students needed something 
-                that understood their unique needs and adapted to their learning pace.
-              </p>
-              <p>
-                That's why we built CodeCampus AI - an intelligent platform that combines 
-                the power of artificial intelligence with proven placement preparation 
-                strategies to help every student achieve their career goals.
-              </p>
-            </div>
+      {/* Stats Section */}
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+            {stats.map((stat, index) => (
+              <div key={index} className="text-center">
+                <div className="text-4xl font-bold text-blue-600 mb-2">{stat.value}</div>
+                <div className="text-sm text-gray-600 font-medium">{stat.label}</div>
+              </div>
+            ))}
           </div>
+        </div>
+      </section>
+
+      {/* Mission Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Our Mission</h2>
+            <p className="text-xl text-gray-600">
+              To democratize placement preparation by making high-quality, AI-powered learning resources 
+              accessible to every engineering student, regardless of their background or location.
+            </p>
+          </div>
+
           <div className="bg-gradient-to-br from-blue-600 to-purple-600 rounded-3xl p-8 sm:p-12 text-white">
-            <h3 className="text-2xl sm:text-3xl font-bold mb-6">Why Choose Us?</h3>
-            <ul className="space-y-4">
-              <li className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                  ✓
-                </div>
-                <span>Personalized AI-powered learning paths</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                  ✓
-                </div>
-                <span>24/7 availability - learn at your own pace</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                  ✓
-                </div>
-                <span>Multi-language support for Indian students</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                  ✓
-                </div>
-                <span>Affordable pricing - accessible to all</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
-                  ✓
-                </div>
-                <span>Proven track record with 5000+ placements</span>
-              </li>
-            </ul>
+            <h3 className="text-2xl font-bold mb-4">Why We Built CodeCampus AI</h3>
+            <p className="text-lg text-blue-100 mb-6">
+              We noticed that many talented students struggle with placement preparation due to lack of 
+              personalized guidance, expensive coaching, and scattered resources. CodeCampus AI was born 
+              from the vision to solve these problems using artificial intelligence.
+            </p>
+            <p className="text-lg text-blue-100">
+              Our platform brings together everything a student needs - from AI-powered doubt solving to 
+              company-specific preparation - all in one place, making the journey from college to career 
+              smoother and more successful.
+            </p>
           </div>
         </div>
       </section>
 
-      {/* Our Values */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">Our Values</h2>
-          <p className="text-lg sm:text-xl text-gray-600">The principles that guide everything we do</p>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
-          {values.map((value, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-shadow"
-            >
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center mb-6">
-                <value.icon className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-2xl font-bold mb-4">{value.title}</h3>
-              <p className="text-gray-600 leading-relaxed">{value.description}</p>
-            </div>
-          ))}
+      {/* Features Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">What We Offer</h2>
+            <p className="text-xl text-gray-600">
+              Comprehensive tools and resources for every aspect of placement preparation
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {features.map((feature, index) => {
+              const Icon = feature.icon
+              return (
+                <div key={index} className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-xl transition-shadow">
+                  <div className={`w-14 h-14 bg-gradient-to-br ${feature.color} rounded-xl flex items-center justify-center mb-6`}>
+                    <Icon className="w-7 h-7 text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h3>
+                  <p className="text-gray-600 leading-relaxed">{feature.description}</p>
+                </div>
+              )
+            })}
+          </div>
         </div>
       </section>
 
-      {/* Team Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">Powered By</h2>
-          <p className="text-lg sm:text-xl text-gray-600">The technology and community behind CodeCampus AI</p>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
-          {team.map((member, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-2xl p-8 text-center shadow-lg hover:shadow-xl transition-shadow"
-            >
-              <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full mx-auto mb-6 flex items-center justify-center">
-                <span className="text-3xl font-bold gradient-text">
-                  {member.name.charAt(0)}
-                </span>
-              </div>
-              <h3 className="text-xl font-bold mb-2">{member.name}</h3>
-              <p className="text-blue-600 font-medium mb-3">{member.role}</p>
-              <p className="text-gray-600">{member.description}</p>
-            </div>
-          ))}
+      {/* Values Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Our Values</h2>
+            <p className="text-xl text-gray-600">
+              The principles that guide everything we do
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {values.map((value, index) => {
+              const Icon = value.icon
+              return (
+                <div key={index} className="text-center">
+                  <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Icon className="w-8 h-8 text-blue-600" />
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-900 mb-2">{value.title}</h3>
+                  <p className="text-sm text-gray-600">{value.description}</p>
+                </div>
+              )
+            })}
+          </div>
         </div>
       </section>
 
-      {/* Contact CTA */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-3xl p-12 text-center text-white">
-          <h2 className="text-4xl font-bold mb-4">Have Questions?</h2>
-          <p className="text-xl mb-8 opacity-90">
-            We're here to help you succeed. Reach out to us anytime!
+      {/* CTA Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-600 to-purple-600">
+        <div className="max-w-4xl mx-auto text-center text-white">
+          <h2 className="text-3xl sm:text-4xl font-bold mb-6">
+            Ready to Start Your Placement Journey?
+          </h2>
+          <p className="text-xl text-blue-100 mb-8">
+            Join thousands of students who are already using CodeCampus AI to prepare for their dream jobs.
           </p>
-          <div className="flex gap-4 justify-center flex-wrap">
-            <a href="mailto:support@codecampus.ai" className="bg-white text-blue-600 px-8 py-4 rounded-xl font-semibold hover:bg-gray-100 transition-colors">
-              Contact Support
-            </a>
-            <a href="/chat" className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-xl font-semibold hover:bg-white/10 transition-colors">
-              Chat with AI
-            </a>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              to="/signup"
+              className="px-8 py-4 bg-white text-blue-600 rounded-xl font-bold hover:bg-blue-50 transition-colors"
+            >
+              Get Started Free
+            </Link>
+            <Link
+              to="/contact"
+              className="px-8 py-4 bg-white/10 backdrop-blur-sm border-2 border-white text-white rounded-xl font-bold hover:bg-white/20 transition-colors"
+            >
+              Contact Us
+            </Link>
           </div>
         </div>
       </section>
+
+      <Footer />
     </div>
   )
 }

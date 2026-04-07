@@ -54,6 +54,9 @@ export default function Header() {
               <Link to="/about" className="rounded-full px-4 py-2 text-sm font-semibold text-stone-700 transition hover:bg-stone-100 hover:text-stone-900">
                 About
               </Link>
+              <Link to="/contact" className="rounded-full px-4 py-2 text-sm font-semibold text-stone-700 transition hover:bg-stone-100 hover:text-stone-900">
+                Contact
+              </Link>
               <Link to="/pricing" className="rounded-full px-4 py-2 text-sm font-semibold text-stone-700 transition hover:bg-stone-100 hover:text-stone-900">
                 Pricing
               </Link>
@@ -151,6 +154,13 @@ export default function Header() {
                 onClick={() => setMobileMenuOpen(false)}
               >
                 About
+              </Link>
+              <Link 
+                to="/contact" 
+                className="block px-4 py-3 text-sm font-semibold text-stone-700 hover:bg-stone-100 rounded-lg transition"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Contact
               </Link>
               <Link 
                 to="/pricing" 

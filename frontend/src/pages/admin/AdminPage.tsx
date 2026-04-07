@@ -721,6 +721,17 @@ const AdminPage = () => {
                   <span className="text-sm">AI Settings</span>
                 </button>
                 
+                <button
+                  onClick={() => {
+                    handleNavigateToPage('/admin/contact-messages')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+                >
+                  <MessageSquare className="w-5 h-5" />
+                  <span className="text-sm">Contact Messages</span>
+                </button>
+                
                 {/* Analytics Section */}
                 <div className="my-3 border-t border-gray-200"></div>
                 <p className="px-4 text-xs font-semibold text-gray-400 uppercase mb-2">Analytics</p>
@@ -830,6 +841,14 @@ const AdminPage = () => {
             >
               <Settings className="w-5 h-5" />
               <span className="text-sm">AI Settings</span>
+            </button>
+            
+            <button
+              onClick={() => handleNavigateToPage('/admin/contact-messages')}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+            >
+              <MessageSquare className="w-5 h-5" />
+              <span className="text-sm">Contact Messages</span>
             </button>
             
             {/* Analytics Section */}
