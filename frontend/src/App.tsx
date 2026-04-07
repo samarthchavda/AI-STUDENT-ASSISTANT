@@ -52,6 +52,7 @@ function AppRoutes() {
       <Route path="/about" element={<AboutPage />} />
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/pricing" element={<PricingPage />} />
+      <Route path="/copilot" element={<ChatPage />} />
       <Route path="/career/resume-templates" element={<ResumeTemplateGalleryPage />} />
       
       {/* Protected Routes - Require Login */}

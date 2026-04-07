@@ -10,7 +10,7 @@ import remarkGfm from 'remark-gfm'
 import { motion, AnimatePresence } from 'framer-motion'
 import 'highlight.js/styles/github-dark.css'
 
-const GUEST_CHAT_LIMIT = 10
+const GUEST_CHAT_LIMIT = 3
 const GUEST_CHAT_USAGE_KEY = 'guest_chat_usage'
 
 const quickInputActions = [
@@ -29,7 +29,9 @@ export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
-      content: '### AI Coding Assistant\n\nHello! I\'m your engineering mentor. Ask me anything about:\n\n• Code debugging & optimization\n• DSA problems & solutions\n• Interview preparation\n• Career roadmaps\n• Resume reviews\n\nWhat can I help you with today?'
+      content: isAuthenticated 
+        ? '### AI Coding Assistant\n\nHello! I\'m your engineering mentor. Ask me anything about:\n\n• Code debugging & optimization\n• DSA problems & solutions\n• Interview preparation\n• Career roadmaps\n• Resume reviews\n\nWhat can I help you with today?'
+        : '### AI Coding Assistant - Demo Mode\n\nWelcome! Try me out with **3 free questions** - no login required.\n\nI can help you with:\n\n• Code debugging & optimization\n• DSA problems & solutions\n• Interview preparation\n• Career roadmaps\n• Resume reviews\n\n**Sign up for unlimited access!**'
     }
   ])
   const [input, setInput] = useState('')
@@ -87,9 +89,9 @@ export default function ChatPage() {
 
   const appendGuestLimitMessage = () => {
     setMessages((prev) => {
-      const lockMessage = 'You have used all 10 free guest chats. Please Sign Up or Login to continue chatting.'
+      const lockMessage = '🔒 **Demo Limit Reached**\n\nYou\'ve used all 3 free demo messages. Sign up or login to continue chatting with unlimited access!\n\n**Why sign up?**\n• Unlimited AI conversations\n• Save your chat history\n• Access all premium features\n• Track your progress\n\n[Sign Up Free](/signup) or [Login](/login)'
       const lastMessage = prev[prev.length - 1]
-      if (lastMessage?.role === 'assistant' && lastMessage.content === lockMessage) {
+      if (lastMessage?.role === 'assistant' && lastMessage.content.includes('Demo Limit Reached')) {
         return prev
       }
       return [...prev, { role: 'assistant', content: lockMessage, timestamp: new Date().toISOString() }]
@@ -575,19 +577,20 @@ export default function ChatPage() {
         <div className="fixed bottom-0 left-0 right-0 bg-transparent px-3 sm:px-4 py-4 sm:py-6">
           <div className="mx-auto w-full max-w-5xl">
             {guestLimitReached && (
-              <div className="mb-4 rounded-xl border border-violet-200 bg-violet-50 p-4 text-violet-800">
-                <div className="text-sm font-semibold">Free chat limit reached</div>
-                <div className="mt-1 text-sm">You used all 10 free guest chats. Continue with a free account.</div>
-                <div className="mt-3 flex flex-wrap gap-2">
+              <div className="mb-4 rounded-xl border-2 border-blue-200 bg-gradient-to-r from-blue-50 to-purple-50 p-6 text-center shadow-lg">
+                <div className="text-2xl mb-2">🔒</div>
+                <div className="text-lg font-bold text-slate-900 mb-2">Demo Limit Reached!</div>
+                <div className="text-sm text-slate-700 mb-4">You've used all 3 free demo messages. Sign up to continue with unlimited access.</div>
+                <div className="flex flex-wrap justify-center gap-3">
                   <button
                     onClick={() => navigate('/signup')}
-                    className="rounded-lg bg-violet-700 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-800"
+                    className="rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-3 text-sm font-bold text-white hover:shadow-lg transition-all"
                   >
                     Sign Up Free
                   </button>
                   <button
                     onClick={() => navigate('/login')}
-                    className="rounded-lg border border-violet-300 bg-white px-4 py-2 text-sm font-semibold text-violet-700 hover:bg-violet-100"
+                    className="rounded-lg border-2 border-blue-300 bg-white px-6 py-3 text-sm font-bold text-blue-700 hover:bg-blue-50 transition-all"
                   >
                     Login
                   </button>
@@ -703,9 +706,10 @@ export default function ChatPage() {
             {/* Status Bar */}
             <div className="mt-3 flex items-center justify-between text-xs">
               <div className="flex items-center gap-3">
-                {!isAuthenticated && (
-                  <span className="rounded-full bg-orange-100 px-2.5 py-1 font-medium text-orange-700">
-                    {guestChatsRemaining} free chats left
+                {!isAuthenticated && !guestLimitReached && (
+                  <span className="flex items-center gap-2 rounded-full bg-gradient-to-r from-blue-100 to-purple-100 border border-blue-200 px-3 py-1.5 font-bold text-blue-700">
+                    <span className="text-lg">{guestChatsRemaining}</span>
+                    <span>free {guestChatsRemaining === 1 ? 'message' : 'messages'} left</span>
                   </span>
                 )}
                 {isListening && (

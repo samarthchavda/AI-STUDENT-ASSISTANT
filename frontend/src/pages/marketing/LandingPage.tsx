@@ -111,34 +111,6 @@ const useCases = [
 export default function LandingPage() {
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAppStore();
-  const [demoQuery, setDemoQuery] = useState('');
-  const [demoResponse, setDemoResponse] = useState('');
-  const [demoLoading, setDemoLoading] = useState(false);
-  const [demoCount, setDemoCount] = useState(0);
-  const [showDemoModal, setShowDemoModal] = useState(false);
-
-  const handleDemoQuery = async () => {
-    if (demoCount >= 3) {
-      alert('Demo limit reached! Sign up to continue.');
-      navigate('/signup');
-      return;
-    }
-    
-    if (!demoQuery.trim()) return;
-    
-    setDemoLoading(true);
-    try {
-      const response = await chatAPI.sendPublicMessage([
-        { role: 'user', content: demoQuery }
-      ]);
-      setDemoResponse(response.data.response);
-      setDemoCount(prev => prev + 1);
-    } catch (error) {
-      setDemoResponse('Error: Please try again or sign up for full access.');
-    } finally {
-      setDemoLoading(false);
-    }
-  };
 
   const handleLogout = () => {
     logout();
@@ -156,33 +128,42 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white text-slate-900 selection:bg-blue-100 font-sans">
       
-      <header className="sticky top-0 z-50 border-b border-slate-100 bg-white/80 backdrop-blur-md">
+      <header className="sticky top-0 z-50 border-b border-slate-200/60 bg-white/90 backdrop-blur-md shadow-sm">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 lg:px-8">
           <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="rounded-lg bg-slate-900 p-1.5 text-white shadow-sm transition-transform group-hover:scale-105">
+            <div className="rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 p-1.5 text-white shadow-sm transition-transform group-hover:scale-105">
               <Brain className="h-5 w-5" />
             </div>
             <span className="text-xl font-bold tracking-tight text-slate-900">CodeCampus AI</span>
           </Link>
           
-          <div className="flex items-center gap-4">
+          {/* Public Navigation Links */}
+          <nav className="hidden md:flex items-center gap-1">
+            <Link to="/copilot" className="px-4 py-2 text-sm font-semibold text-slate-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+              Copilot
+            </Link>
+            <Link to="/about" className="px-4 py-2 text-sm font-semibold text-slate-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+              About
+            </Link>
+            <Link to="/contact" className="px-4 py-2 text-sm font-semibold text-slate-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+              Contact
+            </Link>
+            <Link to="/pricing" className="px-4 py-2 text-sm font-semibold text-slate-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+              Pricing
+            </Link>
+          </nav>
+          
+          <div className="flex items-center gap-3">
             {isAuthenticated ? (
               <>
                 {/* Logged In State */}
-                <div className="hidden sm:flex items-center gap-2 text-sm text-slate-600">
-                  <User className="w-4 h-4" />
-                  <span className="font-medium">{user?.name || user?.email}</span>
-                </div>
-                <button
-                  onClick={() => navigate('/dashboard')}
-                  className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-slate-700 hover:text-slate-900 transition-colors"
-                >
+                <Link to="/dashboard" className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-semibold text-slate-700 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                   <LayoutDashboard className="w-4 h-4" />
                   Dashboard
-                </button>
+                </Link>
                 <button
                   onClick={handleLogout}
-                  className="flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200 transition-all"
+                  className="flex items-center gap-2 rounded-lg bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-200 transition-all"
                 >
                   <LogOut className="w-4 h-4" />
                   Logout
@@ -191,10 +172,10 @@ export default function LandingPage() {
             ) : (
               <>
                 {/* Logged Out State */}
-                <Link to="/login" className="text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors">
+                <Link to="/login" className="hidden sm:block text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors">
                   Login
                 </Link>
-                <Link to="/signup" className="rounded-full bg-slate-900 px-5 py-2 text-sm font-bold text-white hover:bg-blue-600 transition-all shadow-sm">
+                <Link to="/signup" className="rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-5 py-2 text-sm font-bold text-white hover:shadow-lg transition-all">
                   Get Started
                 </Link>
               </>
@@ -204,32 +185,32 @@ export default function LandingPage() {
       </header>
 
       <main>
-        <section className="relative mx-auto max-w-5xl px-4 sm:px-6 pt-24 pb-20 text-center lg:pt-32">
-          <div className="mx-auto mb-8 flex max-w-fit items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-1.5 shadow-sm">
+        <section className="relative mx-auto max-w-5xl px-4 sm:px-6 pt-24 pb-20 text-center lg:pt-32 bg-gradient-to-b from-blue-50/30 via-white to-white">
+          <div className="mx-auto mb-8 flex max-w-fit items-center gap-2 rounded-full border border-blue-200 bg-blue-50/50 px-4 py-1.5 shadow-sm">
             <Sparkles className="h-4 w-4 text-blue-600" />
-            <p className="text-[10px] font-black uppercase tracking-[0.15em] text-slate-500">The New Standard for Campus Prep</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.15em] text-blue-700">The New Standard for Campus Prep</p>
           </div>
 
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-slate-900 mb-8 leading-[1.1]">
             Ace Your Placements <br />
-            <span className="text-blue-600 italic">Powered by AI.</span>
+            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Powered by AI.</span>
           </h1>
 
-          <p className="mt-8 mx-auto max-w-2xl text-lg sm:text-xl text-slate-500 leading-relaxed">
+          <p className="mt-8 mx-auto max-w-2xl text-lg sm:text-xl text-slate-600 leading-relaxed">
             Personalized roadmaps, resume analysis, mock interviews, and DSA help. 
             The only workspace you need for placement success.
           </p>
 
           <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
             <button 
-              onClick={() => setShowDemoModal(true)}
-              className="flex h-14 items-center gap-2 rounded-xl bg-blue-600 px-10 font-bold text-white shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all hover:scale-[1.02]"
+              onClick={() => navigate('/copilot')}
+              className="flex h-14 items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-10 font-bold text-white shadow-lg hover:shadow-xl transition-all hover:scale-[1.02]"
             >
-              <Play size={18} /> Try AI Demo Free
+              <MessageSquare size={18} /> Try AI Copilot Free
             </button>
             <button 
               onClick={handleGetStarted}
-              className="flex h-14 items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-10 font-bold text-white shadow-lg hover:shadow-xl transition-all hover:scale-[1.02]"
+              className="flex h-14 items-center gap-2 rounded-xl border-2 border-blue-200 bg-white px-10 font-bold text-blue-700 hover:bg-blue-50 transition-all hover:scale-[1.02]"
             >
               {isAuthenticated ? (
                 <>
@@ -252,79 +233,9 @@ export default function LandingPage() {
           </p>
         </section>
 
-        {/* Demo Modal */}
-        {showDemoModal && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="bg-white rounded-2xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto shadow-2xl"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-2xl font-bold text-slate-900">Try AI Copilot Demo</h3>
-                <button onClick={() => setShowDemoModal(false)} className="p-2 hover:bg-slate-100 rounded-lg">
-                  <X size={20} />
-                </button>
-              </div>
-              
-              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-sm text-yellow-800">
-                  🎯 Demo Mode: {3 - demoCount} queries remaining. Sign up for unlimited access!
-                </p>
-              </div>
+        {/* Demo Modal - REMOVED, now redirects to /copilot */}
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    Ask anything about coding, DSA, or placements:
-                  </label>
-                  <textarea
-                    value={demoQuery}
-                    onChange={(e) => setDemoQuery(e.target.value)}
-                    placeholder="Example: Explain binary search algorithm..."
-                    className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    rows={3}
-                  />
-                </div>
-
-                <button
-                  onClick={handleDemoQuery}
-                  disabled={demoLoading || demoCount >= 3}
-                  className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {demoLoading ? (
-                    <>Processing...</>
-                  ) : (
-                    <>
-                      <Send size={18} /> Ask AI
-                    </>
-                  )}
-                </button>
-
-                {demoResponse && (
-                  <div className="mt-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
-                    <p className="text-sm font-semibold text-slate-700 mb-2">AI Response:</p>
-                    <p className="text-slate-600 whitespace-pre-wrap">{demoResponse}</p>
-                  </div>
-                )}
-
-                {demoCount >= 3 && (
-                  <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg text-center">
-                    <p className="text-blue-800 font-semibold mb-3">Demo limit reached!</p>
-                    <button
-                      onClick={() => navigate('/signup')}
-                      className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700"
-                    >
-                      Sign Up for Unlimited Access
-                    </button>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          </div>
-        )}
-
-        <section className="mx-auto max-w-7xl px-4 sm:px-6 py-12 border-y border-slate-100 bg-slate-50/30">
+        <section className="mx-auto max-w-7xl px-4 sm:px-6 py-12 border-y border-slate-200/60 bg-slate-50/50">
           <p className="text-center text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400 mb-8">Trusted by students targeting top firms</p>
           <div className="flex flex-wrap justify-center items-center gap-6 sm:gap-10 opacity-40 grayscale">
             {['TCS', 'Infosys', 'Amazon', 'Google', 'Wipro'].map(brand => (
@@ -351,20 +262,20 @@ export default function LandingPage() {
             </div>
         </section>
 
-        <section className="mx-auto max-w-7xl px-4 sm:px-6 py-32 bg-[#F8FAFC]/50 border-y border-slate-100">
+        <section className="mx-auto max-w-7xl px-4 sm:px-6 py-32 bg-gradient-to-b from-white to-blue-50/30 border-y border-slate-200/60">
           <div className="text-center mb-20">
             <h2 className="text-3xl sm:text-4xl font-black text-slate-900">Complete Placement Platform</h2>
-            <p className="text-slate-500 mt-4">Everything an engineering student needs to get hired.</p>
+            <p className="text-slate-600 mt-4">Everything an engineering student needs to get hired.</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {features.map((f, i) => (
-              <div key={i} className="group relative rounded-3xl border border-slate-200 bg-white p-8 transition-all hover:shadow-2xl hover:border-blue-200">
-                {f.tag && <span className="absolute top-4 right-4 text-[10px] font-black bg-blue-50 text-blue-600 px-2.5 py-0.5 rounded-full uppercase">{f.tag}</span>}
+              <div key={i} className="group relative rounded-3xl border border-slate-200 bg-white p-8 transition-all hover:shadow-xl hover:border-blue-300 hover:-translate-y-1">
+                {f.tag && <span className="absolute top-4 right-4 text-[10px] font-black bg-blue-100 text-blue-700 px-2.5 py-0.5 rounded-full uppercase">{f.tag}</span>}
                 <div className={`mb-6 inline-flex rounded-2xl ${f.bg} p-3.5 ${f.color}`}>
                   <f.icon className="h-6 w-6" />
                 </div>
                 <h3 className="text-xl font-bold mb-3 text-slate-900">{f.title}</h3>
-                <p className="text-slate-500 leading-relaxed text-sm font-medium">{f.description}</p>
+                <p className="text-slate-600 leading-relaxed text-sm font-medium">{f.description}</p>
               </div>
             ))}
           </div>
@@ -412,13 +323,13 @@ export default function LandingPage() {
         </section>
 
         <section className="mx-auto max-w-5xl px-4 sm:px-6 py-32 text-center">
-          <div className="bg-slate-900 text-white rounded-[3rem] p-8 sm:p-12 md:p-16 lg:p-24 shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/20 rounded-full blur-3xl -mr-20 -mt-20" />
-            <Brain className="mx-auto h-10 w-10 sm:h-12 sm:w-12 mb-8 text-blue-400" />
+          <div className="bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 text-white rounded-[3rem] p-8 sm:p-12 md:p-16 lg:p-24 shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-20 -mt-20" />
+            <Brain className="mx-auto h-10 w-10 sm:h-12 sm:w-12 mb-8 text-white/90" />
             <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-8 tracking-tight leading-tight">
               {isAuthenticated ? 'Continue Your Journey' : 'Ready to secure your future?'}
             </h2>
-            <p className="mb-10 text-lg sm:text-xl text-slate-400 max-w-xl mx-auto">
+            <p className="mb-10 text-lg sm:text-xl text-white/90 max-w-xl mx-auto">
               {isAuthenticated 
                 ? 'Keep learning and practicing to achieve your placement goals.'
                 : 'Join thousands of students who are already using AI to secure high-package roles.'
@@ -426,7 +337,7 @@ export default function LandingPage() {
             </p>
             <button
               onClick={handleGetStarted}
-              className="inline-block bg-white text-slate-900 px-8 sm:px-12 py-4 sm:py-5 rounded-2xl font-black text-lg sm:text-xl hover:bg-blue-600 hover:text-white transition-all shadow-xl"
+              className="inline-block bg-white text-blue-700 px-8 sm:px-12 py-4 sm:py-5 rounded-2xl font-black text-lg sm:text-xl hover:bg-blue-50 transition-all shadow-xl hover:scale-105"
             >
               {isAuthenticated ? 'Go to Dashboard' : 'Start Free Trial'}
             </button>
@@ -740,13 +651,13 @@ function PricingSection({ navigate }: { navigate: any }) {
   }))
 
   return (
-    <section className="py-20 bg-slate-900 text-white">
+    <section className="py-20 bg-gradient-to-b from-slate-50 to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl font-black mb-4">
+          <h2 className="text-3xl sm:text-4xl font-black text-slate-900 mb-4">
             Simple, Transparent Pricing
           </h2>
-          <p className="text-lg text-slate-400 max-w-2xl mx-auto">
+          <p className="text-lg text-slate-600 max-w-2xl mx-auto">
             Start free, upgrade when you're ready. No hidden fees.
           </p>
         </div>
@@ -755,10 +666,10 @@ function PricingSection({ navigate }: { navigate: any }) {
           {plans.map((plan, index) => (
             <div
               key={index}
-              className={`relative rounded-3xl p-8 ${
+              className={`relative rounded-3xl p-8 border-2 ${
                 plan.popular
-                  ? 'bg-gradient-to-br from-blue-600 to-purple-600 border-2 border-blue-400 shadow-2xl scale-105'
-                  : 'bg-slate-800 border-2 border-slate-700'
+                  ? 'bg-gradient-to-br from-blue-600 to-purple-600 border-blue-400 shadow-2xl scale-105'
+                  : 'bg-white border-slate-200 shadow-lg'
               }`}
             >
               {plan.popular && (
@@ -768,26 +679,26 @@ function PricingSection({ navigate }: { navigate: any }) {
               )}
 
               <div className="mb-6">
-                <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
+                <h3 className={`text-2xl font-bold mb-2 ${plan.popular ? 'text-white' : 'text-slate-900'}`}>{plan.name}</h3>
                 <div className="flex items-baseline gap-2 mb-2">
-                  <span className="text-5xl font-black">{plan.price}</span>
-                  <span className="text-slate-400">/{plan.period}</span>
+                  <span className={`text-5xl font-black ${plan.popular ? 'text-white' : 'text-slate-900'}`}>{plan.price}</span>
+                  <span className={plan.popular ? 'text-blue-100' : 'text-slate-500'}>/{plan.period}</span>
                 </div>
-                <p className="text-slate-300">{plan.description}</p>
+                <p className={plan.popular ? 'text-blue-100' : 'text-slate-600'}>{plan.description}</p>
               </div>
 
               <ul className="space-y-3 mb-8">
                 {plan.features.map((feature, idx) => (
                   <li key={idx} className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-green-400 flex-shrink-0 mt-0.5" />
-                    <span className="text-slate-200">{feature}</span>
+                    <CheckCircle className={`w-5 h-5 flex-shrink-0 mt-0.5 ${plan.popular ? 'text-green-300' : 'text-green-500'}`} />
+                    <span className={plan.popular ? 'text-white' : 'text-slate-700'}>{feature}</span>
                   </li>
                 ))}
                 {plan.limitations.length > 0 && (
                   <>
                     {plan.limitations.map((limitation, idx) => (
                       <li key={`limit-${idx}`} className="flex items-start gap-3">
-                        <span className="text-slate-400 text-sm">✗ {limitation}</span>
+                        <span className={`text-sm ${plan.popular ? 'text-blue-200' : 'text-slate-400'}`}>✗ {limitation}</span>
                       </li>
                     ))}
                   </>
@@ -798,8 +709,8 @@ function PricingSection({ navigate }: { navigate: any }) {
                 onClick={() => navigate('/signup')}
                 className={`w-full py-3 rounded-xl font-bold transition-all ${
                   plan.popular
-                    ? 'bg-white text-blue-600 hover:bg-slate-100'
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                    ? 'bg-white text-blue-600 hover:bg-blue-50'
+                    : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:shadow-lg'
                 }`}
               >
                 {plan.cta}
@@ -808,7 +719,7 @@ function PricingSection({ navigate }: { navigate: any }) {
           ))}
         </div>
 
-        <p className="text-center text-slate-400 mt-8">
+        <p className="text-center text-slate-600 mt-8">
           💳 All plans include 7-day money-back guarantee • Save {YEARLY_SAVINGS_PERCENT}% with yearly billing
         </p>
       </div>
