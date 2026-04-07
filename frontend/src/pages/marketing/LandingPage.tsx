@@ -3,13 +3,12 @@ import {
   Brain, ArrowRight, MessageSquare, FileText, BarChart3, 
   Zap, Trophy, ShieldCheck, Globe2, Sparkles, 
   Rocket, Bot, Clock, Target, CheckCircle, Code2, Briefcase, GraduationCap,
-  Star, Users, Award, Play, Send, X, LogOut, LayoutDashboard, User
+  Star, Users, Award, LogOut, LayoutDashboard
 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useInView } from 'framer-motion'
-import { useRef, useState } from 'react'
+import { useRef } from 'react'
 import Footer from '../../components/Footer'
-import { chatAPI } from '../../api/client'
 import { useAppStore } from '../../store/useAppStore'
 import { PRICING_PLANS, YEARLY_SAVINGS_PERCENT } from '../../config/pricing'
 

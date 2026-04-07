@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Brain, Code2, FileText, Target, Users, Award, Zap, TrendingUp, MessageSquare, BookOpen } from 'lucide-react'
+import { Brain, Code2, FileText, Target, Users, Award, Zap, TrendingUp, MessageSquare } from 'lucide-react'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
 
