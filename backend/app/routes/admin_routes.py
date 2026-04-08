@@ -2562,13 +2562,9 @@ async def get_dsa_questions(
     admin: User = Depends(get_admin_user)
 ):
     """Get all DSA questions with statistics"""
-    from sqlalchemy import text
-    from app.core.database import engine
-    
     try:
         # Read from dsaQuestions.ts file
         import os
-        import json
         import re
         
         frontend_path = os.path.join(os.path.dirname(__file__), '../../../frontend/src/data/dsaQuestions.ts')
@@ -2579,12 +2575,11 @@ async def get_dsa_questions(
         with open(frontend_path, 'r', encoding='utf-8') as f:
             content = f.read()
         
-        # Extract questions array
-        match = re.search(r'export const dsaQuestions: DSAQuestion\[\] = (\[[\s\S]*?\]);?\s*$', content, re.MULTILINE)
+        # Extract questions array - find from export const to the end
+        match = re.search(r'export const dsaQuestions: DSAQuestion\[\] = \[(.*)\];', content, re.DOTALL)
         if not match:
             return {'questions': [], 'stats': {'total': 0, 'easy': 0, 'medium': 0, 'hard': 0, 'topics': []}}
         
-        # Parse questions (simplified - just count and get basic info)
         questions_text = match.group(1)
         
         # Count questions by difficulty
@@ -2601,21 +2596,36 @@ async def get_dsa_questions(
         
         topics = [{'topic': k, 'count': v} for k, v in sorted(topic_counts.items(), key=lambda x: x[1], reverse=True)]
         
-        # Extract sample questions for display
+        # Extract individual questions for display
         questions = []
-        question_blocks = re.findall(r'\{[^}]*id:\s*(\d+)[^}]*title:\s*[\'"]([^\'"]+)[\'"][^}]*difficulty:\s*[\'"]([^\'"]+)[\'"][^}]*topic:\s*[\'"]([^\'"]+)[\'"][^}]*companies:\s*\[([^\]]+)\][^}]*acceptance:\s*([\d.]+)', questions_text)
+        # Match each question object more carefully
+        question_pattern = r"id:\s*(\d+),\s*slug:\s*'([^']+)',\s*title:\s*'([^']+)',\s*difficulty:\s*'([^']+)',\s*topic:\s*'([^']+)',\s*companies:\s*\[([^\]]+)\]"
         
-        for block in question_blocks[:100]:  # Limit to first 100 for display
-            id_num, title, difficulty, topic, companies_str, acceptance = block
-            companies = [c.strip().strip("'\"") for c in companies_str.split(',')]
+        for match in re.finditer(question_pattern, questions_text):
+            id_num = int(match.group(1))
+            slug = match.group(2)
+            title = match.group(3)
+            difficulty = match.group(4)
+            topic = match.group(5)
+            companies_str = match.group(6)
+            
+            # Parse companies array
+            companies = [c.strip().strip("'\"") for c in companies_str.split(',') if c.strip()]
+            
+            # Try to find acceptance rate for this question
+            acceptance = 50.0  # default
+            acceptance_match = re.search(rf"id:\s*{id_num}.*?acceptance:\s*([\d.]+)", questions_text, re.DOTALL)
+            if acceptance_match:
+                acceptance = float(acceptance_match.group(1))
+            
             questions.append({
-                'id': int(id_num),
-                'slug': title.lower().replace(' ', '-'),
+                'id': id_num,
+                'slug': slug,
                 'title': title,
                 'difficulty': difficulty,
                 'topic': topic,
                 'companies': companies,
-                'acceptance': float(acceptance)
+                'acceptance': acceptance
             })
         
         stats = {
