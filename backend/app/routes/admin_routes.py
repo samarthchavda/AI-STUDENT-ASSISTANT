@@ -2320,3 +2320,131 @@ async def recalculate_ats_score(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to recalculate ATS score: {str(e)}")
+
+
+# ============================================================================
+# APTITUDE EXAM MANAGEMENT
+# ============================================================================
+
+@router.get("/aptitude-exam-attempts")
+async def get_aptitude_exam_attempts(
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    """Get all user exam attempts with statistics"""
+    from sqlalchemy import text
+    from app.core.database import engine
+    
+    try:
+        with engine.connect() as conn:
+            # Get user attempts grouped by user and company
+            query = """
+                SELECT 
+                    u.id as user_id,
+                    u.name as user_name,
+                    u.email as user_email,
+                    LOWER(aeh.company) as company,
+                    COUNT(*) as attempts_count,
+                    MAX(aeh.score_percent) as best_score,
+                    MAX(aeh.exam_date) as last_attempt
+                FROM users u
+                INNER JOIN aptitude_exam_history aeh ON u.id = aeh.user_id
+                GROUP BY u.id, u.name, u.email, LOWER(aeh.company)
+                ORDER BY MAX(aeh.exam_date) DESC
+            """
+            result = conn.execute(text(query))
+            attempts = []
+            
+            for row in result:
+                attempts.append({
+                    'user_id': row.user_id,
+                    'user_name': row.user_name,
+                    'user_email': row.user_email,
+                    'company': row.company,
+                    'attempts_count': row.attempts_count,
+                    'best_score': float(row.best_score),
+                    'last_attempt': row.last_attempt.isoformat() if hasattr(row.last_attempt, 'isoformat') else str(row.last_attempt)
+                })
+            
+            # Get statistics
+            stats_query = """
+                SELECT 
+                    COUNT(DISTINCT user_id) as total_users,
+                    COUNT(*) as total_attempts,
+                    AVG(score_percent) as avg_score
+                FROM aptitude_exam_history
+            """
+            stats_result = conn.execute(text(stats_query))
+            stats_row = stats_result.fetchone()
+            
+            # Get company breakdown
+            company_query = """
+                SELECT 
+                    LOWER(company) as company,
+                    COUNT(*) as count
+                FROM aptitude_exam_history
+                GROUP BY LOWER(company)
+                ORDER BY count DESC
+            """
+            company_result = conn.execute(text(company_query))
+            companies = [{'company': row.company, 'count': row.count} for row in company_result]
+            
+            stats = {
+                'total_users': stats_row.total_users if stats_row else 0,
+                'total_attempts': stats_row.total_attempts if stats_row else 0,
+                'avg_score': float(stats_row.avg_score) if stats_row and stats_row.avg_score else 0,
+                'companies': companies
+            }
+            
+            return {
+                'attempts': attempts,
+                'stats': stats
+            }
+            
+    except Exception as e:
+        print(f"Error fetching exam attempts: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Database error: {str(e)}"
+        )
+
+
+@router.post("/reset-exam-attempts")
+async def reset_exam_attempts(
+    request: Dict[str, Any],
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    """Reset exam attempts for a specific user and company"""
+    from sqlalchemy import text
+    from app.core.database import engine
+    
+    try:
+        user_id = request.get('user_id')
+        company = request.get('company')
+        
+        if not user_id or not company:
+            raise HTTPException(status_code=400, detail="user_id and company are required")
+        
+        with engine.begin() as conn:
+            # Delete all attempts for this user and company
+            delete_query = """
+                DELETE FROM aptitude_exam_history
+                WHERE user_id = :user_id AND LOWER(company) = LOWER(:company)
+            """
+            conn.execute(text(delete_query), {'user_id': user_id, 'company': company})
+        
+        return {'message': 'Attempts reset successfully'}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error resetting attempts: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Database error: {str(e)}"
+        )
