@@ -1,0 +1,59 @@
+<svg width="800" height="200" viewBox="0 0 800 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Brain Icon with Code Symbols -->
+  <g transform="translate(20, 20)">
+    <!-- Brain outline -->
+    <path d="M80 40C80 25 70 15 55 15C45 15 37 20 32 28C28 20 20 15 10 15C-5 15 -15 25 -15 40C-15 50 -10 58 -2 63C-10 68 -15 76 -15 86C-15 101 -5 111 10 111C20 111 28 106 32 98C37 106 45 111 55 111C70 111 80 101 80 86C80 76 75 68 67 63C75 58 80 50 80 40Z" 
+          stroke="url(#brainGradient)" 
+          stroke-width="4" 
+          fill="none"
+          stroke-linecap="round"
+          stroke-linejoin="round"/>
+    
+    <!-- Left brain curves -->
+    <path d="M-5 35C-5 35 5 40 5 50C5 60 -5 65 -5 65" 
+          stroke="url(#brainGradient)" 
+          stroke-width="3" 
+          fill="none"
+          stroke-linecap="round"/>
+    
+    <!-- Right brain curves -->
+    <path d="M45 35C45 35 55 40 55 50C55 60 45 65 45 65" 
+          stroke="url(#brainGradient)" 
+          stroke-width="3" 
+          fill="none"
+          stroke-linecap="round"/>
+    
+    <!-- Code symbols -->
+    <text x="15" y="55" font-family="monospace" font-size="24" font-weight="bold" fill="url(#brainGradient)">&lt;/</text>
+    <text x="35" y="55" font-family="monospace" font-size="24" font-weight="bold" fill="url(#purpleGradient)">&gt;</text>
+    
+    <!-- Circuit lines at bottom -->
+    <path d="M20 95L20 105M30 95L30 105M40 95L40 105" 
+          stroke="url(#brainGradient)" 
+          stroke-width="3" 
+          stroke-linecap="round"/>
+    <circle cx="20" cy="105" r="3" fill="url(#brainGradient)"/>
+    <circle cx="30" cy="105" r="3" fill="url(#brainGradient)"/>
+    <circle cx="40" cy="105" r="3" fill="url(#brainGradient)"/>
+  </g>
+  
+  <!-- Text: CodeCampus AI -->
+  <text x="200" y="110" font-family="Arial, sans-serif" font-size="64" font-weight="900" fill="#1a1a1a">
+    CodeCampus
+  </text>
+  <text x="200" y="110" font-family="Arial, sans-serif" font-size="64" font-weight="900" fill="url(#purpleGradient)" dx="430">
+    AI
+  </text>
+  
+  <!-- Gradients -->
+  <defs>
+    <linearGradient id="brainGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="purpleGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#a855f7;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+</svg>

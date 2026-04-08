@@ -19,8 +19,8 @@ export default function Header() {
         <div className="flex items-center justify-between">
           <Link to="/" className="group flex items-center gap-3 transition-opacity hover:opacity-85">
             <img 
-              src="/logos/main-logo.png" 
-              alt="CodeCampus AI Logo" 
+              src="/logo-new.svg" 
+              alt="CodeCampus AI" 
               className="h-12 w-auto object-contain transition-transform group-hover:scale-105"
             />
           </Link>
