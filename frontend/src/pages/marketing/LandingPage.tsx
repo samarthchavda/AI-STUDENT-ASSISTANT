@@ -130,10 +130,11 @@ export default function LandingPage() {
       <header className="sticky top-0 z-50 border-b border-slate-200/60 bg-white/90 backdrop-blur-md shadow-sm">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 lg:px-8">
           <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="rounded-lg bg-gradient-to-br from-blue-600 to-purple-600 p-1.5 text-white shadow-sm transition-transform group-hover:scale-105">
-              <Brain className="h-5 w-5" />
-            </div>
-            <span className="text-xl font-bold tracking-tight text-slate-900">CodeCampus AI</span>
+            <img 
+              src="/logo/logo-full-dark.png" 
+              alt="CodeCampus AI" 
+              className="h-8 w-auto transition-transform group-hover:scale-105"
+            />
           </Link>
           
           {/* Public Navigation Links */}
@@ -324,7 +325,11 @@ export default function LandingPage() {
         <section className="mx-auto max-w-5xl px-4 sm:px-6 py-32 text-center">
           <div className="bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 text-white rounded-[3rem] p-8 sm:p-12 md:p-16 lg:p-24 shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-20 -mt-20" />
-            <Brain className="mx-auto h-10 w-10 sm:h-12 sm:w-12 mb-8 text-white/90" />
+            <img 
+              src="/logo/logo-icon.png" 
+              alt="CodeCampus AI" 
+              className="mx-auto h-16 w-16 sm:h-20 sm:w-20 mb-8 opacity-90"
+            />
             <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black mb-8 tracking-tight leading-tight">
               {isAuthenticated ? 'Continue Your Journey' : 'Ready to secure your future?'}
             </h2>

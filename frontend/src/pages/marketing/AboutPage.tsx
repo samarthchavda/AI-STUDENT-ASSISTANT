@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Brain, Code2, FileText, Target, Users, Award, Zap, TrendingUp, MessageSquare } from 'lucide-react'
+import { Code2, FileText, Target, Users, Award, Zap, TrendingUp, MessageSquare } from 'lucide-react'
 import Header from '../../components/Header'
 import Footer from '../../components/Footer'
 
@@ -69,7 +69,11 @@ export default function AboutPage() {
       <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-50 via-white to-purple-50">
         <div className="max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 rounded-full mb-6">
-            <Brain className="w-5 h-5 text-blue-600" />
+            <img 
+              src="/logo/logo-icon.png" 
+              alt="CodeCampus AI" 
+              className="w-6 h-6"
+            />
             <span className="text-sm font-semibold text-blue-600">About CodeCampus AI</span>
           </div>
           
