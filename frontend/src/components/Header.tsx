@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { LogOut, User, Shield, Brain, Menu, X } from 'lucide-react'
+import { LogOut, User, Shield, Menu, X } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
 import { useState } from 'react'
 
@@ -18,13 +18,11 @@ export default function Header() {
       <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
           <Link to="/" className="group flex items-center gap-3 transition-opacity hover:opacity-85">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,_#0f766e,_#115e59)] text-white shadow-[0_14px_28px_rgba(15,118,110,0.28)] transition-transform group-hover:-rotate-3 group-hover:scale-105">
-              <Brain className="h-6 w-6" />
-            </div>
-            <div className="hidden sm:block">
-              <div className="font-display text-2xl font-bold leading-none text-stone-900">CodeCampus AI</div>
-              <div className="mt-1 text-xs font-semibold uppercase tracking-[0.22em] text-stone-500">Career and study copilot</div>
-            </div>
+            <img 
+              src="/logos/main-logo.png" 
+              alt="CodeCampus AI Logo" 
+              className="h-12 w-auto object-contain transition-transform group-hover:scale-105"
+            />
           </Link>
 
           <div className="flex items-center gap-3 sm:gap-5">
