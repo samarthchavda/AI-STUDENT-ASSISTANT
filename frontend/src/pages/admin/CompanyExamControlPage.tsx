@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Lock, Unlock, Save } from 'lucide-react'
+import { Lock, Unlock } from 'lucide-react'
 import Header from '../../components/Header'
 
 interface CompanyExamSetting {

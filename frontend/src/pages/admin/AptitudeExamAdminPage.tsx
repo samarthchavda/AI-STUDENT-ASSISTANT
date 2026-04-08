@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { BookOpen, Plus, Edit, Trash2, Users, BarChart3, Clock, Target } from 'lucide-react'
+import { BookOpen, Users, BarChart3, Target } from 'lucide-react'
 import Header from '../../components/Header'
 
 interface ExamAttempt {
@@ -14,7 +13,6 @@ interface ExamAttempt {
 }
 
 export default function AptitudeExamAdminPage() {
-  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<'attempts' | 'stats'>('attempts')
   const [examAttempts, setExamAttempts] = useState<ExamAttempt[]>([])
   const [loading, setLoading] = useState(true)
