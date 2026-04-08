@@ -341,30 +341,21 @@ export default function AuthPage() {
       
       <div className="max-w-md w-full relative z-10">
         {/* Logo and Header */}
-        <div className="text-center mb-10">
-          {/* Logo Container */}
-          <div className="flex justify-center mb-8">
-            <Link 
-              to="/" 
-              className="inline-block hover:opacity-90 transition-all duration-300 group"
-            >
-              <img 
-                src="/main-logo.png" 
-                alt="CodeCampus AI" 
-                className="h-20 sm:h-24 w-auto object-contain group-hover:scale-[1.02] transition-transform duration-300"
-                style={{ maxWidth: '280px' }}
-              />
-            </Link>
-          </div>
-          
-          {/* Heading */}
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
+        <div className="text-center mb-8">
+          <Link to="/" className="inline-flex items-center justify-center mb-6 hover:opacity-90 transition-opacity group">
+            <img 
+              src="/main-logo.png" 
+              alt="CodeCampus AI" 
+              className="h-16 sm:h-20 w-auto max-w-[320px] object-contain group-hover:scale-105 transition-transform"
+            />
+          </Link>
+          <h1 className="text-3xl font-bold text-gray-900 mb-3">
             {authMode === 'login' && 'Welcome Back! 👋'}
             {authMode === 'register' && 'Start Your Journey 🚀'}
             {authMode === 'forgot' && 'Reset Password 🔑'}
             {authMode === 'reset' && 'Verify OTP 🔐'}
           </h1>
-          <p className="text-gray-600 text-base sm:text-lg">
+          <p className="text-gray-600 text-lg">
             {authMode === 'login' && 'Continue your placement preparation'}
             {authMode === 'register' && 'Join thousands of engineering students getting placed'}
             {authMode === 'forgot' && "We'll send a 6-digit OTP to your email"}
