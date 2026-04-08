@@ -342,11 +342,11 @@ export default function AuthPage() {
       <div className="max-w-md w-full relative z-10">
         {/* Logo and Header */}
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center justify-center mb-8 hover:opacity-90 transition-opacity group">
+          <Link to="/" className="inline-flex items-center justify-center mb-6 hover:opacity-80 transition-opacity group">
             <img 
-              src="/logos/Dark-full-logo.png" 
-              alt="CodeCampus AI" 
-              className="h-16 sm:h-20 w-auto max-w-[280px] object-contain group-hover:scale-105 transition-transform"
+              src="/logos/main-logo.png" 
+              alt="CodeCampus AI Logo" 
+              className="h-20 w-auto object-contain group-hover:scale-105 transition-transform"
             />
           </Link>
           <h1 className="text-3xl font-bold text-gray-900 mb-3">
