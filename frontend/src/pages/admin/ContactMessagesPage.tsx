@@ -5,7 +5,7 @@ import Header from '../../components/Header'
 import { Mail, Phone, Calendar, Eye, Archive, Trash2, RefreshCw, Filter, MessageSquare } from 'lucide-react'
 import axios from 'axios'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
 interface ContactMessage {
   id: number
@@ -51,7 +51,7 @@ export default function ContactMessagesPage() {
     try {
       const token = localStorage.getItem('token')
       const filterParam = statusFilter !== 'all' ? `?status_filter=${statusFilter}` : ''
-      const response = await axios.get(`${API_URL}/api/contact/admin/messages${filterParam}`, {
+      const response = await axios.get(`${API_URL}/contact/admin/messages${filterParam}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       setMessages(response.data)
@@ -65,7 +65,7 @@ export default function ContactMessagesPage() {
   const loadStats = async () => {
     try {
       const token = localStorage.getItem('token')
-      const response = await axios.get(`${API_URL}/api/contact/admin/messages/stats`, {
+      const response = await axios.get(`${API_URL}/contact/admin/messages/stats`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       setStats(response.data)
@@ -78,7 +78,7 @@ export default function ContactMessagesPage() {
     try {
       const token = localStorage.getItem('token')
       await axios.patch(
-        `${API_URL}/api/contact/admin/messages/${messageId}/status`,
+        `${API_URL}/contact/admin/messages/${messageId}/status`,
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       )
@@ -97,7 +97,7 @@ export default function ContactMessagesPage() {
     
     try {
       const token = localStorage.getItem('token')
-      await axios.delete(`${API_URL}/api/contact/admin/messages/${messageId}`, {
+      await axios.delete(`${API_URL}/contact/admin/messages/${messageId}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       loadMessages()

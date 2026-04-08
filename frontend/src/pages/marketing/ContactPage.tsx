@@ -5,7 +5,7 @@ import Header from '../../components/Header'
 import Footer from '../../components/Footer'
 import axios from 'axios'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -55,7 +55,7 @@ export default function ContactPage() {
     }
 
     try {
-      const response = await axios.post(`${API_URL}/api/contact/submit`, formData)
+      const response = await axios.post(`${API_URL}/contact/submit`, formData)
       
       if (response.data.success) {
         setSuccess(true)
