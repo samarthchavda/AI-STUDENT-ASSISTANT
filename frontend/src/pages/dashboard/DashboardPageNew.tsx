@@ -76,6 +76,11 @@ export default function DashboardPageNew() {
   const loadExamAttempts = async () => {
     try {
       const token = localStorage.getItem('token')
+      if (!token) {
+        console.log('No token available, skipping exam attempts load')
+        return
+      }
+      
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/aptitude/attempts-by-company`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -86,6 +91,8 @@ export default function DashboardPageNew() {
         const attempts = await response.json()
         console.log('📊 Loaded exam attempts by company:', attempts)
         setExamAttempts(attempts)
+      } else {
+        console.log('Failed to load exam attempts:', response.status)
       }
     } catch (error) {
       console.error('Failed to load exam attempts:', error)
