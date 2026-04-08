@@ -595,6 +595,13 @@ const AdminPage = () => {
       ]
     },
     {
+      title: 'Exam Management',
+      items: [
+        { id: 'exam-attempts' as const, label: 'User Attempts', icon: Users, external: '/admin/aptitude-exams' },
+        { id: 'exam-control' as const, label: 'Exam Access Control', icon: Lock, external: '/admin/company-exam-control' },
+      ]
+    },
+    {
       title: 'Analytics',
       items: [
         { id: 'ai-monitor' as const, label: 'AI Analytics', icon: Activity },
@@ -650,9 +657,27 @@ const AdminPage = () => {
                   <div key={section.title}>
                     {sectionIndex > 0 && <div className="my-3 border-t border-gray-200"></div>}
                     <p className="px-4 text-xs font-semibold text-gray-400 uppercase mb-2">{section.title}</p>
-                    {section.items.map((item) => {
+                    {section.items.map((item: any) => {
                       const Icon = item.icon;
                       const isActive = activeTab === item.id;
+                      
+                      // Handle external links
+                      if (item.external) {
+                        return (
+                          <button
+                            key={item.id}
+                            onClick={() => {
+                              handleNavigateToPage(item.external)
+                              setMobileMenuOpen(false)
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+                          >
+                            <Icon className="w-5 h-5" />
+                            <span className="text-sm">{item.label}</span>
+                          </button>
+                        );
+                      }
+                      
                       return (
                         <button
                           key={item.id}
@@ -787,9 +812,24 @@ const AdminPage = () => {
               <div key={section.title}>
                 {sectionIndex > 0 && <div className="my-3 border-t border-gray-200"></div>}
                 <p className="px-4 text-xs font-semibold text-gray-400 uppercase mb-2">{section.title}</p>
-                {section.items.map((item) => {
+                {section.items.map((item: any) => {
                   const Icon = item.icon;
                   const isActive = activeTab === item.id;
+                  
+                  // Handle external links
+                  if (item.external) {
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => handleNavigateToPage(item.external)}
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+                      >
+                        <Icon className="w-5 h-5" />
+                        <span className="text-sm">{item.label}</span>
+                      </button>
+                    );
+                  }
+                  
                   return (
                     <button
                       key={item.id}
