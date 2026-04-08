@@ -55,6 +55,40 @@ export function cleanFractions(text: string): string {
 }
 
 /**
+ * Remove metadata from question text
+ * Removes patterns like:
+ * - [Company Year] at the start (e.g., [Infosys 2019])
+ * - (Question #123) at the end
+ * - Company names in brackets
+ * 
+ * @param text - The text to clean
+ * @returns Text without metadata
+ */
+export function removeMetadata(text: string): string {
+  if (!text) return text
+
+  // Remove [Company Year] pattern at the start (e.g., [Infosys 2019], [TCS 2020])
+  text = text.replace(/^\[[\w\s]+\d{4}\]\s*/i, '')
+  
+  // Remove [Company] pattern at the start (e.g., [Infosys], [TCS])
+  text = text.replace(/^\[[\w\s]+\]\s*/i, '')
+  
+  // Remove (Question #123) pattern at the end
+  text = text.replace(/\s*\(Question\s*#\d+\)\s*$/i, '')
+  
+  // Remove Question #123 pattern at the end (without parentheses)
+  text = text.replace(/\s*Question\s*#\d+\s*$/i, '')
+  
+  // Remove any remaining [text] at the very start
+  text = text.replace(/^\[[^\]]+\]\s*/, '')
+  
+  // Trim any extra whitespace
+  text = text.trim()
+
+  return text
+}
+
+/**
  * Clean and format question text for display
  * Applies all text cleaning operations
  * 
@@ -63,6 +97,9 @@ export function cleanFractions(text: string): string {
  */
 export function cleanQuestionText(text: string): string {
   if (!text) return text
+  
+  // Remove metadata first
+  text = removeMetadata(text)
   
   // Apply fraction cleaning
   text = cleanFractions(text)
