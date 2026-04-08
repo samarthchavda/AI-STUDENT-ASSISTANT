@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Twitter, Github, Linkedin, Youtube } from 'lucide-react'
+import { Brain, Twitter, Github, Linkedin, Youtube } from 'lucide-react'
 
 const company = [
   { label: 'About', to: '/about' },
@@ -121,11 +121,10 @@ export default function Footer() {
           {/* Brand + Company + Socials */}
           <div className="col-span-2 md:col-span-3 lg:col-span-1">
             <Link to="/" className="inline-flex items-center gap-2">
-              <img 
-                src="/logo/logo-full-white.png" 
-                alt="CodeCampus AI" 
-                className="h-10 w-auto"
-              />
+              <div className="rounded-xl bg-gradient-to-br from-blue-600 to-violet-600 p-2 text-white shadow-lg">
+                <Brain className="h-5 w-5" />
+              </div>
+              <span className="text-sm font-semibold text-white">CodeCampus AI</span>
             </Link>
             <p className="mt-3 text-xs leading-relaxed text-slate-400">
               AI-powered placement prep for ambitious engineers. Master DSA, ace interviews, and get placed.

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { Mail, Lock, User, AlertCircle, Sparkles, KeyRound, CheckCircle } from 'lucide-react'
+import { Brain, Mail, Lock, User, AlertCircle, Sparkles, KeyRound, CheckCircle } from 'lucide-react'
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google'
 import { userAPI } from '../../api/client'
 import { useAppStore } from '../../store/useAppStore'
@@ -343,11 +343,10 @@ export default function AuthPage() {
         {/* Logo and Header */}
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-3 mb-6 hover:opacity-80 transition-opacity group">
-            <img 
-              src="/logo/logo-full-white.png" 
-              alt="CodeCampus AI" 
-              className="h-16 w-auto group-hover:scale-110 transition-transform"
-            />
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform">
+              <Brain className="w-9 h-9 text-white" />
+            </div>
+            <span className="text-4xl font-bold gradient-text">CodeCampus AI</span>
           </Link>
           <h1 className="text-3xl font-bold text-gray-900 mb-3">
             {authMode === 'login' && 'Welcome Back! 👋'}
