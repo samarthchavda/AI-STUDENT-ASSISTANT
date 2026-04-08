@@ -67,7 +67,7 @@ const AIResumeMonitorPage = () => {
       }
 
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/admin/ai-resume-monitor`,
+        `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/admin/ai-resume-monitor`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,

@@ -81,7 +81,7 @@ export default function DashboardPageNew() {
         return
       }
       
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/aptitude/attempts-by-company`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/aptitude/attempts-by-company`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

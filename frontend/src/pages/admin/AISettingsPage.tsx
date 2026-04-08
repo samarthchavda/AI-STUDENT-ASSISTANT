@@ -61,7 +61,7 @@ const AISettingsPage = () => {
       }
 
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/admin/ai-settings`,
+        `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/admin/ai-settings`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -100,7 +100,7 @@ const AISettingsPage = () => {
       }
 
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/admin/ai-settings`,
+        `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/admin/ai-settings`,
         {
           method: 'PUT',
           headers: {

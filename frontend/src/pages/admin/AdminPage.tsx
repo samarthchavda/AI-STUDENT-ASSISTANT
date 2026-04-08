@@ -420,10 +420,10 @@ const AdminPage = () => {
     setError(null);
     try {
       const [questions, stats] = await Promise.all([
-        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/admin/aptitude-practice-questions?category=${aptitudeFilterCategory}&subcategory=${aptitudeFilterSubcategory}`, {
+        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/admin/aptitude-practice-questions?category=${aptitudeFilterCategory}&subcategory=${aptitudeFilterSubcategory}`, {
           headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         }).then(r => r.json()),
-        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/admin/aptitude-practice-stats`, {
+        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/admin/aptitude-practice-stats`, {
           headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
         }).then(r => r.json())
       ]);
@@ -452,7 +452,7 @@ const AdminPage = () => {
       const formData = new FormData();
       formData.append('file', aptitudeQuestionsFile);
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/admin/aptitude-practice-questions/bulk-upload`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/admin/aptitude-practice-questions/bulk-upload`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
         body: formData

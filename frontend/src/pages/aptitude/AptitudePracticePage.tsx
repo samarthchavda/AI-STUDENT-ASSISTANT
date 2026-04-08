@@ -169,7 +169,7 @@ export default function AptitudePracticePage() {
 
   const fetchCategoryCounts = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/aptitude/practice-categories`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/aptitude/practice-categories`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -235,7 +235,7 @@ export default function AptitudePracticePage() {
       const offset = (page - 1) * questionsPerPage
       // Fetch questions from database with pagination
       const response = await fetch(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/aptitude/practice-questions?subcategory=${encodeURIComponent(selectedCategory)}&limit=${questionsPerPage}&offset=${offset}`,
+        `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/aptitude/practice-questions?subcategory=${encodeURIComponent(selectedCategory)}&limit=${questionsPerPage}&offset=${offset}`,
         {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`
