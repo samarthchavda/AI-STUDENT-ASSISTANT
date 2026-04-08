@@ -759,7 +759,6 @@ async def get_attempts_by_company(current_user = Depends(get_current_user)):
             status_code=500,
             detail=f"Database error: {str(e)}"
         )
-        )
 
 
 
