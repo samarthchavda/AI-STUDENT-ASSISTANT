@@ -1,0 +1,72 @@
+<svg width="600" height="100" viewBox="0 0 600 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Brain Icon with Code Symbols -->
+  <g transform="translate(50, 50)">
+    <!-- Main brain shape -->
+    <path d="M 0,-25 C -15,-25 -25,-15 -25,0 C -25,8 -22,15 -17,20 C -22,25 -25,32 -25,40 C -25,55 -15,65 0,65 C 8,65 15,62 20,57 C 25,62 32,65 40,65 C 55,65 65,55 65,40 C 65,32 62,25 57,20 C 62,15 65,8 65,0 C 65,-15 55,-25 40,-25 C 32,-25 25,-22 20,-17 C 15,-22 8,-25 0,-25 Z" 
+          stroke="url(#brainGradient)" 
+          stroke-width="3" 
+          fill="none"
+          stroke-linecap="round"
+          stroke-linejoin="round"/>
+    
+    <!-- Left brain curves -->
+    <path d="M -15,-5 Q -10,0 -10,10 Q -10,20 -15,25" 
+          stroke="url(#brainGradient)" 
+          stroke-width="2.5" 
+          fill="none"
+          stroke-linecap="round"/>
+    
+    <path d="M -20,10 Q -15,15 -15,20" 
+          stroke="url(#brainGradient)" 
+          stroke-width="2" 
+          fill="none"
+          stroke-linecap="round"/>
+    
+    <!-- Right brain curves -->
+    <path d="M 15,-5 Q 10,0 10,10 Q 10,20 15,25" 
+          stroke="url(#brainGradient)" 
+          stroke-width="2.5" 
+          fill="none"
+          stroke-linecap="round"/>
+    
+    <path d="M 20,10 Q 15,15 15,20" 
+          stroke="url(#brainGradient)" 
+          stroke-width="2" 
+          fill="none"
+          stroke-linecap="round"/>
+    
+    <!-- Code symbols in center -->
+    <text x="-12" y="8" font-family="monospace" font-size="20" font-weight="bold" fill="#6366f1">&lt;/</text>
+    <text x="5" y="8" font-family="monospace" font-size="20" font-weight="bold" fill="#8b5cf6">&gt;</text>
+    
+    <!-- Circuit lines at bottom -->
+    <line x1="-10" y1="45" x2="-10" y2="55" stroke="url(#brainGradient)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="0" y1="45" x2="0" y2="55" stroke="url(#brainGradient)" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="10" y1="45" x2="10" y2="55" stroke="url(#brainGradient)" stroke-width="2.5" stroke-linecap="round"/>
+    
+    <circle cx="-10" cy="55" r="2.5" fill="#6366f1"/>
+    <circle cx="0" cy="55" r="2.5" fill="#7c3aed"/>
+    <circle cx="10" cy="55" r="2.5" fill="#8b5cf6"/>
+  </g>
+  
+  <!-- Text: CodeCampus AI -->
+  <text x="140" y="62" font-family="system-ui, -apple-system, sans-serif" font-size="42" font-weight="800" fill="#1a1a1a">
+    CodeCampus
+  </text>
+  <text x="410" y="62" font-family="system-ui, -apple-system, sans-serif" font-size="42" font-weight="800" fill="url(#purpleGradient)">
+    AI
+  </text>
+  
+  <!-- Gradients -->
+  <defs>
+    <linearGradient id="brainGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#7c3aed;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="purpleGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#8b5cf6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#a855f7;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+</svg>

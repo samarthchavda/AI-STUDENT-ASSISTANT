@@ -349,9 +349,10 @@ export default function AuthPage() {
               className="inline-block hover:opacity-90 transition-all duration-300 group"
             >
               <img 
-                src="/main-logo.png?v=2" 
+                src="/main-logo.png" 
                 alt="CodeCampus AI" 
-                className="w-[220px] sm:w-[260px] h-auto object-contain group-hover:scale-[1.02] transition-transform duration-300"
+                className="h-20 sm:h-24 w-auto object-contain group-hover:scale-[1.02] transition-transform duration-300"
+                style={{ maxWidth: '280px' }}
               />
             </Link>
           </div>
