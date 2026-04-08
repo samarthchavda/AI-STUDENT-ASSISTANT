@@ -593,6 +593,7 @@ const AdminPage = () => {
       items: [
         { id: 'aptitude-questions' as const, label: 'Aptitude Bank', icon: Target },
         { id: 'company-questions' as const, label: 'Company Sheets', icon: Building2 },
+        { id: 'dsa-questions' as const, label: 'DSA Questions', icon: Code2, external: '/admin/dsa-questions' },
       ]
     },
     {

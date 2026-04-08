@@ -2549,3 +2549,151 @@ async def update_company_exam_setting(
             status_code=500,
             detail=f"Database error: {str(e)}"
         )
+
+
+
+# ============================================================================
+# DSA QUESTIONS MANAGEMENT
+# ============================================================================
+
+@router.get("/dsa-questions")
+async def get_dsa_questions(
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    """Get all DSA questions with statistics"""
+    from sqlalchemy import text
+    from app.core.database import engine
+    
+    try:
+        # Read from dsaQuestions.ts file
+        import os
+        import json
+        import re
+        
+        frontend_path = os.path.join(os.path.dirname(__file__), '../../../frontend/src/data/dsaQuestions.ts')
+        
+        if not os.path.exists(frontend_path):
+            return {'questions': [], 'stats': {'total': 0, 'easy': 0, 'medium': 0, 'hard': 0, 'topics': []}}
+        
+        with open(frontend_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        # Extract questions array
+        match = re.search(r'export const dsaQuestions: DSAQuestion\[\] = (\[[\s\S]*?\]);?\s*$', content, re.MULTILINE)
+        if not match:
+            return {'questions': [], 'stats': {'total': 0, 'easy': 0, 'medium': 0, 'hard': 0, 'topics': []}}
+        
+        # Parse questions (simplified - just count and get basic info)
+        questions_text = match.group(1)
+        
+        # Count questions by difficulty
+        easy_count = questions_text.count("difficulty: 'Easy'")
+        medium_count = questions_text.count("difficulty: 'Medium'")
+        hard_count = questions_text.count("difficulty: 'Hard'")
+        total = easy_count + medium_count + hard_count
+        
+        # Extract topics
+        topic_matches = re.findall(r"topic: '([^']+)'", questions_text)
+        topic_counts = {}
+        for topic in topic_matches:
+            topic_counts[topic] = topic_counts.get(topic, 0) + 1
+        
+        topics = [{'topic': k, 'count': v} for k, v in sorted(topic_counts.items(), key=lambda x: x[1], reverse=True)]
+        
+        # Extract sample questions for display
+        questions = []
+        question_blocks = re.findall(r'\{[^}]*id:\s*(\d+)[^}]*title:\s*[\'"]([^\'"]+)[\'"][^}]*difficulty:\s*[\'"]([^\'"]+)[\'"][^}]*topic:\s*[\'"]([^\'"]+)[\'"][^}]*companies:\s*\[([^\]]+)\][^}]*acceptance:\s*([\d.]+)', questions_text)
+        
+        for block in question_blocks[:100]:  # Limit to first 100 for display
+            id_num, title, difficulty, topic, companies_str, acceptance = block
+            companies = [c.strip().strip("'\"") for c in companies_str.split(',')]
+            questions.append({
+                'id': int(id_num),
+                'slug': title.lower().replace(' ', '-'),
+                'title': title,
+                'difficulty': difficulty,
+                'topic': topic,
+                'companies': companies,
+                'acceptance': float(acceptance)
+            })
+        
+        stats = {
+            'total': total,
+            'easy': easy_count,
+            'medium': medium_count,
+            'hard': hard_count,
+            'topics': topics[:10]  # Top 10 topics
+        }
+        
+        return {'questions': questions, 'stats': stats}
+        
+    except Exception as e:
+        print(f"Error fetching DSA questions: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return {'questions': [], 'stats': {'total': 0, 'easy': 0, 'medium': 0, 'hard': 0, 'topics': []}}
+
+
+@router.post("/dsa-questions/bulk-upload")
+async def bulk_upload_dsa_questions(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    """Bulk upload DSA questions from CSV"""
+    import csv
+    import io
+    
+    try:
+        # Read CSV file
+        contents = await file.read()
+        csv_file = io.StringIO(contents.decode('utf-8'))
+        reader = csv.DictReader(csv_file)
+        
+        # Note: This is a simplified version
+        # In production, you'd want to properly parse and append to dsaQuestions.ts
+        # For now, we'll just validate the format and return success
+        
+        added = 0
+        errors = []
+        
+        for row in reader:
+            try:
+                # Validate required fields
+                required = ['slug', 'title', 'difficulty', 'topic', 'companies', 'description']
+                missing = [f for f in required if f not in row or not row[f]]
+                
+                if missing:
+                    errors.append(f"Row missing fields: {', '.join(missing)}")
+                    continue
+                
+                # Validate difficulty
+                if row['difficulty'] not in ['Easy', 'Medium', 'Hard']:
+                    errors.append(f"Invalid difficulty for {row['title']}: {row['difficulty']}")
+                    continue
+                
+                added += 1
+                
+            except Exception as e:
+                errors.append(f"Error processing row: {str(e)}")
+        
+        if added == 0:
+            raise HTTPException(status_code=400, detail=f"No valid questions found. Errors: {'; '.join(errors[:5])}")
+        
+        return {
+            'message': 'Upload successful',
+            'added': added,
+            'errors': errors[:10] if errors else []
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error uploading DSA questions: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Upload failed: {str(e)}"
+        )

@@ -27,6 +27,7 @@ import DashboardPage from './pages/dashboard/DashboardPage'
 import AdminPage from './pages/admin/AdminPage'
 import AptitudeExamAdminPage from './pages/admin/AptitudeExamAdminPage'
 import CompanyExamControlPage from './pages/admin/CompanyExamControlPage'
+import DSAQuestionsAdminPage from './pages/admin/DSAQuestionsAdminPage'
 import ServicesPage from './pages/marketing/ServicesPage'
 import AboutPage from './pages/marketing/AboutPage'
 import ContactPage from './pages/marketing/ContactPage'
@@ -85,6 +86,7 @@ function AppRoutes() {
       <Route path="/admin" element={<ProtectedRoute requireAdmin><AdminPage /></ProtectedRoute>} />
       <Route path="/admin/aptitude-exams" element={<ProtectedRoute requireAdmin><AptitudeExamAdminPage /></ProtectedRoute>} />
       <Route path="/admin/company-exam-control" element={<ProtectedRoute requireAdmin><CompanyExamControlPage /></ProtectedRoute>} />
+      <Route path="/admin/dsa-questions" element={<ProtectedRoute requireAdmin><DSAQuestionsAdminPage /></ProtectedRoute>} />
       <Route path="/admin/system-health" element={<ProtectedRoute requireAdmin><SystemHealthPage /></ProtectedRoute>} />
       <Route path="/admin/broadcast" element={<ProtectedRoute requireAdmin><BroadcastSystemPage /></ProtectedRoute>} />
       <Route path="/admin/audit-logs" element={<ProtectedRoute requireAdmin><AuditLogsPage /></ProtectedRoute>} />
