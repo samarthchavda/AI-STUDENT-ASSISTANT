@@ -30,7 +30,8 @@ import {
   Layout,
   Settings,
   Menu,
-  X
+  X,
+  Lock
 } from 'lucide-react';
 
 interface AptitudeUserSummary {
