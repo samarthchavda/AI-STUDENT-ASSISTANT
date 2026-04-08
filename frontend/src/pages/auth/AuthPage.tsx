@@ -344,7 +344,7 @@ export default function AuthPage() {
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center justify-center mb-6 hover:opacity-80 transition-opacity group">
             <img 
-              src="/logo-new.svg" 
+              src="/logo-dark-bg.svg" 
               alt="CodeCampus AI" 
               className="h-20 w-auto object-contain group-hover:scale-105 transition-transform"
             />
