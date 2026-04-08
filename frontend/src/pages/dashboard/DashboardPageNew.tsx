@@ -67,10 +67,12 @@ export default function DashboardPageNew() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [showCopilot, setShowCopilot] = useState(false)
   const [examAttempts, setExamAttempts] = useState<Record<string, number>>({})
+  const [examUnlockStatus, setExamUnlockStatus] = useState<Record<string, boolean>>({})
 
   // Load exam attempts on mount
   useEffect(() => {
     loadExamAttempts()
+    loadExamUnlockStatus()
   }, [])
 
   const loadExamAttempts = async () => {
@@ -96,6 +98,30 @@ export default function DashboardPageNew() {
       }
     } catch (error) {
       console.error('Failed to load exam attempts:', error)
+    }
+  }
+
+  const loadExamUnlockStatus = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) return
+      
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/aptitude/company-exam-status`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      
+      if (response.ok) {
+        const status = await response.json()
+        const unlockMap: Record<string, boolean> = {}
+        Object.keys(status).forEach(key => {
+          unlockMap[key] = status[key].is_unlocked
+        })
+        setExamUnlockStatus(unlockMap)
+      }
+    } catch (error) {
+      console.error('Failed to load exam unlock status:', error)
     }
   }
 
@@ -130,7 +156,7 @@ export default function DashboardPageNew() {
     }
   ]
 
-  // Mock Test Cards - Now using real user-specific attempt data
+  // Mock Test Cards - Now using real user-specific attempt data and admin unlock status
   const mockTests: MockTestCard[] = [
     {
       id: 'tcs-nqt',
@@ -210,7 +236,11 @@ export default function DashboardPageNew() {
       usedAttempts: examAttempts['google'] || 0,
       totalAttempts: 2
     }
-  ]
+  ].filter(test => {
+    // Filter out locked exams based on admin settings
+    const companyKey = test.company.toLowerCase()
+    return examUnlockStatus[companyKey] !== false // Show if unlocked or status not loaded yet
+  })
 
   const handleMockTestClick = (test: MockTestCard) => {
     // Check if user has exceeded free attempts

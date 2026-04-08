@@ -2448,3 +2448,104 @@ async def reset_exam_attempts(
             status_code=500,
             detail=f"Database error: {str(e)}"
         )
+
+
+
+# ============================================================================
+# COMPANY EXAM UNLOCK CONTROL
+# ============================================================================
+
+@router.get("/company-exam-settings")
+async def get_company_exam_settings(
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    """Get all company exam settings for admin control"""
+    from sqlalchemy import text
+    from app.core.database import engine
+    
+    try:
+        with engine.connect() as conn:
+            query = """
+                SELECT 
+                    id,
+                    company_key,
+                    company_name,
+                    is_unlocked,
+                    difficulty,
+                    plan_requirement,
+                    updated_at
+                FROM company_exam_settings
+                ORDER BY company_name
+            """
+            result = conn.execute(text(query))
+            settings = []
+            
+            for row in result:
+                settings.append({
+                    'id': row.id,
+                    'company_key': row.company_key,
+                    'company_name': row.company_name,
+                    'is_unlocked': row.is_unlocked,
+                    'difficulty': row.difficulty,
+                    'plan_requirement': row.plan_requirement,
+                    'updated_at': row.updated_at.isoformat() if hasattr(row.updated_at, 'isoformat') else str(row.updated_at)
+                })
+            
+            return {'settings': settings}
+            
+    except Exception as e:
+        print(f"Error fetching company exam settings: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Database error: {str(e)}"
+        )
+
+
+@router.put("/company-exam-settings/{company_key}")
+async def update_company_exam_setting(
+    company_key: str,
+    request: Dict[str, Any],
+    db: Session = Depends(get_db),
+    admin: User = Depends(get_admin_user)
+):
+    """Update company exam unlock status"""
+    from sqlalchemy import text
+    from app.core.database import engine
+    
+    try:
+        is_unlocked = request.get('is_unlocked')
+        
+        if is_unlocked is None:
+            raise HTTPException(status_code=400, detail="is_unlocked is required")
+        
+        with engine.begin() as conn:
+            # Update the setting
+            update_query = """
+                UPDATE company_exam_settings
+                SET is_unlocked = :is_unlocked,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE company_key = :company_key
+            """
+            result = conn.execute(
+                text(update_query),
+                {'is_unlocked': is_unlocked, 'company_key': company_key}
+            )
+            
+            if result.rowcount == 0:
+                raise HTTPException(status_code=404, detail="Company exam not found")
+        
+        return {'message': 'Company exam setting updated successfully'}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error updating company exam setting: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Database error: {str(e)}"
+        )

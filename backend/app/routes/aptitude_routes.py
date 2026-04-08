@@ -914,3 +914,37 @@ async def get_practice_categories(
     except Exception as e:
         print(f"Error fetching categories: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to fetch categories: {str(e)}")
+
+
+
+@router.get("/company-exam-status")
+async def get_company_exam_status(current_user = Depends(get_current_user)):
+    """Get unlock status for all company exams"""
+    from sqlalchemy import text
+    from app.core.database import engine
+    
+    try:
+        with engine.connect() as conn:
+            query = """
+                SELECT 
+                    company_key,
+                    company_name,
+                    is_unlocked
+                FROM company_exam_settings
+                ORDER BY company_name
+            """
+            result = conn.execute(text(query))
+            status = {}
+            
+            for row in result:
+                status[row.company_key] = {
+                    'company_name': row.company_name,
+                    'is_unlocked': row.is_unlocked
+                }
+            
+            return status
+            
+    except Exception as e:
+        print(f"Error fetching company exam status: {str(e)}")
+        # Return empty dict if table doesn't exist yet
+        return {}
