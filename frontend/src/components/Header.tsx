@@ -17,7 +17,7 @@ export default function Header() {
     <header className="fixed top-0 left-0 right-0 z-50 border-b border-gray-100 bg-white/80 backdrop-blur-md shadow-sm">
       <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
-          <Link to="/" className="group flex items-center gap-3 transition-opacity hover:opacity-85">
+          <Link to="/" className="group flex items-center gap-3 transition-opacity hover:opacity-85 -ml-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,_#0f766e,_#115e59)] text-white shadow-[0_14px_28px_rgba(15,118,110,0.28)] transition-transform group-hover:-rotate-3 group-hover:scale-105">
               <Brain className="h-6 w-6" />
             </div>

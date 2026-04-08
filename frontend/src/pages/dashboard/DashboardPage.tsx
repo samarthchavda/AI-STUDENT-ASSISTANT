@@ -128,12 +128,33 @@ export default function DashboardPageNew() {
   const [dsaStats, setDsaStats] = useState<DashboardStats | null>(null)
   const [streakData, setStreakData] = useState<StreakData | null>(null)
   const [loadingDSA, setLoadingDSA] = useState(true)
+  const [examAttempts, setExamAttempts] = useState<Record<string, number>>({})
 
   // Load exam history and stats on mount
   useEffect(() => {
     loadExamHistory()
     loadDSAStats()
+    loadExamAttempts()
   }, [])
+
+  const loadExamAttempts = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/aptitude/attempts-by-company`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      
+      if (response.ok) {
+        const attempts = await response.json()
+        console.log('📊 Loaded exam attempts by company:', attempts)
+        setExamAttempts(attempts)
+      }
+    } catch (error) {
+      console.error('Failed to load exam attempts:', error)
+    }
+  }
 
   const loadDSAStats = async () => {
     try {
@@ -243,7 +264,7 @@ export default function DashboardPageNew() {
     }
   ]
 
-  // Mock Test Cards
+  // Mock Test Cards - Now using real user-specific attempt data
   const mockTests: MockTestCard[] = [
     {
       id: 'tcs-nqt',
@@ -255,7 +276,7 @@ export default function DashboardPageNew() {
       route: '/exam-simulation?company=TCS',
       icon: Award,
       isPremium: user?.plan?.toLowerCase() === 'free',
-      usedAttempts: 1,
+      usedAttempts: examAttempts['tcs'] || 0,
       totalAttempts: 2
     },
     {
@@ -268,7 +289,7 @@ export default function DashboardPageNew() {
       route: '/exam-simulation?company=Infosys',
       icon: Award,
       isPremium: user?.plan?.toLowerCase() === 'free',
-      usedAttempts: 0,
+      usedAttempts: examAttempts['infosys'] || 0,
       totalAttempts: 2
     },
     {
@@ -281,7 +302,7 @@ export default function DashboardPageNew() {
       route: '/exam-simulation?company=Wipro',
       icon: Award,
       isPremium: user?.plan?.toLowerCase() === 'free',
-      usedAttempts: 2,
+      usedAttempts: examAttempts['wipro'] || 0,
       totalAttempts: 2
     },
     {
@@ -294,7 +315,7 @@ export default function DashboardPageNew() {
       route: '/exam-simulation?company=Amazon',
       icon: Award,
       isPremium: user?.plan?.toLowerCase() === 'free',
-      usedAttempts: 0,
+      usedAttempts: examAttempts['amazon'] || 0,
       totalAttempts: 2
     },
     {
@@ -307,7 +328,7 @@ export default function DashboardPageNew() {
       route: '/exam-simulation?company=Microsoft',
       icon: Award,
       isPremium: user?.plan?.toLowerCase() === 'free',
-      usedAttempts: 1,
+      usedAttempts: examAttempts['microsoft'] || 0,
       totalAttempts: 2
     },
     {
@@ -320,7 +341,7 @@ export default function DashboardPageNew() {
       route: '/exam-simulation?company=Google',
       icon: Award,
       isPremium: user?.plan?.toLowerCase() === 'free',
-      usedAttempts: 0,
+      usedAttempts: examAttempts['google'] || 0,
       totalAttempts: 2
     }
   ]
@@ -563,32 +584,32 @@ export default function DashboardPageNew() {
           </div>
 
           {/* Compact Quick Actions Row */}
-          <div className="mb-6">
-            <div className="flex flex-wrap gap-2">
+          <div className="mb-6 mt-2">
+            <div className="flex flex-wrap gap-3">
               <button
                 onClick={() => navigate('/dsa')}
-                className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-purple-50 border border-gray-200 hover:border-purple-300 rounded-xl text-sm font-semibold text-gray-700 hover:text-purple-700 transition-all shadow-sm hover:shadow"
+                className="flex items-center gap-2.5 px-5 py-3 bg-white hover:bg-purple-50 border border-gray-200 hover:border-purple-300 rounded-xl text-sm font-semibold text-gray-700 hover:text-purple-700 transition-all shadow-sm hover:shadow"
               >
                 <Code2 className="w-4 h-4" />
                 Practice DSA
               </button>
               <button
                 onClick={() => navigate('/practice-aptitude')}
-                className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-green-50 border border-gray-200 hover:border-green-300 rounded-xl text-sm font-semibold text-gray-700 hover:text-green-700 transition-all shadow-sm hover:shadow"
+                className="flex items-center gap-2.5 px-5 py-3 bg-white hover:bg-green-50 border border-gray-200 hover:border-green-300 rounded-xl text-sm font-semibold text-gray-700 hover:text-green-700 transition-all shadow-sm hover:shadow"
               >
                 <BookOpen className="w-4 h-4" />
                 Aptitude Test
               </button>
               <button
                 onClick={() => navigate('/career')}
-                className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-xl text-sm font-semibold text-gray-700 hover:text-blue-700 transition-all shadow-sm hover:shadow"
+                className="flex items-center gap-2.5 px-5 py-3 bg-white hover:bg-blue-50 border border-gray-200 hover:border-blue-300 rounded-xl text-sm font-semibold text-gray-700 hover:text-blue-700 transition-all shadow-sm hover:shadow"
               >
                 <FileText className="w-4 h-4" />
                 Resume Builder
               </button>
               <button
                 onClick={() => navigate('/chat')}
-                className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-pink-50 border border-gray-200 hover:border-pink-300 rounded-xl text-sm font-semibold text-gray-700 hover:text-pink-700 transition-all shadow-sm hover:shadow"
+                className="flex items-center gap-2.5 px-5 py-3 bg-white hover:bg-pink-50 border border-gray-200 hover:border-pink-300 rounded-xl text-sm font-semibold text-gray-700 hover:text-pink-700 transition-all shadow-sm hover:shadow"
               >
                 <MessageSquare className="w-4 h-4" />
                 AI Copilot

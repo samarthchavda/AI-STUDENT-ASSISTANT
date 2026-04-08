@@ -728,6 +728,40 @@ async def get_exam_details(exam_id: int, current_user = Depends(get_current_user
         )
 
 
+@router.get("/attempts-by-company")
+async def get_attempts_by_company(current_user = Depends(get_current_user)):
+    """Get exam attempt counts by company for the current user"""
+    try:
+        query = """
+            SELECT 
+                LOWER(company) as company,
+                COUNT(*) as attempt_count
+            FROM aptitude_exam_history
+            WHERE user_id = :user_id
+            GROUP BY LOWER(company)
+        """
+        
+        with engine.connect() as conn:
+            result = conn.execute(text(query), {"user_id": current_user.id})
+            rows = result.fetchall()
+            
+            attempts = {}
+            for row in rows:
+                attempts[row.company] = row.attempt_count
+            
+            return attempts
+            
+    except Exception as e:
+        print(f"Error fetching attempts by company: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail=f"Database error: {str(e)}"
+        )
+        )
+
+
 
 # ============================================================================
 # FREE UNLIMITED APTITUDE PRACTICE - Fetch questions from database

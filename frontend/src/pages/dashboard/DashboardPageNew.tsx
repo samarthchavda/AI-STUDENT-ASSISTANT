@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Home,
@@ -66,6 +66,31 @@ export default function DashboardPageNew() {
   const [activeSidebar, setActiveSidebar] = useState('dashboard')
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [showCopilot, setShowCopilot] = useState(false)
+  const [examAttempts, setExamAttempts] = useState<Record<string, number>>({})
+
+  // Load exam attempts on mount
+  useEffect(() => {
+    loadExamAttempts()
+  }, [])
+
+  const loadExamAttempts = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/api/aptitude/attempts-by-company`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      
+      if (response.ok) {
+        const attempts = await response.json()
+        console.log('📊 Loaded exam attempts by company:', attempts)
+        setExamAttempts(attempts)
+      }
+    } catch (error) {
+      console.error('Failed to load exam attempts:', error)
+    }
+  }
 
   // Sidebar navigation items
   const sidebarItems: SidebarItem[] = [
@@ -98,7 +123,7 @@ export default function DashboardPageNew() {
     }
   ]
 
-  // Mock Test Cards
+  // Mock Test Cards - Now using real user-specific attempt data
   const mockTests: MockTestCard[] = [
     {
       id: 'tcs-nqt',
@@ -110,7 +135,7 @@ export default function DashboardPageNew() {
       route: '/exam-simulation?company=TCS',
       icon: Award,
       isPremium: user?.plan?.toLowerCase() === 'free',
-      usedAttempts: 1,
+      usedAttempts: examAttempts['tcs'] || 0,
       totalAttempts: 2
     },
     {
@@ -123,7 +148,7 @@ export default function DashboardPageNew() {
       route: '/exam-simulation?company=Infosys',
       icon: Award,
       isPremium: user?.plan?.toLowerCase() === 'free',
-      usedAttempts: 0,
+      usedAttempts: examAttempts['infosys'] || 0,
       totalAttempts: 2
     },
     {
@@ -136,7 +161,7 @@ export default function DashboardPageNew() {
       route: '/exam-simulation?company=Wipro',
       icon: Award,
       isPremium: user?.plan?.toLowerCase() === 'free',
-      usedAttempts: 2,
+      usedAttempts: examAttempts['wipro'] || 0,
       totalAttempts: 2
     },
     {
@@ -149,7 +174,7 @@ export default function DashboardPageNew() {
       route: '/exam-simulation?company=Amazon',
       icon: Award,
       isPremium: user?.plan?.toLowerCase() === 'free',
-      usedAttempts: 0,
+      usedAttempts: examAttempts['amazon'] || 0,
       totalAttempts: 2
     },
     {
@@ -162,7 +187,7 @@ export default function DashboardPageNew() {
       route: '/exam-simulation?company=Microsoft',
       icon: Award,
       isPremium: user?.plan?.toLowerCase() === 'free',
-      usedAttempts: 1,
+      usedAttempts: examAttempts['microsoft'] || 0,
       totalAttempts: 2
     },
     {
@@ -175,7 +200,7 @@ export default function DashboardPageNew() {
       route: '/exam-simulation?company=Google',
       icon: Award,
       isPremium: user?.plan?.toLowerCase() === 'free',
-      usedAttempts: 0,
+      usedAttempts: examAttempts['google'] || 0,
       totalAttempts: 2
     }
   ]
