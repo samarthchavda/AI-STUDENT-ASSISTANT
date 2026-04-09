@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Search, ChevronDown, ChevronUp, ChevronRight, Menu, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cleanQuestionText } from './utils/textCleaners'
-import { aptitudeCategories, getSubcategoriesForCategory } from '../../config/aptitudeCategories'
+import { aptitudeCategories } from '../../config/aptitudeCategories'
 
 interface Question {
   id: string
@@ -27,15 +27,8 @@ interface SubCategory {
   total: number
 }
 
-interface ParentCategory {
-  name: string
-  icon: string
-  subCategories: SubCategory[]
-}
-
 export default function AptitudePracticePage() {
   const [selectedCategory, setSelectedCategory] = useState('percentage')
-  const [selectedParentCategory, setSelectedParentCategory] = useState('Aptitude')
   const [questions, setQuestions] = useState<Question[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
