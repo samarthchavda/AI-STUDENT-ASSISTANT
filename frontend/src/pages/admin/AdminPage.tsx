@@ -764,6 +764,17 @@ const AdminPage = () => {
                 <p className="px-4 text-xs font-semibold text-gray-400 uppercase mb-2">Analytics</p>
                 <button
                   onClick={() => {
+                    handleNavigateToPage('/admin/time-tracking')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+                >
+                  <Activity className="w-5 h-5" />
+                  <span className="text-sm">Time Tracking</span>
+                </button>
+                
+                <button
+                  onClick={() => {
                     handleNavigateToPage('/admin/dsa-analytics')
                     setMobileMenuOpen(false)
                   }}
@@ -896,6 +907,14 @@ const AdminPage = () => {
             {/* Analytics Section */}
             <div className="my-3 border-t border-gray-200"></div>
             <p className="px-4 text-xs font-semibold text-gray-400 uppercase mb-2">Analytics</p>
+            <button
+              onClick={() => handleNavigateToPage('/admin/time-tracking')}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+            >
+              <Activity className="w-5 h-5" />
+              <span className="text-sm">Time Tracking</span>
+            </button>
+            
             <button
               onClick={() => handleNavigateToPage('/admin/dsa-analytics')}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"

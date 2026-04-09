@@ -19,6 +19,7 @@ import UserResumesPage from './pages/admin/UserResumesPage'
 import AIResumeMonitorPage from './pages/admin/AIResumeMonitorPage'
 import AISettingsPage from './pages/admin/AISettingsPage'
 import ContactMessagesPage from './pages/admin/ContactMessagesPage'
+import TimeTrackingPage from './pages/admin/TimeTrackingPage'
 import CareerPage from './pages/resume/CareerPage'
 import ResumeTemplateGalleryPage from './pages/resume/ResumeTemplateGalleryPage'
 import CompanyPrepPage from './pages/aptitude/CompanyPrepPage'
@@ -40,9 +41,11 @@ import DSAAnalyticsPage from './pages/admin/DSAAnalyticsPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import ScrollToTop from './components/ScrollToTop'
 import { useAutoLogout } from './hooks/useAutoLogout'
+import { useActivityTracking } from './hooks/useActivityTracking'
 
 function AppRoutes() {
   useAutoLogout()
+  useActivityTracking() // Add activity tracking
 
   return (
     <Routes>
@@ -100,6 +103,7 @@ function AppRoutes() {
       <Route path="/admin/ai-resume-monitor" element={<ProtectedRoute requireAdmin><AIResumeMonitorPage /></ProtectedRoute>} />
       <Route path="/admin/ai-settings" element={<ProtectedRoute requireAdmin><AISettingsPage /></ProtectedRoute>} />
       <Route path="/admin/contact-messages" element={<ProtectedRoute requireAdmin><ContactMessagesPage /></ProtectedRoute>} />
+      <Route path="/admin/time-tracking" element={<ProtectedRoute requireAdmin><TimeTrackingPage /></ProtectedRoute>} />
     </Routes>
   )
 }
