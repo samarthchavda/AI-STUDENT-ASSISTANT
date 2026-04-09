@@ -370,11 +370,7 @@ export default function ExamPrepPage() {
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-slate-600 mb-3">{company.description}</p>
-                      <div className="flex items-center gap-2 text-xs font-semibold text-blue-600">
-                        <FileText className="h-3.5 w-3.5" />
-                        {company.count.toLocaleString()} questions
-                      </div>
+                      <p className="text-xs text-slate-600">{company.description}</p>
                     </button>
                   )
                 })}
