@@ -786,6 +786,17 @@ const AdminPage = () => {
                 
                 <button
                   onClick={() => {
+                    handleNavigateToPage('/admin/performance-trends')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+                >
+                  <TrendingUp className="w-5 h-5" />
+                  <span className="text-sm">Performance Trends</span>
+                </button>
+                
+                <button
+                  onClick={() => {
                     handleNavigateToPage('/admin/dsa-analytics')
                     setMobileMenuOpen(false)
                   }}
@@ -932,6 +943,14 @@ const AdminPage = () => {
             >
               <Target className="w-5 h-5" />
               <span className="text-sm">Learning Behavior</span>
+            </button>
+            
+            <button
+              onClick={() => handleNavigateToPage('/admin/performance-trends')}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+            >
+              <TrendingUp className="w-5 h-5" />
+              <span className="text-sm">Performance Trends</span>
             </button>
             
             <button
