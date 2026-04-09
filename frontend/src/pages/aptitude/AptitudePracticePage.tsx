@@ -22,6 +22,7 @@ interface Question {
 
 interface SubCategory {
   name: string
+  value: string
   solved: number
   total: number
 }
@@ -32,190 +33,32 @@ interface ParentCategory {
   subCategories: SubCategory[]
 }
 
-// Initial structure - will be populated dynamically from API
-const getInitialCategoryStructure = (): ParentCategory[] => [
-  {
-    name: 'Aptitude',
-    icon: '🔢',
-    subCategories: []
-  },
-  {
-    name: 'Logical Reasoning',
-    icon: '🧠',
-    subCategories: []
-  },
-  {
-    name: 'Verbal Ability',
-    icon: '📝',
-    subCategories: []
-  },
-  {
-    name: 'C Programming',
-    icon: '💻',
-    subCategories: []
-  },
-  {
-    name: 'Java Programming',
-    icon: '☕',
-    subCategories: []
-  },
-  {
-    name: 'Database',
-    icon: '🗄️',
-    subCategories: []
-  },
-  {
-    name: 'Networking',
-    icon: '🌐',
-    subCategories: []
-  },
-  {
-    name: 'Digital Electronics',
-    icon: '⚡',
-    subCategories: []
-  },
-  {
-    name: 'General Knowledge',
-    icon: '🌍',
-    subCategories: []
-  }
-]
-
-// Map subcategories to parent categories
-const subcategoryToParent: { [key: string]: string } = {
-  // Aptitude
-  'Average': 'Aptitude',
-  'Percentage': 'Aptitude',
-  'Profit and Loss': 'Aptitude',
-  'Time and Distance': 'Aptitude',
-  'Time and Work': 'Aptitude',
-  'Ratio and Proportion': 'Aptitude',
-  'Simple Interest': 'Aptitude',
-  'Compound Interest': 'Aptitude',
-  'Pipes and Cisterns': 'Aptitude',
-  'Problems on Trains': 'Aptitude',
-  'Boats and Streams': 'Aptitude',
-  'Alligation or Mixture': 'Aptitude',
-  'Problems on Ages': 'Aptitude',
-  'Calendar': 'Aptitude',
-  'Clock': 'Aptitude',
-  'Height and Distance': 'Aptitude',
-  'Area': 'Aptitude',
-  'Volume and Surface Area': 'Aptitude',
-  'Permutation and Combination': 'Aptitude',
-  'Probability': 'Aptitude',
-  'True Discount': 'Aptitude',
-  "Banker's Discount": 'Aptitude',
-  'Stocks and Shares': 'Aptitude',
-  
-  // Logical Reasoning
-  'Puzzles': 'Logical Reasoning',
-  'Verbal Reasoning': 'Logical Reasoning',
-  'Logical Problems': 'Logical Reasoning',
-  'Odd Man Out': 'Logical Reasoning',
-  'Series': 'Logical Reasoning',
-  'Coding Decoding': 'Logical Reasoning',
-  'Blood Relations': 'Logical Reasoning',
-  
-  // Verbal Ability
-  'Synonyms': 'Verbal Ability',
-  'Antonyms': 'Verbal Ability',
-  'Sentence Correction': 'Verbal Ability',
-  'Spotting Errors': 'Verbal Ability',
-  
-  // C Programming
-  'C Basics': 'C Programming',
-  'C Programming': 'C Programming',
-  'Arrays And Strings': 'C Programming',
-  
-  // Java Programming
-  'Java Basics': 'Java Programming',
-  'Java Programming': 'Java Programming',
-  
-  // Database
-  'SQL': 'Database',
-  
-  // Networking
-  'Networking': 'Networking',
-  'Networking Basics': 'Networking',
-  
-  // Digital Electronics
-  'Digital Electronics': 'Digital Electronics',
-  
-  // General Knowledge
-  'General Knowledge': 'General Knowledge',
-  'World Geography': 'General Knowledge'
-}
-
 export default function AptitudePracticePage() {
-  const [selectedCategory, setSelectedCategory] = useState('Average')
+  const [selectedCategory, setSelectedCategory] = useState('percentage')
+  const [selectedParentCategory, setSelectedParentCategory] = useState('Aptitude')
   const [questions, setQuestions] = useState<Question[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedOption, setSelectedOption] = useState<{ [key: string]: string }>({})
   const [expandedParents, setExpandedParents] = useState<string[]>(['Aptitude'])
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [categoryCounts, setCategoryCounts] = useState<{ [key: string]: number }>({})
-  const [categoryStructure, setCategoryStructure] = useState<ParentCategory[]>(getInitialCategoryStructure())
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
   const [totalQuestions, setTotalQuestions] = useState(0)
   const questionsPerPage = 10
 
-  // Fetch category counts on mount and build dynamic structure
-  useEffect(() => {
-    fetchCategoryCounts()
-  }, [])
-
-  const fetchCategoryCounts = async () => {
-    try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/aptitude/practice-categories`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        const counts: { [key: string]: number } = {}
-        
-        // Build dynamic category structure
-        const newStructure = getInitialCategoryStructure()
-        
-        data.categories.forEach((cat: any) => {
-          counts[cat.subcategory] = cat.total_questions
-          
-          // Find parent category
-          const parentName = subcategoryToParent[cat.subcategory] || 'Aptitude'
-          const parent = newStructure.find(p => p.name === parentName)
-          
-          if (parent) {
-            parent.subCategories.push({
-              name: cat.subcategory,
-              solved: 0,
-              total: cat.total_questions
-            })
-          }
-        })
-        
-        // Sort subcategories alphabetically within each parent
-        newStructure.forEach(parent => {
-          parent.subCategories.sort((a, b) => a.name.localeCompare(b.name))
-        })
-        
-        setCategoryCounts(counts)
-        setCategoryStructure(newStructure)
-        
-        // Set first available subcategory as selected
-        if (newStructure[0]?.subCategories[0]) {
-          setSelectedCategory(newStructure[0].subCategories[0].name)
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching category counts:', error)
-    }
-  }
+  // Use the imported category structure
+  const categoryStructure = aptitudeCategories.map(cat => ({
+    name: cat.label,
+    icon: cat.icon || '📚',
+    subCategories: cat.subcategories.map(sub => ({
+      name: sub.label,
+      value: sub.value,
+      solved: 0,
+      total: sub.count || 0
+    }))
+  }))
 
   useEffect(() => {
     setCurrentPage(1) // Reset to page 1 when category changes
@@ -393,14 +236,14 @@ export default function AptitudePracticePage() {
                         >
                           <div className="ml-4 mt-1 space-y-1 border-l-2 border-gray-100 pl-2">
                             {parent.subCategories.map((sub) => {
-                              const isActive = selectedCategory === sub.name
-                              const totalQuestions = categoryCounts[sub.name] || 0
+                              const isActive = selectedCategory === sub.value
+                              const totalQuestions = sub.total || 0
                               const isComingSoon = totalQuestions === 0
                               
                               return (
                                 <button
-                                  key={sub.name}
-                                  onClick={() => !isComingSoon && handleSubCategoryClick(sub.name)}
+                                  key={sub.value}
+                                  onClick={() => !isComingSoon && handleSubCategoryClick(sub.value)}
                                   disabled={isComingSoon}
                                   className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
                                     isActive

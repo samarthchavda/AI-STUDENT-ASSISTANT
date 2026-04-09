@@ -2582,51 +2582,68 @@ async def get_dsa_questions(
         
         questions_text = match.group(1)
         
-        # Count questions by difficulty
-        easy_count = questions_text.count("difficulty: 'Easy'")
-        medium_count = questions_text.count("difficulty: 'Medium'")
-        hard_count = questions_text.count("difficulty: 'Hard'")
+        # Count questions by difficulty - more accurate counting
+        easy_count = len(re.findall(r"difficulty:\s*['\"]Easy['\"]", questions_text))
+        medium_count = len(re.findall(r"difficulty:\s*['\"]Medium['\"]", questions_text))
+        hard_count = len(re.findall(r"difficulty:\s*['\"]Hard['\"]", questions_text))
         total = easy_count + medium_count + hard_count
         
         # Extract topics
-        topic_matches = re.findall(r"topic: '([^']+)'", questions_text)
+        topic_matches = re.findall(r"topic:\s*['\"]([^'\"]+)['\"]", questions_text)
         topic_counts = {}
         for topic in topic_matches:
             topic_counts[topic] = topic_counts.get(topic, 0) + 1
         
         topics = [{'topic': k, 'count': v} for k, v in sorted(topic_counts.items(), key=lambda x: x[1], reverse=True)]
         
-        # Extract individual questions for display
+        # Extract individual questions for display - improved pattern
         questions = []
-        # Match each question object more carefully
-        question_pattern = r"id:\s*(\d+),\s*slug:\s*'([^']+)',\s*title:\s*'([^']+)',\s*difficulty:\s*'([^']+)',\s*topic:\s*'([^']+)',\s*companies:\s*\[([^\]]+)\]"
+        # Split by question objects (each starts with opening brace after comma or array start)
+        question_blocks = re.split(r'\n\s*\{\s*\n', questions_text)
         
-        for match in re.finditer(question_pattern, questions_text):
-            id_num = int(match.group(1))
-            slug = match.group(2)
-            title = match.group(3)
-            difficulty = match.group(4)
-            topic = match.group(5)
-            companies_str = match.group(6)
+        for block in question_blocks:
+            if not block.strip():
+                continue
+                
+            # Extract fields using individual patterns
+            id_match = re.search(r'id:\s*(\d+)', block)
+            slug_match = re.search(r"slug:\s*['\"]([^'\"]+)['\"]", block)
+            title_match = re.search(r"title:\s*['\"]([^'\"]+)['\"]", block)
+            difficulty_match = re.search(r"difficulty:\s*['\"]([^'\"]+)['\"]", block)
+            topic_match = re.search(r"topic:\s*['\"]([^'\"]+)['\"]", block)
+            companies_match = re.search(r"companies:\s*\[([^\]]+)\]", block)
+            acceptance_match = re.search(r"acceptance:\s*([\d.]+)", block)
             
-            # Parse companies array
-            companies = [c.strip().strip("'\"") for c in companies_str.split(',') if c.strip()]
-            
-            # Try to find acceptance rate for this question
-            acceptance = 50.0  # default
-            acceptance_match = re.search(rf"id:\s*{id_num}.*?acceptance:\s*([\d.]+)", questions_text, re.DOTALL)
-            if acceptance_match:
-                acceptance = float(acceptance_match.group(1))
-            
-            questions.append({
-                'id': id_num,
-                'slug': slug,
-                'title': title,
-                'difficulty': difficulty,
-                'topic': topic,
-                'companies': companies,
-                'acceptance': acceptance
-            })
+            if id_match and slug_match and title_match and difficulty_match and topic_match:
+                id_num = int(id_match.group(1))
+                slug = slug_match.group(1)
+                title = title_match.group(1)
+                difficulty = difficulty_match.group(1)
+                topic = topic_match.group(1)
+                
+                # Parse companies array
+                companies = []
+                if companies_match:
+                    companies_str = companies_match.group(1)
+                    companies = [c.strip().strip("'\"") for c in companies_str.split(',') if c.strip()]
+                
+                # Get acceptance rate
+                acceptance = 50.0  # default
+                if acceptance_match:
+                    acceptance = float(acceptance_match.group(1))
+                
+                questions.append({
+                    'id': id_num,
+                    'slug': slug,
+                    'title': title,
+                    'difficulty': difficulty,
+                    'topic': topic,
+                    'companies': companies,
+                    'acceptance': acceptance
+                })
+        
+        # Sort questions by id
+        questions.sort(key=lambda x: x['id'])
         
         stats = {
             'total': total,
@@ -2636,7 +2653,7 @@ async def get_dsa_questions(
             'topics': topics[:10]  # Top 10 topics
         }
         
-        return {'questions': questions, 'stats': stats}
+        return {'questions': questions[:50], 'stats': stats}  # Return first 50 for display
         
     except Exception as e:
         print(f"Error fetching DSA questions: {str(e)}")
