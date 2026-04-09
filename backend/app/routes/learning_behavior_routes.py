@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from sqlalchemy import func, text, desc, case
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime, timedelta
 from app.core.auth import get_current_user, require_admin
-from app.core.database import get_db_connection
-import psycopg2.extras
+from app.core.database import get_db, engine
 
 router = APIRouter(prefix="/tracking", tags=["Learning Behavior Tracking"])
 
@@ -16,32 +17,6 @@ class LearningBehaviorLog(BaseModel):
     company: Optional[str] = None
     action_type: str  # start_practice, complete_question, skip_question, view_solution
     time_of_day: Optional[str] = None
-
-# Response Models
-class LearningBehaviorSummary(BaseModel):
-    most_practiced_topic: str
-    most_practiced_category: str
-    preferred_difficulty: str
-    favorite_company: str
-    peak_study_time: str
-    total_actions: int
-    completed_count: int
-    skipped_count: int
-    solutions_viewed: int
-
-class UserBehaviorDetail(BaseModel):
-    id: int
-    name: str
-    email: str
-    plan: str
-    most_practiced_topic: Optional[str]
-    preferred_difficulty: Optional[str]
-    favorite_company: Optional[str]
-    peak_study_time: Optional[str]
-    total_actions: int
-    completed_count: int
-    skipped_count: int
-    completion_rate: float
 
 # Helper function to determine time of day
 def get_time_of_day() -> str:
@@ -59,59 +34,55 @@ def get_time_of_day() -> str:
 @router.post("/learning-behavior")
 async def log_learning_behavior(
     log: LearningBehaviorLog,
-    current_user: dict = Depends(get_current_user)
+    current_user = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
     """Log user learning behavior"""
-    conn = get_db_connection()
-    cur = conn.cursor()
-    
     try:
         # Auto-detect time of day if not provided
         time_of_day = log.time_of_day or get_time_of_day()
         
-        cur.execute("""
+        # Use raw SQL for insert
+        query = text("""
             INSERT INTO learning_behavior_logs 
             (user_id, topic, category, difficulty, company, action_type, time_of_day)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            VALUES (:user_id, :topic, :category, :difficulty, :company, :action_type, :time_of_day)
             RETURNING id
-        """, (
-            current_user['id'],
-            log.topic,
-            log.category,
-            log.difficulty,
-            log.company,
-            log.action_type,
-            time_of_day
-        ))
+        """)
         
-        log_id = cur.fetchone()[0]
-        conn.commit()
+        result = db.execute(query, {
+            'user_id': current_user.id,
+            'topic': log.topic,
+            'category': log.category,
+            'difficulty': log.difficulty,
+            'company': log.company,
+            'action_type': log.action_type,
+            'time_of_day': time_of_day
+        })
+        
+        log_id = result.fetchone()[0]
+        db.commit()
         
         return {"success": True, "log_id": log_id}
         
     except Exception as e:
-        conn.rollback()
+        db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        cur.close()
-        conn.close()
 
 # Admin Endpoints
 @router.get("/admin/learning-behavior/summary")
 async def get_learning_behavior_summary(
     days: int = 30,
-    current_user: dict = Depends(require_admin)
+    current_user = Depends(require_admin),
+    db: Session = Depends(get_db)
 ):
     """Get overall learning behavior summary"""
-    conn = get_db_connection()
-    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    
     try:
         # Refresh materialized view first
-        cur.execute("SELECT refresh_learning_behavior_summary()")
+        db.execute(text("SELECT refresh_learning_behavior_summary()"))
         
         # Get summary stats
-        cur.execute("""
+        query = text("""
             SELECT 
                 MODE() WITHIN GROUP (ORDER BY most_practiced_topic) as most_practiced_topic,
                 MODE() WITHIN GROUP (ORDER BY most_practiced_category) as most_practiced_category,
@@ -123,12 +94,12 @@ async def get_learning_behavior_summary(
                 SUM(skipped_count) as skipped_count,
                 SUM(solutions_viewed) as solutions_viewed
             FROM learning_behavior_summary
-            WHERE last_activity >= NOW() - INTERVAL '%s days'
-        """, (days,))
+            WHERE last_activity >= NOW() - INTERVAL ':days days'
+        """)
         
-        result = cur.fetchone()
+        result = db.execute(query, {'days': days}).fetchone()
         
-        if not result or not result['total_actions']:
+        if not result or not result[5]:  # total_actions is at index 5
             return {
                 "most_practiced_topic": "N/A",
                 "most_practiced_category": "N/A",
@@ -141,62 +112,73 @@ async def get_learning_behavior_summary(
                 "solutions_viewed": 0
             }
         
-        return dict(result)
+        return {
+            "most_practiced_topic": result[0] or "N/A",
+            "most_practiced_category": result[1] or "N/A",
+            "preferred_difficulty": result[2] or "N/A",
+            "favorite_company": result[3] or "N/A",
+            "peak_study_time": result[4] or "N/A",
+            "total_actions": int(result[5]) if result[5] else 0,
+            "completed_count": int(result[6]) if result[6] else 0,
+            "skipped_count": int(result[7]) if result[7] else 0,
+            "solutions_viewed": int(result[8]) if result[8] else 0
+        }
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        cur.close()
-        conn.close()
 
 @router.get("/admin/learning-behavior/topic-distribution")
 async def get_topic_distribution(
     days: int = 30,
-    current_user: dict = Depends(require_admin)
+    current_user = Depends(require_admin),
+    db: Session = Depends(get_db)
 ):
     """Get topic distribution for charts"""
-    conn = get_db_connection()
-    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    
     try:
-        cur.execute("""
+        query = text("""
             SELECT 
                 topic,
                 COUNT(*) as count,
                 ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER (), 2) as percentage
             FROM learning_behavior_logs
-            WHERE created_at >= NOW() - INTERVAL '%s days'
+            WHERE created_at >= NOW() - INTERVAL ':days days'
             AND topic IS NOT NULL
             GROUP BY topic
             ORDER BY count DESC
             LIMIT 10
-        """, (days,))
+        """)
         
-        return {"data": cur.fetchall()}
+        results = db.execute(query, {'days': days}).fetchall()
+        
+        data = [
+            {
+                "topic": row[0],
+                "count": int(row[1]),
+                "percentage": float(row[2])
+            }
+            for row in results
+        ]
+        
+        return {"data": data}
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        cur.close()
-        conn.close()
 
 @router.get("/admin/learning-behavior/difficulty-distribution")
 async def get_difficulty_distribution(
     days: int = 30,
-    current_user: dict = Depends(require_admin)
+    current_user = Depends(require_admin),
+    db: Session = Depends(get_db)
 ):
     """Get difficulty preference distribution"""
-    conn = get_db_connection()
-    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    
     try:
-        cur.execute("""
+        query = text("""
             SELECT 
                 difficulty,
                 COUNT(*) as count,
                 ROUND(COUNT(*) * 100.0 / SUM(COUNT(*)) OVER (), 2) as percentage
             FROM learning_behavior_logs
-            WHERE created_at >= NOW() - INTERVAL '%s days'
+            WHERE created_at >= NOW() - INTERVAL ':days days'
             AND difficulty IS NOT NULL
             GROUP BY difficulty
             ORDER BY 
@@ -206,62 +188,73 @@ async def get_difficulty_distribution(
                     WHEN 'hard' THEN 3
                     ELSE 4
                 END
-        """, (days,))
+        """)
         
-        return {"data": cur.fetchall()}
+        results = db.execute(query, {'days': days}).fetchall()
+        
+        data = [
+            {
+                "difficulty": row[0],
+                "count": int(row[1]),
+                "percentage": float(row[2])
+            }
+            for row in results
+        ]
+        
+        return {"data": data}
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        cur.close()
-        conn.close()
 
 @router.get("/admin/learning-behavior/company-preference")
 async def get_company_preference(
     days: int = 30,
-    current_user: dict = Depends(require_admin)
+    current_user = Depends(require_admin),
+    db: Session = Depends(get_db)
 ):
     """Get company preference distribution"""
-    conn = get_db_connection()
-    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    
     try:
-        cur.execute("""
+        query = text("""
             SELECT 
                 company,
                 COUNT(*) as count
             FROM learning_behavior_logs
-            WHERE created_at >= NOW() - INTERVAL '%s days'
+            WHERE created_at >= NOW() - INTERVAL ':days days'
             AND company IS NOT NULL
             GROUP BY company
             ORDER BY count DESC
             LIMIT 10
-        """, (days,))
+        """)
         
-        return {"data": cur.fetchall()}
+        results = db.execute(query, {'days': days}).fetchall()
+        
+        data = [
+            {
+                "company": row[0],
+                "count": int(row[1])
+            }
+            for row in results
+        ]
+        
+        return {"data": data}
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        cur.close()
-        conn.close()
 
 @router.get("/admin/learning-behavior/study-time-heatmap")
 async def get_study_time_heatmap(
     days: int = 30,
-    current_user: dict = Depends(require_admin)
+    current_user = Depends(require_admin),
+    db: Session = Depends(get_db)
 ):
     """Get study time heatmap data"""
-    conn = get_db_connection()
-    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    
     try:
-        cur.execute("""
+        query = text("""
             SELECT 
                 time_of_day,
                 COUNT(*) as count
             FROM learning_behavior_logs
-            WHERE created_at >= NOW() - INTERVAL '%s days'
+            WHERE created_at >= NOW() - INTERVAL ':days days'
             AND time_of_day IS NOT NULL
             GROUP BY time_of_day
             ORDER BY 
@@ -271,30 +264,35 @@ async def get_study_time_heatmap(
                     WHEN 'evening' THEN 3
                     WHEN 'night' THEN 4
                 END
-        """, (days,))
+        """)
         
-        return {"data": cur.fetchall()}
+        results = db.execute(query, {'days': days}).fetchall()
+        
+        data = [
+            {
+                "time_of_day": row[0],
+                "count": int(row[1])
+            }
+            for row in results
+        ]
+        
+        return {"data": data}
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        cur.close()
-        conn.close()
 
 @router.get("/admin/learning-behavior/users-table")
 async def get_users_behavior_table(
     days: int = 30,
-    current_user: dict = Depends(require_admin)
+    current_user = Depends(require_admin),
+    db: Session = Depends(get_db)
 ):
     """Get user behavior breakdown table"""
-    conn = get_db_connection()
-    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    
     try:
         # Refresh materialized view
-        cur.execute("SELECT refresh_learning_behavior_summary()")
+        db.execute(text("SELECT refresh_learning_behavior_summary()"))
         
-        cur.execute("""
+        query = text("""
             SELECT 
                 u.id,
                 u.name,
@@ -315,40 +313,56 @@ async def get_users_behavior_table(
                 END as completion_rate
             FROM users u
             INNER JOIN learning_behavior_summary lbs ON u.id = lbs.user_id
-            WHERE lbs.last_activity >= NOW() - INTERVAL '%s days'
+            WHERE lbs.last_activity >= NOW() - INTERVAL ':days days'
             ORDER BY lbs.total_actions DESC
             LIMIT 100
-        """, (days,))
+        """)
         
-        return {"users": cur.fetchall()}
+        results = db.execute(query, {'days': days}).fetchall()
+        
+        users = [
+            {
+                "id": row[0],
+                "name": row[1],
+                "email": row[2],
+                "plan": row[3],
+                "most_practiced_topic": row[4],
+                "preferred_difficulty": row[5],
+                "favorite_company": row[6],
+                "peak_study_time": row[7],
+                "total_actions": int(row[8]),
+                "completed_count": int(row[9]),
+                "skipped_count": int(row[10]),
+                "solutions_viewed": int(row[11]),
+                "completion_rate": float(row[12])
+            }
+            for row in results
+        ]
+        
+        return {"users": users}
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        cur.close()
-        conn.close()
 
 @router.get("/admin/learning-behavior/user/{user_id}")
 async def get_user_learning_behavior(
     user_id: int,
     days: int = 30,
-    current_user: dict = Depends(require_admin)
+    current_user = Depends(require_admin),
+    db: Session = Depends(get_db)
 ):
     """Get specific user's learning behavior"""
-    conn = get_db_connection()
-    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    
     try:
         # Get user summary
-        cur.execute("""
+        summary_query = text("""
             SELECT * FROM learning_behavior_summary
-            WHERE user_id = %s
-        """, (user_id,))
+            WHERE user_id = :user_id
+        """)
         
-        summary = cur.fetchone()
+        summary = db.execute(summary_query, {'user_id': user_id}).fetchone()
         
         # Get recent activity
-        cur.execute("""
+        activity_query = text("""
             SELECT 
                 topic,
                 category,
@@ -358,21 +372,31 @@ async def get_user_learning_behavior(
                 time_of_day,
                 created_at
             FROM learning_behavior_logs
-            WHERE user_id = %s
-            AND created_at >= NOW() - INTERVAL '%s days'
+            WHERE user_id = :user_id
+            AND created_at >= NOW() - INTERVAL ':days days'
             ORDER BY created_at DESC
             LIMIT 50
-        """, (user_id, days))
+        """)
         
-        activity = cur.fetchall()
+        activity_results = db.execute(activity_query, {'user_id': user_id, 'days': days}).fetchall()
+        
+        activity = [
+            {
+                "topic": row[0],
+                "category": row[1],
+                "difficulty": row[2],
+                "company": row[3],
+                "action_type": row[4],
+                "time_of_day": row[5],
+                "created_at": row[6].isoformat() if row[6] else None
+            }
+            for row in activity_results
+        ]
         
         return {
-            "summary": summary,
+            "summary": dict(summary._mapping) if summary else None,
             "recent_activity": activity
         }
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        cur.close()
-        conn.close()
