@@ -33,3 +33,20 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Temporary files
+*.tmp
+*.bak
+*.backup
+*_backup_*.json
+*.old
+
+# Test and check scripts
+test_*.py
+check_*.py
+fix_*.py
+verify_*.py
+
+# Export files (keep only cleaned versions)
+*_export.json
+*_removed.json
