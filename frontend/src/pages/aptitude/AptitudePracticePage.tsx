@@ -20,13 +20,6 @@ interface Question {
   showAnswer: boolean
 }
 
-interface SubCategory {
-  name: string
-  value: string
-  solved: number
-  total: number
-}
-
 export default function AptitudePracticePage() {
   const [selectedCategory, setSelectedCategory] = useState('percentage')
   const [questions, setQuestions] = useState<Question[]>([])
