@@ -1,6 +1,6 @@
 /**
  * Aptitude Practice Categories and Subcategories Configuration
- * Updated from database - Total: 8830 questions
+ * Updated from database - Total: 5830 questions
  */
 
 export interface SubcategoryConfig {
@@ -24,12 +24,12 @@ export const aptitudeCategories: CategoryConfig[] = [
     icon: '🧮',
     color: 'blue',
     subcategories: [
-      { value: 'percentage', label: 'Percentage', count: 804 },
-      { value: 'profit-and-loss', label: 'Profit and Loss', count: 735 },
-      { value: 'time-speed-distance', label: 'Time, Speed & Distance', count: 822 },
-      { value: 'time-and-work', label: 'Time and Work', count: 406 },
-      { value: 'average', label: 'Average', count: 104 },
-      { value: 'ratio-and-proportion', label: 'Ratio and Proportion', count: 43 },
+      { value: 'percentage', label: 'Percentage', count: 524 },
+      { value: 'profit-and-loss', label: 'Profit and Loss', count: 482 },
+      { value: 'time-speed-distance', label: 'Time, Speed & Distance', count: 479 },
+      { value: 'time-and-work', label: 'Time and Work', count: 265 },
+      { value: 'average', label: 'Average', count: 52 },
+      { value: 'ratio-and-proportion', label: 'Ratio and Proportion', count: 30 },
     ]
   },
   {
@@ -38,7 +38,7 @@ export const aptitudeCategories: CategoryConfig[] = [
     icon: '🗄️',
     color: 'green',
     subcategories: [
-      { value: 'sql', label: 'SQL', count: 1553 },
+      { value: 'sql', label: 'SQL', count: 1046 },
     ]
   },
   {
@@ -47,7 +47,7 @@ export const aptitudeCategories: CategoryConfig[] = [
     icon: '⚡',
     color: 'yellow',
     subcategories: [
-      { value: 'digital-electronics', label: 'Digital Electronics', count: 1015 },
+      { value: 'digital-electronics', label: 'Digital Electronics', count: 673 },
     ]
   },
   {
@@ -56,9 +56,9 @@ export const aptitudeCategories: CategoryConfig[] = [
     icon: '💻',
     color: 'purple',
     subcategories: [
-      { value: 'c-programming', label: 'C Programming', count: 825 },
-      { value: 'c-basics', label: 'C Basics', count: 69 },
-      { value: 'arrays-and-strings', label: 'Arrays and Strings', count: 74 },
+      { value: 'c-programming', label: 'C Programming', count: 570 },
+      { value: 'c-basics', label: 'C Basics', count: 50 },
+      { value: 'arrays-and-strings', label: 'Arrays and Strings', count: 49 },
     ]
   },
   {
@@ -67,8 +67,8 @@ export const aptitudeCategories: CategoryConfig[] = [
     icon: '🌍',
     color: 'indigo',
     subcategories: [
-      { value: 'general-knowledge', label: 'General Knowledge', count: 765 },
-      { value: 'world-geography', label: 'World Geography', count: 209 },
+      { value: 'general-knowledge', label: 'General Knowledge', count: 515 },
+      { value: 'world-geography', label: 'World Geography', count: 149 },
     ]
   },
   {
@@ -77,10 +77,10 @@ export const aptitudeCategories: CategoryConfig[] = [
     icon: '🧩',
     color: 'pink',
     subcategories: [
-      { value: 'logical-reasoning', label: 'Logical Reasoning', count: 432 },
-      { value: 'verbal-reasoning', label: 'Verbal Reasoning', count: 262 },
-      { value: 'puzzles', label: 'Puzzles', count: 78 },
-      { value: 'logical-problems', label: 'Logical Problems', count: 25 },
+      { value: 'logical-reasoning', label: 'Logical Reasoning', count: 289 },
+      { value: 'verbal-reasoning', label: 'Verbal Reasoning', count: 177 },
+      { value: 'puzzles', label: 'Puzzles', count: 51 },
+      { value: 'logical-problems', label: 'Logical Problems', count: 16 },
     ]
   },
   {
@@ -89,8 +89,8 @@ export const aptitudeCategories: CategoryConfig[] = [
     icon: '🌐',
     color: 'cyan',
     subcategories: [
-      { value: 'networking', label: 'Networking', count: 201 },
-      { value: 'networking-basics', label: 'Networking Basics', count: 148 },
+      { value: 'networking', label: 'Networking', count: 137 },
+      { value: 'networking-basics', label: 'Networking Basics', count: 99 },
     ]
   },
   {
@@ -99,8 +99,8 @@ export const aptitudeCategories: CategoryConfig[] = [
     icon: '☕',
     color: 'orange',
     subcategories: [
-      { value: 'java-basics', label: 'Java Basics', count: 140 },
-      { value: 'java-programming', label: 'Java Programming', count: 118 },
+      { value: 'java-basics', label: 'Java Basics', count: 97 },
+      { value: 'java-programming', label: 'Java Programming', count: 79 },
     ]
   },
   {
@@ -109,7 +109,7 @@ export const aptitudeCategories: CategoryConfig[] = [
     icon: '📝',
     color: 'red',
     subcategories: [
-      { value: 'synonyms', label: 'Synonyms', count: 2 },
+      { value: 'synonyms', label: 'Synonyms', count: 1 },
     ]
   },
 ]
