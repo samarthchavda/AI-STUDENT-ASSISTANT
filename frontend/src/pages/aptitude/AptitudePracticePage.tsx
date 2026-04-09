@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Search, ChevronDown, ChevronUp, ChevronRight, Menu, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cleanQuestionText } from './utils/textCleaners'
+import { aptitudeCategories, getSubcategoriesForCategory } from '../../config/aptitudeCategories'
 
 interface Question {
   id: string
