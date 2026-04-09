@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Check, Play, Zap, Crown, X, Lock } from 'lucide-react'
+import { Check, Play, Zap, Crown, X, Lock, TrendingUp, Clock, FileText, Award, Target, Brain, MessageSquare, Code } from 'lucide-react'
 import Header from '../../components/Header'
 import { EXAM_CONFIG, calculateDuration } from '../../config/examConfig'
 import { api } from '../../api/client'
@@ -16,40 +16,83 @@ type ExamConfig = {
   durationMinutes: number
 }
 
-// All companies now use the same question count from config
-const companies: Array<{ id: string; description: string }> = [
+// Company data with question counts from database
+const companies: Array<{ id: string; description: string; count: number; popular?: boolean }> = [
   {
     id: 'TCS',
     description: 'TCS placement aptitude questions',
+    count: 1852,
+    popular: true,
   },
   {
     id: 'Infosys',
     description: 'Infosys aptitude and reasoning set',
+    count: 1509,
   },
   {
     id: 'Wipro',
     description: 'Wipro placement questions',
+    count: 1232,
   },
   {
     id: 'Cognizant',
     description: 'Cognizant aptitude questions',
+    count: 1239,
   },
   {
     id: 'Accenture',
     description: 'Accenture placement pattern',
+    count: 1228,
   },
   {
     id: 'HCL',
     description: 'HCL aptitude questions',
+    count: 1229,
+  },
+  {
+    id: 'Capgemini',
+    description: 'Capgemini placement questions',
+    count: 1246,
+  },
+  {
+    id: 'Deloitte',
+    description: 'Deloitte aptitude questions',
+    count: 1231,
+  },
+  {
+    id: 'LTIMindtree',
+    description: 'LTIMindtree placement questions',
+    count: 1234,
   },
 ]
 
-// Category descriptions mapping
-const categoryDescriptions: Record<string, string> = {
-  'Quantitative Aptitude': 'Mathematical and numerical reasoning questions',
-  'Logical Reasoning': 'Pattern recognition and logical thinking problems',
-  'Verbal Ability': 'Language comprehension and verbal reasoning',
-  'Technical Aptitude': 'Technical concepts and problem-solving questions',
+// Category descriptions and icons mapping
+const categoryDescriptions: Record<string, { description: string; icon: any; color: string }> = {
+  'Quantitative Aptitude': {
+    description: 'Mathematical and numerical reasoning questions',
+    icon: Target,
+    color: 'blue',
+  },
+  'Logical Reasoning': {
+    description: 'Pattern recognition and logical thinking problems',
+    icon: Brain,
+    color: 'purple',
+  },
+  'Verbal Ability': {
+    description: 'Language comprehension and verbal reasoning',
+    icon: MessageSquare,
+    color: 'green',
+  },
+  'Technical Aptitude': {
+    description: 'Technical concepts and problem-solving questions',
+    icon: Code,
+    color: 'orange',
+  },
+  'Data Interpretation': {
+    description: 'Analyze and interpret data from charts and tables',
+    icon: TrendingUp,
+    color: 'pink',
+  },
 }
 
 export default function ExamPrepPage() {
@@ -80,7 +123,7 @@ export default function ExamPrepPage() {
         const formattedCategories = fetchedCategories.map((cat: string) => ({
           id: cat,
           label: cat,
-          description: categoryDescriptions[cat] || `${cat} questions`,
+          description: categoryDescriptions[cat]?.description || `${cat} questions`,
         }))
         
         setCategories(formattedCategories)
@@ -247,154 +290,326 @@ export default function ExamPrepPage() {
   )
 
   return (
-    <div className="min-h-screen bg-white text-slate-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50">
       <Header />
 
       {showUpgradeModal && <UpgradeModal />}
 
-      <main className="mx-auto w-full max-w-5xl px-4 sm:px-6 pt-24 pb-10">
-        <div className="mb-8">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500">Step 1 · Setup</p>
-          <h1 className="mt-2 text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-slate-900">Configure Your Aptitude Assessment</h1>
-          <p className="mt-3 text-sm sm:text-base text-slate-600">Pick exam pattern, category, and difficulty before starting your live timed test.</p>
+      <main className="mx-auto w-full max-w-7xl px-4 sm:px-6 pt-24 pb-16">
+        {/* Hero Section */}
+        <div className="mb-12 text-center">
+          <div className="inline-flex items-center gap-2 rounded-full bg-blue-100 px-4 py-1.5 text-sm font-semibold text-blue-700 mb-4">
+            <Award className="h-4 w-4" />
+            <span>12,000+ Questions from Top Companies</span>
+          </div>
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 mb-4">
+            Crack Top Company
+            <br />
+            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Aptitude Tests
+            </span>
+          </h1>
+          <p className="text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto">
+            Practice with real company patterns. Get instant results. Track your progress.
+          </p>
+
+          {/* Stats Bar */}
+          <div className="mt-8 grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-4xl mx-auto">
+            <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
+              <div className="text-2xl sm:text-3xl font-black text-blue-600">12K+</div>
+              <div className="text-xs sm:text-sm text-slate-600 font-medium">Questions</div>
+            </div>
+            <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
+              <div className="text-2xl sm:text-3xl font-black text-purple-600">9</div>
+              <div className="text-xs sm:text-sm text-slate-600 font-medium">Companies</div>
+            </div>
+            <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
+              <div className="text-2xl sm:text-3xl font-black text-green-600">5</div>
+              <div className="text-xs sm:text-sm text-slate-600 font-medium">Categories</div>
+            </div>
+            <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
+              <div className="text-2xl sm:text-3xl font-black text-orange-600">3</div>
+              <div className="text-xs sm:text-sm text-slate-600 font-medium">Difficulty Levels</div>
+            </div>
+          </div>
         </div>
 
-        <section className="rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 md:p-8">
-          <h2 className="text-base sm:text-lg font-bold text-slate-900">Choose Company Pattern</h2>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            {companies.map((company) => {
-              const selected = company.id === selectedCompany
-              return (
-                <button
-                  key={company.id}
-                  onClick={() => setSelectedCompany(company.id)}
-                  className={`relative rounded-2xl border p-5 text-left transition ${
-                    selected
-                      ? 'border-blue-600 bg-blue-50'
-                      : 'border-slate-200 bg-white hover:border-blue-300'
-                  }`}
-                >
-                  <p className="text-sm font-bold text-slate-900">{company.id}</p>
-                  <p className="mt-1 text-sm text-slate-600">{company.description}</p>
-                  <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    {questionCount} questions · {durationMinutes} mins
-                  </p>
-                  {selected && (
-                    <span className="absolute right-4 top-4 inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white">
-                      <Check className="h-4 w-4" />
-                    </span>
-                  )}
-                </button>
-              )
-            })}
-          </div>
-        </section>
-
-        <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 md:p-8">
-          <h2 className="text-base sm:text-lg font-bold text-slate-900">Choose Category</h2>
-          {loading ? (
-            <div className="mt-4 flex items-center justify-center py-8">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
-            </div>
-          ) : (
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              {categories.map((category) => {
-                const selected = category.id === selectedCategory
-                const limitData = categoryLimits[category.id]
-                const isPro = user?.plan?.toLowerCase() === 'pro'
-                const isLocked = !isPro && (limitData?.locked || false)
-                const examCount = limitData?.count || 0
-                
-                return (
-                  <button
-                    key={category.id}
-                    onClick={() => {
-                      if (isLocked) {
-                        setLimitInfo({
-                          exams_taken: examCount,
-                          limit: 2
-                        })
-                        setShowUpgradeModal(true)
-                      } else {
-                        setSelectedCategory(category.id)
-                      }
-                    }}
-                    className={`relative rounded-2xl border p-5 text-left transition ${
-                      isLocked
-                        ? 'border-gray-300 bg-gray-50 opacity-60'
-                        : selected
-                        ? 'border-blue-600 bg-blue-50'
-                        : 'border-slate-200 bg-white hover:border-blue-300'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <p className="text-sm font-bold text-slate-900">{category.label}</p>
-                        <p className="mt-1 text-sm text-slate-600">{category.description}</p>
-                        {isLocked && (
-                          <p className="mt-2 text-xs font-semibold text-orange-600">
-                            🔒 Limit reached ({examCount}/2) - Upgrade to unlock
-                          </p>
-                        )}
-                        {!isLocked && examCount > 0 && !isPro && (
-                          <p className="mt-2 text-xs font-semibold text-blue-600">
-                            {examCount}/2 exams used
-                          </p>
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* Left Column - Configuration */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Company Selection */}
+            <section className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-slate-900">Choose Company</h2>
+                <span className="text-sm text-slate-500">{companies.length} companies</span>
+              </div>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {companies.map((company) => {
+                  const selected = company.id === selectedCompany
+                  return (
+                    <button
+                      key={company.id}
+                      onClick={() => setSelectedCompany(company.id)}
+                      className={`relative rounded-2xl border-2 p-5 text-left transition-all hover:scale-105 ${
+                        selected
+                          ? 'border-blue-600 bg-gradient-to-br from-blue-50 to-blue-100 shadow-lg shadow-blue-200/50'
+                          : 'border-slate-200 bg-white hover:border-blue-300 hover:shadow-md'
+                      }`}
+                    >
+                      {company.popular && (
+                        <span className="absolute -top-2 -right-2 inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 px-2.5 py-1 text-xs font-bold text-white shadow-lg">
+                          <Zap className="h-3 w-3" />
+                          Popular
+                        </span>
+                      )}
+                      <div className="flex items-start justify-between mb-2">
+                        <p className="text-lg font-black text-slate-900">{company.id}</p>
+                        {selected && (
+                          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white">
+                            <Check className="h-4 w-4" />
+                          </span>
                         )}
                       </div>
-                      {isLocked ? (
-                        <Lock className="h-5 w-5 flex-shrink-0 text-gray-400" />
-                      ) : selected ? (
-                        <span className="inline-flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-blue-600 text-white">
+                      <p className="text-xs text-slate-600 mb-3">{company.description}</p>
+                      <div className="flex items-center gap-2 text-xs font-semibold text-blue-600">
+                        <FileText className="h-3.5 w-3.5" />
+                        {company.count.toLocaleString()} questions
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            </section>
+
+            {/* Category Selection */}
+            <section className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-slate-900">Choose Category</h2>
+                <span className="text-sm text-slate-500">{categories.length} categories</span>
+              </div>
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
+                </div>
+              ) : (
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {categories.map((category) => {
+                    const selected = category.id === selectedCategory
+                    const limitData = categoryLimits[category.id]
+                    const isPro = user?.plan?.toLowerCase() === 'pro'
+                    const isLocked = !isPro && (limitData?.locked || false)
+                    const examCount = limitData?.count || 0
+                    const categoryInfo = categoryDescriptions[category.id] || { icon: Target, color: 'blue', description: category.description }
+                    const Icon = categoryInfo.icon
+                    
+                    const colorClasses = {
+                      blue: 'from-blue-500 to-blue-600',
+                      purple: 'from-purple-500 to-purple-600',
+                      green: 'from-green-500 to-green-600',
+                      orange: 'from-orange-500 to-orange-600',
+                      pink: 'from-pink-500 to-pink-600',
+                    }[categoryInfo.color] || 'from-blue-500 to-blue-600'
+                    
+                    return (
+                      <button
+                        key={category.id}
+                        onClick={() => {
+                          if (isLocked) {
+                            setLimitInfo({
+                              exams_taken: examCount,
+                              limit: 2
+                            })
+                            setShowUpgradeModal(true)
+                          } else {
+                            setSelectedCategory(category.id)
+                          }
+                        }}
+                        className={`relative rounded-2xl border-2 p-5 text-left transition-all hover:scale-105 ${
+                          isLocked
+                            ? 'border-gray-300 bg-gray-50 opacity-60 cursor-not-allowed'
+                            : selected
+                            ? 'border-blue-600 bg-gradient-to-br from-blue-50 to-blue-100 shadow-lg shadow-blue-200/50'
+                            : 'border-slate-200 bg-white hover:border-blue-300 hover:shadow-md'
+                        }`}
+                      >
+                        <div className="flex items-start gap-4">
+                          <div className={`flex-shrink-0 rounded-xl bg-gradient-to-br ${colorClasses} p-3 text-white shadow-lg`}>
+                            <Icon className="h-6 w-6" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-base font-bold text-slate-900 mb-1">{category.label}</p>
+                            <p className="text-xs text-slate-600 mb-2">{categoryInfo.description}</p>
+                            {isLocked && (
+                              <div className="flex items-center gap-1.5 text-xs font-semibold text-orange-600">
+                                <Lock className="h-3.5 w-3.5" />
+                                Limit reached ({examCount}/2)
+                              </div>
+                            )}
+                            {!isLocked && examCount > 0 && !isPro && (
+                              <p className="text-xs font-semibold text-blue-600">
+                                {examCount}/2 exams used
+                              </p>
+                            )}
+                          </div>
+                          {!isLocked && selected && (
+                            <span className="flex-shrink-0 inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white">
+                              <Check className="h-4 w-4" />
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </section>
+
+            {/* Difficulty Selection */}
+            <section className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm">
+              <h2 className="text-xl font-bold text-slate-900 mb-6">Select Difficulty</h2>
+              <div className="grid grid-cols-3 gap-4">
+                {(['Easy', 'Medium', 'Hard'] as const).map((level) => {
+                  const selected = difficulty === level
+                  const colors = {
+                    Easy: { bg: 'from-green-500 to-emerald-600', text: 'text-green-700', border: 'border-green-600', badge: 'bg-green-100' },
+                    Medium: { bg: 'from-yellow-500 to-orange-600', text: 'text-orange-700', border: 'border-orange-600', badge: 'bg-orange-100' },
+                    Hard: { bg: 'from-red-500 to-rose-600', text: 'text-red-700', border: 'border-red-600', badge: 'bg-red-100' },
+                  }[level]
+                  
+                  return (
+                    <button
+                      key={level}
+                      onClick={() => setDifficulty(level)}
+                      className={`relative rounded-2xl border-2 p-5 text-center transition-all hover:scale-105 ${
+                        selected
+                          ? `${colors.border} bg-gradient-to-br from-white to-slate-50 shadow-lg`
+                          : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-md'
+                      }`}
+                    >
+                      <div className={`mx-auto mb-3 h-12 w-12 rounded-xl bg-gradient-to-br ${colors.bg} flex items-center justify-center text-white font-black text-xl shadow-lg`}>
+                        {level[0]}
+                      </div>
+                      <p className={`text-sm font-bold ${selected ? colors.text : 'text-slate-900'}`}>{level}</p>
+                      {selected && (
+                        <span className="absolute -top-2 -right-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg">
                           <Check className="h-4 w-4" />
                         </span>
-                      ) : null}
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            </section>
+          </div>
+
+          {/* Right Column - Test Summary */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-24 space-y-6">
+              {/* Test Summary Card */}
+              <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl text-white">
+                <div className="flex items-center gap-2 mb-6">
+                  <div className="h-10 w-10 rounded-xl bg-blue-600 flex items-center justify-center">
+                    <FileText className="h-5 w-5" />
+                  </div>
+                  <h3 className="text-lg font-bold">Test Summary</h3>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 h-8 w-8 rounded-lg bg-white/10 flex items-center justify-center">
+                      <Award className="h-4 w-4 text-blue-400" />
                     </div>
-                  </button>
-                )
-              })}
-            </div>
-          )}
-        </section>
+                    <div className="flex-1">
+                      <p className="text-xs text-slate-400 mb-1">Company</p>
+                      <p className="text-sm font-bold">{selectedCompany}</p>
+                    </div>
+                  </div>
 
-        <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-4 sm:p-6 md:p-8">
-          <h2 className="text-base sm:text-lg font-bold text-slate-900">Difficulty Picker</h2>
-          <div className="mt-4 inline-flex rounded-xl border border-slate-200 bg-slate-50 p-1">
-            {(['Easy', 'Medium', 'Hard'] as const).map((level) => {
-              const selected = difficulty === level
-              return (
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 h-8 w-8 rounded-lg bg-white/10 flex items-center justify-center">
+                      <Target className="h-4 w-4 text-purple-400" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-slate-400 mb-1">Category</p>
+                      <p className="text-sm font-bold">{categories.find((item) => item.id === selectedCategory)?.label || 'Select category'}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 h-8 w-8 rounded-lg bg-white/10 flex items-center justify-center">
+                      <TrendingUp className="h-4 w-4 text-green-400" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-slate-400 mb-1">Difficulty</p>
+                      <p className="text-sm font-bold">{difficulty}</p>
+                    </div>
+                  </div>
+
+                  <div className="h-px bg-white/10 my-4"></div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-slate-400" />
+                      <span className="text-sm text-slate-400">Questions</span>
+                    </div>
+                    <span className="text-lg font-black">{questionCount}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-slate-400" />
+                      <span className="text-sm text-slate-400">Duration</span>
+                    </div>
+                    <span className="text-lg font-black">{durationMinutes} mins</span>
+                  </div>
+                </div>
+
                 <button
-                  key={level}
-                  onClick={() => setDifficulty(level)}
-                  className={`rounded-lg px-6 py-2.5 text-sm font-semibold capitalize transition ${
-                    selected ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'
-                  }`}
+                  onClick={handleStart}
+                  disabled={loading || !selectedCategory}
+                  className="mt-8 w-full inline-flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-4 text-base font-bold text-white shadow-xl hover:shadow-2xl hover:scale-105 transition-all disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:scale-100"
                 >
-                  {level}
+                  <Play className="h-5 w-5" />
+                  Start Test Now
+                  <Zap className="h-5 w-5" />
                 </button>
-              )
-            })}
-          </div>
 
-          <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
-            <p className="font-semibold text-slate-900">Ready Configuration</p>
-            <p className="mt-1">
-              {selectedCompany} · {categories.find((item) => item.id === selectedCategory)?.label} · {difficulty} ·{' '}
-              {questionCount} questions in {durationMinutes} mins
-            </p>
-          </div>
-        </section>
+                <p className="mt-4 text-xs text-center text-slate-400">
+                  Full screen mode required · No tab switching
+                </p>
+              </div>
 
-        <div className="mt-10 flex justify-center">
-          <button
-            onClick={handleStart}
-            disabled={loading || !selectedCategory}
-            className="inline-flex w-full sm:w-auto sm:min-w-[320px] items-center justify-center gap-3 rounded-2xl bg-blue-600 px-8 py-4 text-base sm:text-lg font-bold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <Play className="h-5 w-5" />
-            Start Quiz
-            <Zap className="h-5 w-5" />
-          </button>
+              {/* Pro Features Card */}
+              {user?.plan?.toLowerCase() !== 'pro' && (
+                <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-3xl p-6 border-2 border-yellow-200 shadow-lg">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Crown className="h-5 w-5 text-yellow-600" />
+                    <h3 className="text-sm font-bold text-slate-900">Upgrade to Pro</h3>
+                  </div>
+                  <ul className="space-y-2 mb-4">
+                    <li className="flex items-start gap-2 text-xs text-slate-700">
+                      <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                      <span>Unlimited tests</span>
+                    </li>
+                    <li className="flex items-start gap-2 text-xs text-slate-700">
+                      <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                      <span>Advanced analytics</span>
+                    </li>
+                    <li className="flex items-start gap-2 text-xs text-slate-700">
+                      <Check className="h-4 w-4 text-green-600 flex-shrink-0 mt-0.5" />
+                      <span>Priority support</span>
+                    </li>
+                  </ul>
+                  <button
+                    onClick={() => navigate('/pricing')}
+                    className="w-full rounded-xl bg-gradient-to-r from-yellow-500 to-orange-600 px-4 py-2.5 text-sm font-bold text-white hover:from-yellow-600 hover:to-orange-700 transition-all"
+                  >
+                    Upgrade Now
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </main>
     </div>
