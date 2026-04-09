@@ -17,52 +17,79 @@ type ExamConfig = {
 }
 
 // Company data with question counts from database
-const companies: Array<{ id: string; description: string; count: number; popular?: boolean }> = [
+const companies: Array<{ id: string; description: string; count: number; popular?: boolean; freeAccess?: boolean }> = [
   {
     id: 'TCS',
     description: 'TCS placement aptitude questions',
     count: 1852,
     popular: true,
+    freeAccess: true,
   },
   {
     id: 'Infosys',
     description: 'Infosys aptitude and reasoning set',
     count: 1509,
+    freeAccess: true,
   },
   {
     id: 'Wipro',
     description: 'Wipro placement questions',
     count: 1232,
+    freeAccess: true,
+  },
+  {
+    id: 'Google',
+    description: 'Google placement questions',
+    count: 1200,
+    freeAccess: true,
+  },
+  {
+    id: 'Microsoft',
+    description: 'Microsoft placement questions',
+    count: 1150,
+    freeAccess: true,
+  },
+  {
+    id: 'Amazon',
+    description: 'Amazon placement questions',
+    count: 1180,
+    freeAccess: true,
   },
   {
     id: 'Cognizant',
     description: 'Cognizant aptitude questions',
     count: 1239,
+    freeAccess: false,
   },
   {
     id: 'Accenture',
     description: 'Accenture placement pattern',
     count: 1228,
+    freeAccess: false,
   },
   {
     id: 'HCL',
     description: 'HCL aptitude questions',
     count: 1229,
+    freeAccess: false,
   },
   {
     id: 'Capgemini',
     description: 'Capgemini placement questions',
     count: 1246,
+    freeAccess: false,
   },
   {
     id: 'Deloitte',
     description: 'Deloitte aptitude questions',
     count: 1231,
+    freeAccess: false,
   },
   {
     id: 'LTIMindtree',
     description: 'LTIMindtree placement questions',
     count: 1234,
+    freeAccess: false,
   },
 ]
 
@@ -107,6 +134,7 @@ export default function ExamPrepPage() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [limitInfo, setLimitInfo] = useState<{ exams_taken: number; limit: number } | null>(null)
   const [categoryLimits, setCategoryLimits] = useState<Record<string, { count: number; locked: boolean }>>({})
+  const [companyLimits, setCompanyLimits] = useState<Record<string, { count: number; locked: boolean }>>({})
 
   const questionCount = EXAM_CONFIG.QUESTION_LIMIT
   const durationMinutes = calculateDuration(questionCount)
@@ -148,6 +176,19 @@ export default function ExamPrepPage() {
             }
           })
           setCategoryLimits(limits)
+
+          // Count exams per company
+          const companyLimitsData: Record<string, { count: number; locked: boolean }> = {}
+          companies.forEach((company) => {
+            const count = history.filter((exam: any) => exam.company === company.id).length
+            const isPro = user?.plan?.toLowerCase() === 'pro'
+            // Lock if: not free access AND (not pro OR reached limit)
+            companyLimitsData[company.id] = {
+              count,
+              locked: !company.freeAccess && (!isPro || count >= 2)
+            }
+          })
+          setCompanyLimits(companyLimitsData)
         } catch (error) {
           console.error('Failed to fetch exam limits:', error)
         }
@@ -189,6 +230,28 @@ export default function ExamPrepPage() {
   const handleStart = async () => {
     // PRO users can always start exams
     const isPro = user?.plan?.toLowerCase() === 'pro'
+    
+    // Check if company is locked (only for non-PRO users)
+    const selectedCompanyData = companies.find(c => c.id === selectedCompany)
+    if (!isPro && selectedCompanyData && !selectedCompanyData.freeAccess) {
+      setLimitInfo({
+        exams_taken: 0,
+        limit: 0
+      })
+      setShowUpgradeModal(true)
+      return
+    }
+
+    // Check if company limit reached for free access companies
+    const companyLimit = companyLimits[selectedCompany]
+    if (!isPro && selectedCompanyData?.freeAccess && companyLimit && companyLimit.count >= 2) {
+      setLimitInfo({
+        exams_taken: companyLimit.count,
+        limit: 2
+      })
+      setShowUpgradeModal(true)
+      return
+    }
     
     // Check if category is locked (only for non-PRO users)
     if (!isPro && categoryLimits[selectedCategory]?.locked) {
@@ -346,31 +409,73 @@ export default function ExamPrepPage() {
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {companies.map((company) => {
                   const selected = company.id === selectedCompany
+                  const isPro = user?.plan?.toLowerCase() === 'pro'
+                  const companyLimit = companyLimits[company.id]
+                  const isLocked = !isPro && !company.freeAccess
+                  const examCount = companyLimit?.count || 0
+                  const hasReachedLimit = !isPro && company.freeAccess && examCount >= 2
+                  
                   return (
                     <button
                       key={company.id}
-                      onClick={() => setSelectedCompany(company.id)}
+                      onClick={() => {
+                        if (isLocked || hasReachedLimit) {
+                          setLimitInfo({
+                            exams_taken: examCount,
+                            limit: 2
+                          })
+                          setShowUpgradeModal(true)
+                        } else {
+                          setSelectedCompany(company.id)
+                        }
+                      }}
                       className={`relative rounded-2xl border-2 p-5 text-left transition-all hover:scale-105 ${
-                        selected
+                        isLocked || hasReachedLimit
+                          ? 'border-gray-300 bg-gray-50 opacity-60 cursor-not-allowed'
+                          : selected
                           ? 'border-blue-600 bg-gradient-to-br from-blue-50 to-blue-100 shadow-lg shadow-blue-200/50'
                           : 'border-slate-200 bg-white hover:border-blue-300 hover:shadow-md'
                       }`}
                     >
-                      {company.popular && (
+                      {company.popular && !isLocked && !hasReachedLimit && (
                         <span className="absolute -top-2 -right-2 inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-yellow-400 to-orange-500 px-2.5 py-1 text-xs font-bold text-white shadow-lg">
                           <Zap className="h-3 w-3" />
                           Popular
                         </span>
                       )}
+                      {isLocked && (
+                        <span className="absolute -top-2 -right-2 inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-gray-400 to-gray-500 px-2.5 py-1 text-xs font-bold text-white shadow-lg">
+                          <Lock className="h-3 w-3" />
+                          Pro Only
+                        </span>
+                      )}
                       <div className="flex items-start justify-between mb-2">
                         <p className="text-lg font-black text-slate-900">{company.id}</p>
-                        {selected && (
+                        {!isLocked && !hasReachedLimit && selected && (
                           <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-white">
                             <Check className="h-4 w-4" />
                           </span>
                         )}
+                        {isLocked && (
+                          <Lock className="h-5 w-5 text-gray-400" />
+                        )}
                       </div>
-                      <p className="text-xs text-slate-600">{company.description}</p>
+                      <p className="text-xs text-slate-600 mb-2">{company.description}</p>
+                      {isLocked && (
+                        <p className="text-xs font-semibold text-orange-600">
+                          🔒 Upgrade to Pro to unlock
+                        </p>
+                      )}
+                      {!isLocked && hasReachedLimit && (
+                        <p className="text-xs font-semibold text-orange-600">
+                          🔒 Limit reached ({examCount}/2) - Upgrade to unlock
+                        </p>
+                      )}
+                      {!isLocked && !hasReachedLimit && company.freeAccess && examCount > 0 && !isPro && (
+                        <p className="text-xs font-semibold text-blue-600">
+                          {examCount}/2 exams used
+                        </p>
+                      )}
                     </button>
                   )
                 })}
