@@ -63,12 +63,6 @@ interface UserPerformance {
   last_attempt: string | null;
 }
 
-const DIFFICULTY_COLORS: { [key: string]: string } = {
-  'easy': '#10b981',
-  'medium': '#f59e0b',
-  'hard': '#ef4444'
-};
-
 export default function PerformanceTrendsPage() {
   const navigate = useNavigate();
   const { user } = useAppStore();
