@@ -201,6 +201,10 @@ app.include_router(growth_routes.router, tags=["Growth Features"])
 from app.routes import time_tracking_routes
 app.include_router(time_tracking_routes.router, prefix="/api/tracking", tags=["Time Tracking"])
 
+# Import learning behavior routes
+from app.routes import learning_behavior_routes
+app.include_router(learning_behavior_routes.router, prefix="/api", tags=["Learning Behavior"])
+
 @app.get("/")
 @rate_limit("10/minute")  # Rate limit: 10 requests per minute
 async def root(request: Request):

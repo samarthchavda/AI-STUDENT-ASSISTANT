@@ -20,6 +20,7 @@ import AIResumeMonitorPage from './pages/admin/AIResumeMonitorPage'
 import AISettingsPage from './pages/admin/AISettingsPage'
 import ContactMessagesPage from './pages/admin/ContactMessagesPage'
 import TimeTrackingPage from './pages/admin/TimeTrackingPage'
+import LearningBehaviorPage from './pages/admin/LearningBehaviorPage'
 import CareerPage from './pages/resume/CareerPage'
 import ResumeTemplateGalleryPage from './pages/resume/ResumeTemplateGalleryPage'
 import CompanyPrepPage from './pages/aptitude/CompanyPrepPage'
@@ -104,6 +105,7 @@ function AppRoutes() {
       <Route path="/admin/ai-settings" element={<ProtectedRoute requireAdmin><AISettingsPage /></ProtectedRoute>} />
       <Route path="/admin/contact-messages" element={<ProtectedRoute requireAdmin><ContactMessagesPage /></ProtectedRoute>} />
       <Route path="/admin/time-tracking" element={<ProtectedRoute requireAdmin><TimeTrackingPage /></ProtectedRoute>} />
+      <Route path="/admin/learning-behavior" element={<ProtectedRoute requireAdmin><LearningBehaviorPage /></ProtectedRoute>} />
     </Routes>
   )
 }

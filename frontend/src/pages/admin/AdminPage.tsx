@@ -775,6 +775,17 @@ const AdminPage = () => {
                 
                 <button
                   onClick={() => {
+                    handleNavigateToPage('/admin/learning-behavior')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+                >
+                  <Target className="w-5 h-5" />
+                  <span className="text-sm">Learning Behavior</span>
+                </button>
+                
+                <button
+                  onClick={() => {
                     handleNavigateToPage('/admin/dsa-analytics')
                     setMobileMenuOpen(false)
                   }}
@@ -913,6 +924,14 @@ const AdminPage = () => {
             >
               <Activity className="w-5 h-5" />
               <span className="text-sm">Time Tracking</span>
+            </button>
+            
+            <button
+              onClick={() => handleNavigateToPage('/admin/learning-behavior')}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+            >
+              <Target className="w-5 h-5" />
+              <span className="text-sm">Learning Behavior</span>
             </button>
             
             <button
