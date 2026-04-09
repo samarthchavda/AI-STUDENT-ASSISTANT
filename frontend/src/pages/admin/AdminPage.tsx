@@ -28,6 +28,8 @@ import {
   Code2,
   Database,
   Layout,
+  Zap,
+  Smartphone,
   Settings,
   Menu,
   X,
@@ -797,6 +799,39 @@ const AdminPage = () => {
                 
                 <button
                   onClick={() => {
+                    handleNavigateToPage('/admin/engagement-metrics')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+                >
+                  <Activity className="w-5 h-5" />
+                  <span className="text-sm">Engagement Metrics</span>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    handleNavigateToPage('/admin/feature-usage')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+                >
+                  <Zap className="w-5 h-5" />
+                  <span className="text-sm">Feature Usage</span>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    handleNavigateToPage('/admin/device-browser')
+                    setMobileMenuOpen(false)
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+                >
+                  <Smartphone className="w-5 h-5" />
+                  <span className="text-sm">Device & Browser</span>
+                </button>
+                
+                <button
+                  onClick={() => {
                     handleNavigateToPage('/admin/dsa-analytics')
                     setMobileMenuOpen(false)
                   }}
@@ -951,6 +986,30 @@ const AdminPage = () => {
             >
               <TrendingUp className="w-5 h-5" />
               <span className="text-sm">Performance Trends</span>
+            </button>
+            
+            <button
+              onClick={() => handleNavigateToPage('/admin/engagement-metrics')}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+            >
+              <Activity className="w-5 h-5" />
+              <span className="text-sm">Engagement Metrics</span>
+            </button>
+            
+            <button
+              onClick={() => handleNavigateToPage('/admin/feature-usage')}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+            >
+              <Zap className="w-5 h-5" />
+              <span className="text-sm">Feature Usage</span>
+            </button>
+            
+            <button
+              onClick={() => handleNavigateToPage('/admin/device-browser')}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all"
+            >
+              <Smartphone className="w-5 h-5" />
+              <span className="text-sm">Device & Browser</span>
             </button>
             
             <button

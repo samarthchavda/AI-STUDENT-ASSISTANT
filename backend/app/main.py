@@ -209,6 +209,18 @@ app.include_router(learning_behavior_routes.router, prefix="/api", tags=["Learni
 from app.routes import performance_trends_routes
 app.include_router(performance_trends_routes.router, prefix="/api", tags=["Performance Trends"])
 
+# Import engagement metrics routes
+from app.routes import engagement_metrics_routes
+app.include_router(engagement_metrics_routes.router, prefix="/api", tags=["Engagement Metrics"])
+
+# Import feature usage routes
+from app.routes import feature_usage_routes
+app.include_router(feature_usage_routes.router, prefix="/api", tags=["Feature Usage"])
+
+# Import device browser routes
+from app.routes import device_browser_routes
+app.include_router(device_browser_routes.router, prefix="/api", tags=["Device & Browser"])
+
 @app.get("/")
 @rate_limit("10/minute")  # Rate limit: 10 requests per minute
 async def root(request: Request):

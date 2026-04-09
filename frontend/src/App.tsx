@@ -22,6 +22,9 @@ import ContactMessagesPage from './pages/admin/ContactMessagesPage'
 import TimeTrackingPage from './pages/admin/TimeTrackingPage'
 import LearningBehaviorPage from './pages/admin/LearningBehaviorPage'
 import PerformanceTrendsPage from './pages/admin/PerformanceTrendsPage'
+import EngagementMetricsPage from './pages/admin/EngagementMetricsPage'
+import FeatureUsagePage from './pages/admin/FeatureUsagePage'
+import DeviceBrowserPage from './pages/admin/DeviceBrowserPage'
 import CareerPage from './pages/resume/CareerPage'
 import ResumeTemplateGalleryPage from './pages/resume/ResumeTemplateGalleryPage'
 import CompanyPrepPage from './pages/aptitude/CompanyPrepPage'
@@ -108,6 +111,9 @@ function AppRoutes() {
       <Route path="/admin/time-tracking" element={<ProtectedRoute requireAdmin><TimeTrackingPage /></ProtectedRoute>} />
       <Route path="/admin/learning-behavior" element={<ProtectedRoute requireAdmin><LearningBehaviorPage /></ProtectedRoute>} />
       <Route path="/admin/performance-trends" element={<ProtectedRoute requireAdmin><PerformanceTrendsPage /></ProtectedRoute>} />
+      <Route path="/admin/engagement-metrics" element={<ProtectedRoute requireAdmin><EngagementMetricsPage /></ProtectedRoute>} />
+      <Route path="/admin/feature-usage" element={<ProtectedRoute requireAdmin><FeatureUsagePage /></ProtectedRoute>} />
+      <Route path="/admin/device-browser" element={<ProtectedRoute requireAdmin><DeviceBrowserPage /></ProtectedRoute>} />
     </Routes>
   )
 }
