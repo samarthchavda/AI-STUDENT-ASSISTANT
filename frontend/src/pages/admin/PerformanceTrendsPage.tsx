@@ -343,11 +343,7 @@ export default function PerformanceTrendsPage() {
                 <XAxis dataKey="difficulty" stroke="#64748b" style={{ fontSize: '12px', textTransform: 'capitalize' }} />
                 <YAxis stroke="#64748b" style={{ fontSize: '12px' }} />
                 <Tooltip contentStyle={{ backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px' }} />
-                <Bar dataKey="avg_score" name="Avg Score %" radius={[8, 8, 0, 0]}>
-                  {difficultyData.map((entry, index) => (
-                    <cell key={`cell-${index}`} fill={DIFFICULTY_COLORS[entry.difficulty] || '#3b82f6'} />
-                  ))}
-                </Bar>
+                <Bar dataKey="avg_score" name="Avg Score %" radius={[8, 8, 0, 0]} fill="#3b82f6" />
               </BarChart>
             </ResponsiveContainer>
           </div>

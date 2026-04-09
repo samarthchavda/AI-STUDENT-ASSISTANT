@@ -47,7 +47,7 @@ export default function DeviceBrowserPage() {
   const [userPreferences, setUserPreferences] = useState<UserPreference[]>([]);
 
   useEffect(() => {
-    if (!user?.is_admin) {
+    if (!user?.isAdmin) {
       navigate('/');
       return;
     }
@@ -178,9 +178,9 @@ export default function DeviceBrowserPage() {
                   cx="50%"
                   cy="50%"
                   outerRadius={100}
-                  label={(entry) => `${entry.device_type}: ${entry.percentage.toFixed(1)}%`}
+                  label
                 >
-                  {deviceDist.map((entry, index) => (
+                  {deviceDist.map((_, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
@@ -234,9 +234,9 @@ export default function DeviceBrowserPage() {
                   cx="50%"
                   cy="50%"
                   outerRadius={100}
-                  label={(entry) => `${entry.os_name}: ${entry.percentage.toFixed(1)}%`}
+                  label
                 >
-                  {osDist.map((entry, index) => (
+                  {osDist.map((_, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>

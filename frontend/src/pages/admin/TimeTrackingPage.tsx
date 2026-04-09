@@ -283,7 +283,7 @@ export default function TimeTrackingPage() {
                       border: '1px solid #e2e8f0',
                       borderRadius: '8px'
                     }}
-                    formatter={(value: number) => formatMinutes(value)}
+                    formatter={(value) => formatMinutes(Number(value))}
                   />
                   <Legend />
                   <Line 

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Zap, TrendingUp, TrendingDown, AlertCircle, ArrowLeft, Target } from 'lucide-react';
 import Header from '../../components/Header';
 import { useAppStore } from '../../store/useAppStore';
-import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface FeatureUsageSummary {
   total_features: number;
@@ -51,7 +51,7 @@ export default function FeatureUsagePage() {
   const [categoryUsage, setCategoryUsage] = useState<CategoryUsage[]>([]);
 
   useEffect(() => {
-    if (!user?.is_admin) {
+    if (!user?.isAdmin) {
       navigate('/');
       return;
     }
@@ -196,9 +196,9 @@ export default function FeatureUsagePage() {
                   cx="50%"
                   cy="50%"
                   outerRadius={100}
-                  label={(entry) => `${entry.category}: ${entry.total_uses}`}
+                  label
                 >
-                  {categoryUsage.map((entry, index) => (
+                  {categoryUsage.map((_, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>

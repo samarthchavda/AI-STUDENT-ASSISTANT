@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Users, TrendingUp, AlertTriangle, Target, ArrowLeft, Activity } from 'lucide-react';
 import Header from '../../components/Header';
 import { useAppStore } from '../../store/useAppStore';
-import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface EngagementSummary {
   dau: number;
@@ -49,7 +49,7 @@ export default function EngagementMetricsPage() {
   const [userSegments, setUserSegments] = useState<UserSegment[]>([]);
 
   useEffect(() => {
-    if (!user?.is_admin) {
+    if (!user?.isAdmin) {
       navigate('/');
       return;
     }
@@ -204,9 +204,9 @@ export default function EngagementMetricsPage() {
                   cx="50%"
                   cy="50%"
                   outerRadius={100}
-                  label={(entry) => `${entry.segment}: ${entry.user_count}`}
+                  label
                 >
-                  {userSegments.map((entry, index) => (
+                  {userSegments.map((_, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>

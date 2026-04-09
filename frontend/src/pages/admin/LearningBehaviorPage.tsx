@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { BookOpen, Target, TrendingUp, Clock, Award, Users, ArrowLeft, Sun, Sunset, Moon, CloudMoon } from 'lucide-react';
 import Header from '../../components/Header';
 import { useAppStore } from '../../store/useAppStore';
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface LearningBehaviorSummary {
   most_practiced_topic: string;
@@ -309,9 +309,9 @@ export default function LearningBehaviorPage() {
                     cx="50%"
                     cy="50%"
                     outerRadius={100}
-                    label={(entry) => `${entry.topic} (${entry.percentage}%)`}
+                    label
                   >
-                    {topicData.map((entry, index) => (
+                    {topicData.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
