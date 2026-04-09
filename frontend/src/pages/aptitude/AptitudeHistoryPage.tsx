@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Calendar, Clock, Award, ChevronRight, TrendingUp, BookOpen, ArrowLeft } from 'lucide-react'
 import Header from '../../components/Header'
 import { api } from '../../api/client'
+import { cleanQuestionText } from './utils/textCleaners'
 
 interface ExamHistory {
   id: number
@@ -180,7 +181,7 @@ export default function AptitudeHistoryPage() {
                     </span>
                   </div>
 
-                  <p className="mb-4 text-gray-800">{question.question}</p>
+                  <p className="mb-4 text-gray-800">{cleanQuestionText(question.question)}</p>
 
                   <div className="mb-4 space-y-2">
                     {question.options.map((option, optIndex) => {
@@ -209,7 +210,7 @@ export default function AptitudeHistoryPage() {
                                 Your Answer
                               </span>
                             )}
-                            <span className="text-gray-800">{option}</span>
+                            <span className="text-gray-800">{cleanQuestionText(option)}</span>
                           </div>
                         </div>
                       )
@@ -218,7 +219,7 @@ export default function AptitudeHistoryPage() {
 
                   <div className="rounded-lg bg-blue-50 p-4">
                     <p className="mb-1 text-sm font-semibold text-blue-900">Explanation:</p>
-                    <p className="text-sm text-blue-800">{question.explanation}</p>
+                    <p className="text-sm text-blue-800">{cleanQuestionText(question.explanation)}</p>
                   </div>
                 </div>
               ))}

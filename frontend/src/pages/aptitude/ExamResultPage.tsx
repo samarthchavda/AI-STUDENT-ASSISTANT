@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import Header from '../../components/Header'
+import { cleanQuestionText } from './utils/textCleaners'
 
 type Difficulty = 'Easy' | 'Medium' | 'Hard'
 
@@ -180,7 +181,7 @@ export default function ExamResultPage() {
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-slate-500">Question {index + 1}</p>
-                      <h3 className="mt-2 text-lg font-bold text-slate-900">{question.question}</h3>
+                      <h3 className="mt-2 text-lg font-bold text-slate-900">{cleanQuestionText(question.question)}</h3>
                     </div>
                     <span 
                       className={`rounded-full px-3 py-1 text-xs font-bold ${
@@ -218,7 +219,7 @@ export default function ExamResultPage() {
                             <span className={`flex-1 ${
                               isCorrectOption || isSelectedOption ? 'font-semibold' : ''
                             }`}>
-                              {option}
+                              {cleanQuestionText(option)}
                             </span>
                             {isCorrectOption && (
                               <span className="text-xs font-bold text-green-700">✓ Correct</span>
@@ -235,7 +236,7 @@ export default function ExamResultPage() {
                   {question.explanation && (
                     <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 p-4">
                       <p className="text-xs font-bold uppercase tracking-wider text-blue-700">Explanation</p>
-                      <p className="mt-2 text-sm leading-relaxed text-slate-700">{question.explanation}</p>
+                      <p className="mt-2 text-sm leading-relaxed text-slate-700">{cleanQuestionText(question.explanation)}</p>
                     </div>
                   )}
                 </article>

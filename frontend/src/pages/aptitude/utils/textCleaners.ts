@@ -3,6 +3,95 @@
  */
 
 /**
+ * Format mathematical symbols and expressions for proper display
+ * Handles unicode symbols, HTML entities, and common math notation
+ * 
+ * @param text - The text containing math symbols
+ * @returns Text with properly formatted math symbols
+ */
+export function formatMathSymbols(text: string): string {
+  if (!text) return text
+
+  // Decode HTML entities first
+  const textarea = document.createElement('textarea')
+  textarea.innerHTML = text
+  text = textarea.value
+
+  // Square root symbols
+  text = text.replace(/sqrt\(([^)]+)\)/gi, '√($1)')
+  text = text.replace(/√\s*\(?\s*(\d+)\s*\)?/g, '√$1')
+  
+  // Powers and superscripts
+  text = text.replace(/\^2/g, '²')
+  text = text.replace(/\^3/g, '³')
+  text = text.replace(/\*\*2/g, '²')
+  text = text.replace(/\*\*3/g, '³')
+  text = text.replace(/(\d+)\s*squared/gi, '$1²')
+  text = text.replace(/(\d+)\s*cubed/gi, '$1³')
+  
+  // Fractions - common patterns
+  text = text.replace(/\b1\/2\b/g, '½')
+  text = text.replace(/\b1\/3\b/g, '⅓')
+  text = text.replace(/\b2\/3\b/g, '⅔')
+  text = text.replace(/\b1\/4\b/g, '¼')
+  text = text.replace(/\b3\/4\b/g, '¾')
+  text = text.replace(/\b1\/5\b/g, '⅕')
+  text = text.replace(/\b2\/5\b/g, '⅖')
+  text = text.replace(/\b3\/5\b/g, '⅗')
+  text = text.replace(/\b4\/5\b/g, '⅘')
+  text = text.replace(/\b1\/6\b/g, '⅙')
+  text = text.replace(/\b5\/6\b/g, '⅚')
+  text = text.replace(/\b1\/8\b/g, '⅛')
+  text = text.replace(/\b3\/8\b/g, '⅜')
+  text = text.replace(/\b5\/8\b/g, '⅝')
+  text = text.replace(/\b7\/8\b/g, '⅞')
+  
+  // Multiplication symbols
+  text = text.replace(/\s*[xX]\s+/g, ' × ')
+  text = text.replace(/\s*\*\s*/g, ' × ')
+  
+  // Division symbols
+  text = text.replace(/\s+\/\s+/g, ' ÷ ')
+  text = text.replace(/\s+div\s+/gi, ' ÷ ')
+  
+  // Inequality symbols
+  text = text.replace(/<=/g, '≤')
+  text = text.replace(/>=/g, '≥')
+  text = text.replace(/!=/g, '≠')
+  
+  // Plus-minus
+  text = text.replace(/\+\/-/g, '±')
+  text = text.replace(/\+-/g, '±')
+  
+  // Percentage - ensure proper spacing
+  text = text.replace(/(\d)\s*%/g, '$1%')
+  
+  // Degree symbol
+  text = text.replace(/(\d+)\s*degrees?/gi, '$1°')
+  
+  // Pi symbol
+  text = text.replace(/\bpi\b/gi, 'π')
+  
+  // Infinity
+  text = text.replace(/\binfinity\b/gi, '∞')
+  
+  // Approximately equal
+  text = text.replace(/~=/g, '≈')
+  text = text.replace(/approximately equal to/gi, '≈')
+  
+  // Sum symbol
+  text = text.replace(/\bsum\b/gi, '∑')
+  
+  // Product symbol
+  text = text.replace(/\bproduct\b/gi, '∏')
+  
+  // Delta (change)
+  text = text.replace(/\bdelta\b/gi, 'Δ')
+  
+  return text
+}
+
+/**
  * Clean malformed fractions in text
  * Converts patterns like "221days2" to "22.5 days"
  * 
@@ -89,6 +178,37 @@ export function removeMetadata(text: string): string {
 }
 
 /**
+ * Normalize encoding issues and broken characters
+ * Fixes common encoding problems in question text
+ * 
+ * @param text - The text to normalize
+ * @returns Text with fixed encoding
+ */
+export function normalizeEncoding(text: string): string {
+  if (!text) return text
+
+  // Fix common encoding issues
+  text = text.replace(/â€™/g, "'")  // Smart apostrophe
+  text = text.replace(/â€œ/g, '"')  // Smart quote open
+  text = text.replace(/â€/g, '"')   // Smart quote close
+  text = text.replace(/â€"/g, '—')  // Em dash
+  text = text.replace(/â€"/g, '–')  // En dash
+  text = text.replace(/Â/g, '')     // Non-breaking space artifact
+  text = text.replace(/â‚¬/g, '€')  // Euro symbol
+  text = text.replace(/Â£/g, '£')   // Pound symbol
+  text = text.replace(/Â°/g, '°')   // Degree symbol
+  
+  // Fix broken unicode
+  text = text.replace(/\uFFFD/g, '') // Replacement character
+  
+  // Normalize whitespace
+  text = text.replace(/\s+/g, ' ')
+  text = text.trim()
+
+  return text
+}
+
+/**
  * Clean and format question text for display
  * Applies all text cleaning operations
  * 
@@ -101,10 +221,14 @@ export function cleanQuestionText(text: string): string {
   // Remove metadata first
   text = removeMetadata(text)
   
+  // Normalize encoding issues
+  text = normalizeEncoding(text)
+  
   // Apply fraction cleaning
   text = cleanFractions(text)
   
-  // Add more cleaning operations here as needed
+  // Format mathematical symbols
+  text = formatMathSymbols(text)
   
   return text
 }
