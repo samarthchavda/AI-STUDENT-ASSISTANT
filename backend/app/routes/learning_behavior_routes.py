@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional, List
 from datetime import datetime, timedelta
-from app.core.auth import get_current_user, get_current_admin_user
+from app.core.auth import get_current_user, require_admin
 from app.core.database import get_db_connection
 import psycopg2.extras
 
@@ -100,7 +100,7 @@ async def log_learning_behavior(
 @router.get("/admin/learning-behavior/summary")
 async def get_learning_behavior_summary(
     days: int = 30,
-    current_user: dict = Depends(get_current_admin_user)
+    current_user: dict = Depends(require_admin)
 ):
     """Get overall learning behavior summary"""
     conn = get_db_connection()
@@ -152,7 +152,7 @@ async def get_learning_behavior_summary(
 @router.get("/admin/learning-behavior/topic-distribution")
 async def get_topic_distribution(
     days: int = 30,
-    current_user: dict = Depends(get_current_admin_user)
+    current_user: dict = Depends(require_admin)
 ):
     """Get topic distribution for charts"""
     conn = get_db_connection()
@@ -183,7 +183,7 @@ async def get_topic_distribution(
 @router.get("/admin/learning-behavior/difficulty-distribution")
 async def get_difficulty_distribution(
     days: int = 30,
-    current_user: dict = Depends(get_current_admin_user)
+    current_user: dict = Depends(require_admin)
 ):
     """Get difficulty preference distribution"""
     conn = get_db_connection()
@@ -219,7 +219,7 @@ async def get_difficulty_distribution(
 @router.get("/admin/learning-behavior/company-preference")
 async def get_company_preference(
     days: int = 30,
-    current_user: dict = Depends(get_current_admin_user)
+    current_user: dict = Depends(require_admin)
 ):
     """Get company preference distribution"""
     conn = get_db_connection()
@@ -249,7 +249,7 @@ async def get_company_preference(
 @router.get("/admin/learning-behavior/study-time-heatmap")
 async def get_study_time_heatmap(
     days: int = 30,
-    current_user: dict = Depends(get_current_admin_user)
+    current_user: dict = Depends(require_admin)
 ):
     """Get study time heatmap data"""
     conn = get_db_connection()
@@ -284,7 +284,7 @@ async def get_study_time_heatmap(
 @router.get("/admin/learning-behavior/users-table")
 async def get_users_behavior_table(
     days: int = 30,
-    current_user: dict = Depends(get_current_admin_user)
+    current_user: dict = Depends(require_admin)
 ):
     """Get user behavior breakdown table"""
     conn = get_db_connection()
@@ -332,7 +332,7 @@ async def get_users_behavior_table(
 async def get_user_learning_behavior(
     user_id: int,
     days: int = 30,
-    current_user: dict = Depends(get_current_admin_user)
+    current_user: dict = Depends(require_admin)
 ):
     """Get specific user's learning behavior"""
     conn = get_db_connection()
