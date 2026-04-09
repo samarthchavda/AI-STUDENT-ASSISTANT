@@ -43,11 +43,16 @@ async def log_activity(
 ):
     """Log user activity (called by frontend)"""
     try:
+        import json
+        
         query = text("""
             INSERT INTO user_activity_logs 
             (user_id, page_url, feature_name, action_type, duration_seconds, session_id, metadata)
             VALUES (:user_id, :page_url, :feature_name, :action_type, :duration_seconds, :session_id, :metadata::jsonb)
         """)
+        
+        # Convert metadata to JSON string if it exists
+        metadata_json = json.dumps(activity.metadata) if activity.metadata else None
         
         with engine.connect() as conn:
             conn.execute(query, {
@@ -57,13 +62,15 @@ async def log_activity(
                 "action_type": activity.action_type,
                 "duration_seconds": activity.duration_seconds,
                 "session_id": activity.session_id,
-                "metadata": str(activity.metadata) if activity.metadata else None
+                "metadata": metadata_json
             })
             conn.commit()
         
         return {"status": "success", "message": "Activity logged"}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to log activity: {str(e)}")
+        # Log error but don't fail - tracking should be silent
+        print(f"Activity logging error: {str(e)}")
+        return {"status": "error", "message": str(e)}
 
 # ============================================================================
 # ADMIN ENDPOINTS
