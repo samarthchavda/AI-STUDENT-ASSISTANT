@@ -59,7 +59,7 @@ const ResumeAnalyticsPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/admin/resume-analytics`, {
+      const response = await fetch('/api/admin/resume-analytics', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }

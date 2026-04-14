@@ -41,7 +41,7 @@ const UserResumesPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/admin/user-resumes`, {
+      const response = await fetch('/api/admin/user-resumes', {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
       if (!response.ok) throw new Error('Failed to load resumes');
@@ -57,7 +57,7 @@ const UserResumesPage = () => {
   const handleDelete = async (resumeId: number) => {
     if (!confirm('Are you sure you want to delete this resume?')) return;
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/admin/user-resumes/${resumeId}`, {
+      const response = await fetch(`/api/admin/user-resumes/${resumeId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
@@ -72,7 +72,7 @@ const UserResumesPage = () => {
     setRecalculating(resumeId);
     setError(null);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/admin/recalculate-ats/${resumeId}`, {
+      const response = await fetch(`/api/admin/recalculate-ats/${resumeId}`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });

@@ -1,8 +1,6 @@
 // Code Execution Service - Uses backend API for real code execution
 // Backend handles Judge0 integration or mock execution
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-
 // Language IDs for Judge0 (kept for reference)
 export const LANGUAGE_IDS = {
   python: 71,      // Python 3
@@ -43,14 +41,14 @@ async function executeCode(code: string, language: keyof typeof LANGUAGE_IDS, in
   console.log(`🚀 [CODE EXECUTION] Starting execution - Language: ${language}`);
   
   try {
-    console.log(`📡 [CODE EXECUTION] Calling backend API: ${API_BASE_URL}/api/code/execute`);
+    console.log(`📡 [CODE EXECUTION] Calling backend API: /api/code/execute`);
     
     // Call backend API for execution (backend handles mock vs real)
     // Use longer timeout for code execution (60 seconds)
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 second timeout
     
-    const response = await fetch(`${API_BASE_URL}/api/code/execute`, {
+    const response = await fetch('/api/code/execute', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

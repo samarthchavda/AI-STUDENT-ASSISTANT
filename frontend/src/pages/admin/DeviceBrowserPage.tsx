@@ -63,12 +63,12 @@ export default function DeviceBrowserPage() {
       };
 
       const [summaryRes, deviceRes, browserRes, osRes, mobileRes, prefsRes] = await Promise.all([
-        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/tracking/admin/device-browser/summary`, { headers }),
-        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/tracking/admin/device-browser/device-distribution`, { headers }),
-        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/tracking/admin/device-browser/browser-distribution`, { headers }),
-        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/tracking/admin/device-browser/os-distribution`, { headers }),
-        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/tracking/admin/device-browser/mobile-vs-desktop`, { headers }),
-        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/tracking/admin/device-browser/user-preferences?limit=20`, { headers })
+        fetch('/api/tracking/admin/device-browser/summary', { headers }),
+        fetch('/api/tracking/admin/device-browser/device-distribution', { headers }),
+        fetch('/api/tracking/admin/device-browser/browser-distribution', { headers }),
+        fetch('/api/tracking/admin/device-browser/os-distribution', { headers }),
+        fetch('/api/tracking/admin/device-browser/mobile-vs-desktop', { headers }),
+        fetch('/api/tracking/admin/device-browser/user-preferences?limit=20', { headers })
       ]);
 
       const summaryData = await summaryRes.json();

@@ -85,7 +85,7 @@ export const useDeviceBrowserTracking = () => {
 
       const deviceInfo = detectDeviceInfo();
 
-      await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/tracking/device-browser`, {
+      await fetch('/api/tracking/device-browser', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

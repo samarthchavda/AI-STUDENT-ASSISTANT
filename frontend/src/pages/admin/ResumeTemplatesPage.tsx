@@ -42,7 +42,7 @@ const ResumeTemplatesPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/admin/resume-templates`, {
+      const response = await fetch('/api/admin/resume-templates', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -61,7 +61,7 @@ const ResumeTemplatesPage = () => {
 
   const handleToggleActive = async (templateId: string, currentStatus: boolean) => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/admin/resume-templates/${templateId}/toggle`, {
+      const response = await fetch(`/api/admin/resume-templates/${templateId}/toggle`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -83,7 +83,7 @@ const ResumeTemplatesPage = () => {
 
   const handleChangeTier = async (templateId: string, newTier: 'free' | 'premium') => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/admin/resume-templates/${templateId}/tier?tier=${newTier}`, {
+      const response = await fetch(`/api/admin/resume-templates/${templateId}/tier?tier=${newTier}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`

@@ -35,7 +35,7 @@ export default function DSAQuestionsAdminPage() {
     try {
       const token = localStorage.getItem('token')
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/admin/dsa-questions`,
+        '/api/admin/dsa-questions',
         {
           headers: { 'Authorization': `Bearer ${token}` }
         }
@@ -75,7 +75,7 @@ export default function DSAQuestionsAdminPage() {
       formData.append('file', uploadFile)
 
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/admin/dsa-questions/bulk-upload`,
+        '/api/admin/dsa-questions/bulk-upload',
         {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}` },
@@ -289,7 +289,7 @@ reverse-string,Reverse String,Easy,Strings,"TCS,Infosys","Write a function that 
                     </tr>
                   ) : (
                     questions.slice(0, 50).map((q) => (
-                      <tr key={q.id} className="border-b border-gray-100 hover:bg-gray-50">
+                      <tr key={q.slug} className="border-b border-gray-100 hover:bg-gray-50">
                         <td className="py-3 px-6">
                           <div className="font-semibold text-gray-900">{q.title}</div>
                           <div className="text-xs text-gray-500">{q.slug}</div>
@@ -308,8 +308,8 @@ reverse-string,Reverse String,Easy,Strings,"TCS,Infosys","Write a function that 
                         <td className="py-3 px-6 text-gray-700">{q.topic}</td>
                         <td className="py-3 px-6">
                           <div className="flex flex-wrap gap-1">
-                            {q.companies.slice(0, 3).map((company, idx) => (
-                              <span key={idx} className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">
+                            {q.companies.slice(0, 3).map((company) => (
+                              <span key={company} className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">
                                 {company}
                               </span>
                             ))}

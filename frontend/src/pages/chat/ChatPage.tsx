@@ -8,7 +8,7 @@ import ReactMarkdown from 'react-markdown'
 import rehypeHighlight from 'rehype-highlight'
 import remarkGfm from 'remark-gfm'
 import { motion, AnimatePresence } from 'framer-motion'
-import 'highlight.js/styles/github-dark.css'
+import 'highlight.js/styles/github.css'
 
 const GUEST_CHAT_LIMIT = 3
 const GUEST_CHAT_USAGE_KEY = 'guest_chat_usage'

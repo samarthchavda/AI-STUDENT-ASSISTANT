@@ -22,7 +22,7 @@ export const usePerformanceTracking = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/tracking/performance`, {
+      await fetch('/api/tracking/performance', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

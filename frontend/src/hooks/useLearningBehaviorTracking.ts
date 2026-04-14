@@ -20,7 +20,7 @@ export const useLearningBehaviorTracking = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/tracking/learning-behavior`, {
+      await fetch('/api/tracking/learning-behavior', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

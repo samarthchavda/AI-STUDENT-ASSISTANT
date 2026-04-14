@@ -83,7 +83,7 @@ export default function DashboardPageNew() {
         return
       }
       
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/aptitude/attempts-by-company`, {
+      const response = await fetch('/api/aptitude/attempts-by-company', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -106,7 +106,7 @@ export default function DashboardPageNew() {
       const token = localStorage.getItem('token')
       if (!token) return
       
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/aptitude/company-exam-status`, {
+      const response = await fetch('/api/aptitude/company-exam-status', {
         headers: {
           'Authorization': `Bearer ${token}`
         }

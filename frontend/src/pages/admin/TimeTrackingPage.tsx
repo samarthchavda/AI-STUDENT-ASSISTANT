@@ -61,19 +61,18 @@ export default function TimeTrackingPage() {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
       const [summaryRes, chartRes, peakRes, usersRes] = await Promise.all([
-        fetch(`${baseUrl}/tracking/admin/summary?days=${days}`, {
+        fetch(`/api/tracking/admin/summary?days=${days}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         }),
-        fetch(`${baseUrl}/tracking/admin/daily-chart?days=${days}`, {
+        fetch(`/api/tracking/admin/daily-chart?days=${days}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         }),
-        fetch(`${baseUrl}/tracking/admin/peak-hours?days=${days}`, {
+        fetch(`/api/tracking/admin/peak-hours?days=${days}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         }),
-        fetch(`${baseUrl}/tracking/admin/users-table?days=${days}`, {
+        fetch(`/api/tracking/admin/users-table?days=${days}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         })
       ]);

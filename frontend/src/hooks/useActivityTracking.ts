@@ -29,7 +29,7 @@ const logActivity = async (activity: ActivityLog) => {
     const token = localStorage.getItem('token');
     if (!token) return; // Don't track if not logged in
 
-    await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/tracking/activity`, {
+    await fetch('/api/tracking/activity', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

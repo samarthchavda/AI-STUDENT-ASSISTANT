@@ -88,28 +88,27 @@ export default function PerformanceTrendsPage() {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
       const [summaryRes, trendsRes, weakRes, strongRes, improversRes, difficultyRes, usersRes] = await Promise.all([
-        fetch(`${baseUrl}/tracking/admin/performance/summary?days=${days}`, {
+        fetch(`/api/tracking/admin/performance/summary?days=${days}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         }),
-        fetch(`${baseUrl}/tracking/admin/performance/score-trends?days=${days}`, {
+        fetch(`/api/tracking/admin/performance/score-trends?days=${days}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         }),
-        fetch(`${baseUrl}/tracking/admin/performance/weak-areas?limit=5`, {
+        fetch(`/api/tracking/admin/performance/weak-areas?limit=5`, {
           headers: { 'Authorization': `Bearer ${token}` }
         }),
-        fetch(`${baseUrl}/tracking/admin/performance/strong-areas?limit=5`, {
+        fetch(`/api/tracking/admin/performance/strong-areas?limit=5`, {
           headers: { 'Authorization': `Bearer ${token}` }
         }),
-        fetch(`${baseUrl}/tracking/admin/performance/top-improvers?limit=10`, {
+        fetch(`/api/tracking/admin/performance/top-improvers?limit=10`, {
           headers: { 'Authorization': `Bearer ${token}` }
         }),
-        fetch(`${baseUrl}/tracking/admin/performance/difficulty-breakdown?days=${days}`, {
+        fetch(`/api/tracking/admin/performance/difficulty-breakdown?days=${days}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         }),
-        fetch(`${baseUrl}/tracking/admin/performance/users-table?days=${days}&limit=50`, {
+        fetch(`/api/tracking/admin/performance/users-table?days=${days}&limit=50`, {
           headers: { 'Authorization': `Bearer ${token}` }
         })
       ]);

@@ -18,6 +18,23 @@ const API_ORIGIN = resolveApiOrigin(import.meta.env.VITE_API_URL || '')
 const API_PREFIX = '/api'
 const API_BASE_URL = API_ORIGIN ? `${API_ORIGIN}${API_PREFIX}` : API_PREFIX
 
+/**
+ * Utility function to construct proper API URLs
+ * Uses relative paths in development (Vite proxy), absolute URLs in production
+ */
+export const getApiUrl = (endpoint: string): string => {
+  // Ensure endpoint starts with /
+  const normalizedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`
+  
+  // If API_ORIGIN is set (production), use absolute URL
+  if (API_ORIGIN) {
+    return `${API_BASE_URL}${normalizedEndpoint}`
+  }
+  
+  // In development, use relative path for Vite proxy
+  return `/api${normalizedEndpoint}`
+}
+
 export const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {

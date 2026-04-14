@@ -27,7 +27,7 @@ export default function CompanyExamControlPage() {
     try {
       const token = localStorage.getItem('token')
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/admin/company-exam-settings`,
+        '/api/admin/company-exam-settings',
         {
           headers: { 'Authorization': `Bearer ${token}` }
         }
@@ -54,7 +54,7 @@ export default function CompanyExamControlPage() {
     try {
       const token = localStorage.getItem('token')
       const res = await fetch(
-        `${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/admin/company-exam-settings/${companyKey}`,
+        `/api/admin/company-exam-settings/${companyKey}`,
         {
           method: 'PUT',
           headers: {

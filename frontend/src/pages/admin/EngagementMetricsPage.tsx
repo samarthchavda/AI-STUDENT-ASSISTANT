@@ -65,10 +65,10 @@ export default function EngagementMetricsPage() {
       };
 
       const [summaryRes, dauRes, churnRes, segmentsRes] = await Promise.all([
-        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/tracking/admin/engagement/summary`, { headers }),
-        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/tracking/admin/engagement/dau-wau-mau?days=30`, { headers }),
-        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/tracking/admin/engagement/churn-risk?limit=10`, { headers }),
-        fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api'}/tracking/admin/engagement/user-segments`, { headers })
+        fetch('/api/tracking/admin/engagement/summary', { headers }),
+        fetch('/api/tracking/admin/engagement/dau-wau-mau?days=30', { headers }),
+        fetch('/api/tracking/admin/engagement/churn-risk?limit=10', { headers }),
+        fetch('/api/tracking/admin/engagement/user-segments', { headers })
       ]);
 
       const summaryData = await summaryRes.json();
