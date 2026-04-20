@@ -184,52 +184,72 @@ export default function LandingPage() {
       </header>
 
       <main>
-        <section className="relative mx-auto max-w-5xl px-4 sm:px-6 pt-24 pb-20 text-center lg:pt-32 bg-gradient-to-b from-blue-50/30 via-white to-white">
-          <div className="mx-auto mb-8 flex max-w-fit items-center gap-2 rounded-full border border-blue-200 bg-blue-50/50 px-4 py-1.5 shadow-sm">
-            <Sparkles className="h-4 w-4 text-blue-600" />
-            <p className="text-[10px] font-black uppercase tracking-[0.15em] text-blue-700">The New Standard for Campus Prep</p>
+        <section className="relative mx-auto max-w-7xl px-4 pb-20 pt-24 sm:px-6 lg:pt-28">
+          <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
+            <div>
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50/70 px-4 py-1.5 shadow-sm">
+                <Sparkles className="h-4 w-4 text-blue-600" />
+                <p className="text-[10px] font-black uppercase tracking-[0.14em] text-blue-700">Built for engineering campus prep</p>
+              </div>
+
+              <h1 className="text-4xl font-extrabold leading-[1.1] tracking-tight text-slate-900 sm:text-5xl lg:text-6xl">
+                <span className="bg-gradient-to-r from-blue-700 to-violet-600 bg-clip-text text-transparent">Placement</span>{' '}
+                Preparation Platform for Engineering Students 🚀
+              </h1>
+
+              <p className="mt-6 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg">
+                Practice company-wise aptitude questions, take mock tests, use{' '}
+                <span className="bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text font-semibold text-transparent">AI</span>{' '}
+                copilot, and build ATS-friendly resumes — all in one place.
+              </p>
+
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+                <button
+                  onClick={handleGetStarted}
+                  className="inline-flex h-12 items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 px-7 text-sm font-bold text-white shadow-lg shadow-blue-300/40 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl"
+                >
+                  Start Free Practice
+                </button>
+                <button
+                  onClick={() => navigate('/services')}
+                  className="inline-flex h-12 items-center justify-center rounded-xl border border-slate-300 bg-white px-7 text-sm font-bold text-slate-800 transition-all duration-300 hover:border-blue-300 hover:bg-blue-50"
+                >
+                  Explore Mock Tests
+                </button>
+              </div>
+
+              <div className="mt-8 grid grid-cols-2 gap-3 text-sm font-semibold text-slate-700 sm:grid-cols-4">
+                <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-center">10+ Companies</div>
+                <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-center">10K+ Questions</div>
+                <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-center">AI Powered</div>
+                <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-center">Mock Tests + Resume + DSA</div>
+              </div>
+            </div>
+
+            <div className="relative">
+              <div className="absolute -inset-3 -z-10 rounded-3xl bg-gradient-to-tr from-blue-100 via-violet-100 to-cyan-100 blur-2xl" />
+              <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.12)] sm:p-6">
+                <div className="mb-5 flex items-center justify-between">
+                  <p className="text-xs font-bold uppercase tracking-[0.15em] text-slate-500">Dashboard Preview</p>
+                  <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">Live Progress</span>
+                </div>
+                <div className="space-y-3">
+                  <div className="rounded-xl border border-blue-100 bg-blue-50/70 p-3">
+                    <p className="text-xs font-semibold text-slate-500">Aptitude Practice</p>
+                    <p className="mt-1 text-sm font-bold text-slate-900">72% mastery in TCS pattern set</p>
+                  </div>
+                  <div className="rounded-xl border border-violet-100 bg-violet-50/70 p-3">
+                    <p className="text-xs font-semibold text-slate-500">AI Copilot</p>
+                    <p className="mt-1 text-sm font-bold text-slate-900">14 doubts solved this week</p>
+                  </div>
+                  <div className="rounded-xl border border-cyan-100 bg-cyan-50/70 p-3">
+                    <p className="text-xs font-semibold text-slate-500">Resume ATS Score</p>
+                    <p className="mt-1 text-sm font-bold text-slate-900">86/100 - ready for top recruiters</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-slate-900 mb-8 leading-[1.1]">
-            Ace Your Placements <br />
-            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Powered by AI.</span>
-          </h1>
-
-          <p className="mt-8 mx-auto max-w-2xl text-lg sm:text-xl text-slate-600 leading-relaxed">
-            Personalized roadmaps, resume analysis, mock interviews, and DSA help. 
-            The only workspace you need for placement success.
-          </p>
-
-          <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
-            <button 
-              onClick={() => navigate('/copilot')}
-              className="flex h-14 items-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-10 font-bold text-white shadow-lg hover:shadow-xl transition-all hover:scale-[1.02]"
-            >
-              <MessageSquare size={18} /> Try AI Copilot Free
-            </button>
-            <button 
-              onClick={handleGetStarted}
-              className="flex h-14 items-center gap-2 rounded-xl border-2 border-blue-200 bg-white px-10 font-bold text-blue-700 hover:bg-blue-50 transition-all hover:scale-[1.02]"
-            >
-              {isAuthenticated ? (
-                <>
-                  <LayoutDashboard size={18} /> Go to Dashboard
-                </>
-              ) : (
-                <>
-                  Get Started Free <ArrowRight size={18} />
-                </>
-              )}
-            </button>
-          </div>
-
-          <p className="mt-6 text-sm text-slate-500">
-            {isAuthenticated ? (
-              <>👋 Welcome back, {user?.name}! Continue your learning journey</>
-            ) : (
-              <>✨ No credit card required • 🚀 Start in 30 seconds • 💯 Free forever plan</>
-            )}
-          </p>
         </section>
 
         {/* Demo Modal - REMOVED, now redirects to /copilot */}

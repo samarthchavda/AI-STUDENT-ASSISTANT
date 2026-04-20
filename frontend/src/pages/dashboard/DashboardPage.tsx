@@ -494,7 +494,7 @@ export default function DashboardPageNew() {
       {/* Sticky Header */}
       <Header />
 
-      <div className="flex pt-20">
+      <div className="flex">
         {/* Mobile Menu Button */}
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
