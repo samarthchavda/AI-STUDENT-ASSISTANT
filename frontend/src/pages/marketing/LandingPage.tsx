@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { 
-  Brain, ArrowRight, MessageSquare, FileText, BarChart3, 
+  Brain, MessageSquare, FileText, BarChart3, 
   Zap, Trophy, ShieldCheck, Globe2, Sparkles, 
   Rocket, Bot, Clock, Target, CheckCircle, Code2, Briefcase, GraduationCap,
   Star, Users, Award, LogOut, LayoutDashboard
@@ -109,7 +109,7 @@ const useCases = [
 
 export default function LandingPage() {
   const navigate = useNavigate();
-  const { user, isAuthenticated, logout } = useAppStore();
+  const { isAuthenticated, logout } = useAppStore();
 
   const handleLogout = () => {
     logout();
