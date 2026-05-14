@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '../store/useAppStore'
 
-const INACTIVITY_TIMEOUT = 30 * 60 * 1000 // 30 minutes in milliseconds
+const INACTIVITY_TIMEOUT = 4 * 60 * 60 * 1000 // 4 hours in milliseconds
 const TOKEN_CHECK_INTERVAL = 60 * 1000 // Check every minute
 
 export function useAutoLogout() {
