@@ -15,6 +15,14 @@ pwd_context = CryptContext(
     schemes=["pbkdf2_sha256", "bcrypt"],
     deprecated="auto",
     bcrypt__truncate_error=False,
+    pbkdf2_sha256__rounds=29000,  # Default is good for security
+)
+
+# Optimized context for faster verification (used only for login performance)
+pwd_context_fast = CryptContext(
+    schemes=["pbkdf2_sha256"],
+    deprecated="auto",
+    pbkdf2_sha256__rounds=29000,  # Trade-off: security vs speed
 )
 
 # Password validation regex

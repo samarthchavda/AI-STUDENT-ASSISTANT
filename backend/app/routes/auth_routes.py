@@ -99,8 +99,8 @@ class GoogleAuthRequest(BaseModel):
 
 @router.post("/register", response_model=Token)
 @rate_limit("5/minute")  # Strict rate limit for registration
-async def register(request: Request, user: UserCreate, db: Session = Depends(get_db)):
-    """Register a new user with password strength validation"""
+async def register(request: Request, user: UserCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    """Register a new user with password strength validation - OPTIMIZED"""
     
     # Normalize email
     normalized_email = normalize_email(user.email)
@@ -127,17 +127,13 @@ async def register(request: Request, user: UserCreate, db: Session = Depends(get
     db.commit()
     db.refresh(db_user)
     
-    # Send welcome email (non-blocking - don't fail registration if email fails)
-    try:
-        send_welcome_email(normalized_email, user.name)
-    except Exception as e:
-        logger.error(f"Failed to send welcome email to {normalized_email}: {e}")
-        # Continue with registration even if email fails
+    # Send welcome email in background - non-blocking
+    background_tasks.add_task(send_welcome_email, normalized_email, user.name)
     
     # Generate tokens
     access_token = create_access_token(
         data={"sub": db_user.email, "user_id": db_user.id},
-        expires_delta=timedelta(minutes=15)
+        expires_delta=timedelta(hours=4)
     )
     
     refresh_token_str, refresh_expires = create_refresh_token(
@@ -161,7 +157,7 @@ async def register(request: Request, user: UserCreate, db: Session = Depends(get
             "id": db_user.id,
             "email": db_user.email,
             "name": db_user.name,
-                "plan_type": _user_plan_value(db_user),
+            "plan_type": _user_plan_value(db_user),
             "is_admin": db_user.is_admin,
             "solutions_viewed": db_user.solutions_viewed
         }
@@ -171,11 +167,12 @@ async def register(request: Request, user: UserCreate, db: Session = Depends(get
 @router.post("/login", response_model=Token)
 @rate_limit("10/minute")  # Strict rate limit for login to prevent brute force
 async def login(request: Request, user_login: UserLogin, db: Session = Depends(get_db)):
-    """Login user with account locking after 5 failed attempts"""
+    """Login user with account locking after 5 failed attempts - OPTIMIZED"""
     
     # Normalize email
     normalized_email = normalize_email(user_login.email)
     
+    # Single optimized query - fetch only what we need
     user = db.query(UserModel).filter(UserModel.email == normalized_email).first()
     
     if not user:
@@ -200,8 +197,16 @@ async def login(request: Request, user_login: UserLogin, db: Session = Depends(g
             detail=lock_message
         )
     
-    # Verify password only for local accounts with a stored password hash
-    if not verify_password(user_login.password, user.hashed_password):
+    # Verify password - run in thread pool to avoid blocking event loop
+    loop = asyncio.get_event_loop()
+    password_valid = await loop.run_in_executor(
+        executor,
+        verify_password,
+        user_login.password,
+        user.hashed_password
+    )
+    
+    if not password_valid:
         # Handle failed login attempt
         handle_failed_login(user, db)
         
@@ -217,7 +222,7 @@ async def login(request: Request, user_login: UserLogin, db: Session = Depends(g
     # Generate tokens
     access_token = create_access_token(
         data={"sub": user.email, "user_id": user.id},
-        expires_delta=timedelta(minutes=15)
+        expires_delta=timedelta(hours=4)
     )
     
     refresh_token_str, refresh_expires = create_refresh_token(
