@@ -55,7 +55,12 @@ def _build_allowed_origins() -> list[str]:
     return list(dict.fromkeys(all_origins))
 
 # Create tables
-Base.metadata.create_all(bind=engine)
+try:
+    Base.metadata.create_all(bind=engine)
+    print("✅ Database tables created successfully")
+except Exception as db_init_error:
+    print(f"⚠️ Could not initialize database tables: {db_init_error}")
+    print("⚠️ Server will continue but database operations may fail")
 
 # Ensure usage-limit columns exist for existing deployments (e.g., Supabase/Postgres)
 try:
@@ -103,7 +108,7 @@ app = FastAPI(
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
     response = await call_next(request)
-    response.headers["Cross-Origin-Opener-Policy"] = "same-origin-allow-popups"
+    # COOP header is already set in SecurityHeadersMiddleware, no need to duplicate
     return response
 
 # Add rate limiter state
@@ -132,7 +137,7 @@ async def log_startup_info():
     logger.info(f"📊 Environment: {settings.environment}")
     logger.info(f"🔐 Google OAuth: {'Enabled' if settings.google_client_id else 'Disabled'}")
     logger.info(f"🤖 AI Service: {'Configured' if ai_service.use_ai else 'Demo Mode'}")
-    logger.info(f"💾 Database pool: size=10, max_overflow=20")
+    logger.info(f"💾 Database pool: size=20, max_overflow=40 (optimized for high concurrency)")
     logger.info(f"⚡ Keep-alive endpoint: /ping (use for Render)")
 
 

@@ -40,7 +40,7 @@ export const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 60000, // 60 second timeout (increased for code execution)
+  timeout: 120000, // 120 second timeout (2 minutes for code execution & AI requests)
 })
 
 // Add token to requests if available
